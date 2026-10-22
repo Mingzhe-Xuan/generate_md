@@ -32,6 +32,18 @@ def main():
                   input_backwards=dict(atom_features=0, bondlength=0, angle_features=0),
                   input_gradient_max=dict(atom_features=0., bondlength=0., angle_features=0.),
                   checkpoints={})
+    reference = Path(os.environ['ATOMGPTLAB_CACHE'])/'jarvis_data/megnet.json.zip'
+    if reference.stat().st_size != 562093824:
+        raise RuntimeError('Prepare the complete official MEGNet reference before submitting.')
+    with zipfile.ZipFile(reference) as archive:
+        if archive.testzip() is not None or 'megnet.json' not in archive.namelist():
+            raise RuntimeError('Invalid MEGNet reference ZIP.')
+    digest = hashlib.sha256()
+    with reference.open('rb') as stream:
+        for chunk in iter(lambda: stream.read(1024*1024), b''):
+            digest.update(chunk)
+    report['megnet_reference'] = dict(bytes=reference.stat().st_size, sha256=digest.hexdigest(),
+                                    source='https://ndownloader.figshare.com/files/26724977')
     expected = {'mp_gappbe_alignnn': '8e9309fcb435a88481ccbc945d16cb1343f9ac24d8198607f753ce59b687242e',
                 'mp_e_form_alignnn': '848fb8f5844445ab2c751a7a7790ad69d7d3c6c385eb645758c48049e2bd8e71'}
     checkpoint_digests = []

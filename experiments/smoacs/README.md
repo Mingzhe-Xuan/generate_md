@@ -202,3 +202,10 @@ contain optimizer/scheduler state. alignn_checkpoint.py restores the old loading
 mode only inside the upstream alignn_loader module, only after checking the exact
 checkpoint member digest from the already hash-pinned ZIP. Other Torch loaders
 are unaffected and the module binding is restored after execution.
+
+The upstream novelty summary additionally reads the official JARVIS MEGNet
+reference (https://ndownloader.figshare.com/files/26724977). Prepare its complete
+562093824-byte megnet.json.zip in results/smoacs/jarvis-cache/jarvis_data before
+submission. ATOMGPTLAB_CACHE is confined to this task directory. The Slurm run
+checks ZIP CRC/member/size and records its SHA-256 before processing; large
+reference parsing and integrity checks happen inside the allocated job.
