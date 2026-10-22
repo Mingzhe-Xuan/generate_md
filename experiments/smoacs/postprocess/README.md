@@ -50,3 +50,15 @@ no global Torch loading defaults are modified.
 dft_prepare.sbatch builds a private PBE54 cache only from matching installed
 datasets, then checks actual POTCAR construction and MP flow creation in the
 paper-version DFT venv. Cache potential contents remain server-only and ignored.
+
+DFT execution: set SMOACS_DFT_ID to one eligible original candidate ID and
+SMOACS_INVENTORY to the audited inventory JSON, then submit dft_run.sbatch.
+It requires a converged, hash-matched MatterSim result and recognized installed
+PBE54 datasets. paper_dft.py centralizes the exact author maker for preflight
+and execution. The workflow must contain exactly two relaxations and a static;
+each parsed stage must converge with finite energy. The final static must have
+NEDOS2001. Record bandgap from its eigenvalues, not from the ML predictor.
+All settings/input hashes and stage-level convergence are retained. E_hull is
+explicitly unknown until consistent reference phases are available. Per-job
+attempt directories preserve failed runs. Do not confuse successful workflow
+execution with meeting bandgap or S.U.N. criteria.

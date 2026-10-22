@@ -45,14 +45,9 @@ def main():
     from pymatgen.core import SETTINGS
     SETTINGS['PMG_VASP_PSP_DIR'] = os.environ['PMG_VASP_PSP_DIR']
     SETTINGS['PMG_DEFAULT_FUNCTIONAL'] = 'PBE_54'
-    from atomate2.vasp.flows.mp import MPGGADoubleRelaxStaticMaker
-    from atomate2.vasp.jobs.mp import MPGGAStaticMaker
     from pymatgen.core import Structure
-    from pymatgen.io.vasp.sets import MPStaticSet
-    static_maker = MPGGAStaticMaker(input_set_generator=MPStaticSet(
-        force_gamma=True, auto_metal_kpoints=True, inherit_incar=False,
-        user_incar_settings={'NEDOS': 2001}))
-    maker = MPGGADoubleRelaxStaticMaker(static_maker=static_maker)
+    from paper_dft import make_paper_maker, leaf_jobs
+    maker = make_paper_maker()
     (args.output/'maker.json').write_text(json.dumps(maker.as_dict(), indent=2, default=str)+'\n')
     ready = []
     for candidate in inventory['candidates']:
@@ -66,7 +61,7 @@ def main():
                 raise RuntimeError('Incomplete candidate POTCAR construction.')
             flow = maker.make(structure)
             row['flow_name'] = flow.name
-            row['job_count'] = len(flow.jobs)
+            row['job_count'] = len(list(leaf_jobs(flow)))
             ready.append(row)
     report = dict(python_packages={n:version(n) for n in ['atomate2','pymatgen','jobflow','custodian','mp-api','emmet-core']},
                   exported_pbe54=exported, candidate_denominator=128,
