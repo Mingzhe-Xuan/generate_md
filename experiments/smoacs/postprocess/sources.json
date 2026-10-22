@@ -10,5 +10,17 @@
     "unavailable_readme_commit": "71d640e21c4d3293ae4a968bc64c12e118f42a92"
   },
   "dft_repository": "https://github.com/AkiraTOSEI/atomate2-dft",
-  "dft_commit": "3fd683f50610a4e34d5ca7216cf5eaad57dba17b"
+  "dft_commit": "3fd683f50610a4e34d5ca7216cf5eaad57dba17b",
+  "publication_archives": {
+    "smoacs": {
+      "doi": "10.5281/zenodo.20149017",
+      "sha256": "c178135f388ba14f67c8bb57ccc727de52bfff9b7e75469f21157d11ae30f343",
+      "md5": "f2d8bff20f80442a9af37ef98588c88f"
+    },
+    "dft": {
+      "doi": "10.5281/zenodo.20133844",
+      "sha256": "610b91f7dac7d4abca45bfc17045520506f21bea5e1f3e865b518c4248462be2",
+      "md5": "f1a8fbee5bcbf796ce8b48eb6c076a6c"
+    }
+  }
 }

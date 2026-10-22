@@ -101,3 +101,14 @@ audit now obtains POTCAR symbols from actual MPGGARelaxSetGenerator public
 get_input_set(potcar_spec=True), not a newer standalone MPRelaxSet. It scans
 both installed6.4.3 test-potential roots. Every audit uses a new outputdirectory;
 previous manifests and active DFT caches are never rewritten by this audit.
+
+
+Publication provenance: publication_audit.py checks official Zenodo archives
+10.5281/zenodo.20149017 and 10.5281/zenodo.20133844 against sources.json.
+The archived MatterSim relaxation function is AST-identical to our SMOACS source;
+the archived DFT workflow is identical to the pinned DFT source after normalizing
+line endings. The later GitHub README MatterSim commit pin is absent from the
+published README, so it must not be described as a paper-mandated revision.
+The actual installed MatterSim revision and checkpoint hash remain explicit.
+The real Slurm termination probe248 passed while a protected sibling step stayed
+alive. Resource inventory249 uses the exact paper DFT environment.
