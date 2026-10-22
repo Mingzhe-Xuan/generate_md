@@ -63,3 +63,21 @@ requirements-paper.txt describes the initial paper runtime; obtain Torch/DGL CUD
 wheels from the official indexes separately. Treat installed-version snapshots and
 Slurm runtime checks as evidence; installation alone does not certify GPU compatibility.
 Run the tiny preparation tests with python -m pytest -q experiments/smoacs/test_prepare_assets.py.
+
+## Original Section 2.1 execution
+
+run_section21.py verifies the archive and original author script SHA-256, then executes
+those unchanged source bytes in a Slurm job. The wrapper supplies paths and CLI
+arguments, adds the pinned checkout to the Python import path, and records provenance.
+It does not write or patch upstream source on the server. Set SMOACS_ASSETS to the
+prepared assets directory before submitting section21.sbatch. The defaults are 256
+candidates in a complete batch, 200 steps, seed 42, template geometry, oxidation mask
+and gradient optimization. Select other methods with SMOACS_METHOD and initialization
+with SMOACS_INITIALIZATION. For a smoke check, explicitly set SMOACS_CANDIDATES=2,
+SMOACS_BATCH_SIZE=2, SMOACS_STEPS=10; mutation methods additionally require
+SMOACS_MUTATION_STEPS="5 7". Every job uses a fresh experiment directory.
+
+The archived author script uses a 0.04 eV training window in its saved summary.
+Recompute the paper 0.2 eV assessment from all per-candidate rows separately.
+Report candidate count, actual saved configuration, device implementation, and any
+difference from the paper; keep CPU smoke results separate from CUDA reproduction.
