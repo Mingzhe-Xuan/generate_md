@@ -17,6 +17,15 @@ def count_statuses(rows, expected=128):
                 relaxation_converged_fraction=counts['converged']/expected)
 
 
+def dft_readiness(symbols, available, relaxation_status):
+    missing = sorted(set(symbols)-set(available))
+    if missing:
+        return 'blocked_missing_potentials', missing
+    if relaxation_status != 'converged':
+        return 'blocked_relaxation', []
+    return 'not_run', []
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--inventory', type=Path, required=True)
@@ -65,7 +74,8 @@ def main():
                 if key in dft:
                     row['dft_'+key] = dft[key]
         else:
-            row['dft_status'] = 'not_run'
+            row['dft_status'], row['missing_potcar_symbols'] = dft_readiness(
+                candidate['potcar_symbols'], inventory['available_pbe54'], row['status'])
         rows.append(row)
     matcher = StructureMatcher(ltol=0.2, stol=0.3, angle_tol=5,
                                primitive_cell=True, scale=True, attempt_supercell=True)
