@@ -124,3 +124,7 @@ from the repository root. This installs only into SMOACS_PYTHON (default the tas
 venv), uses no network, requires the pinned Torch/DGL builds, runs pip check and
 saves freeze-<job_id>.txt. A successful install is followed by probe.sbatch; it
 does not establish GPU compatibility or paper reproduction by itself.
+
+The archived script executes in a registered __main__ module with its own compile
+flags. Launcher future imports must not change author annotations; this matters
+for Pydantic models and dataclass type resolution. Author bytes remain unchanged.

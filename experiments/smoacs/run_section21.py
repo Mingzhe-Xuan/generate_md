@@ -8,9 +8,24 @@ import os
 from pathlib import Path
 import sys
 import tarfile
+import types
 
 SOURCE_MEMBER = "reproducibility/section_2_1/section_2_1_main.py"
 SOURCE_SHA256 = "59f48b03c2066aae03a7526e72d3a6fc0a5539e850aa925cadb1aa43e453326d"
+
+
+def execute_author_source(original: bytes, filename: str) -> None:
+    module = types.ModuleType("__main__")
+    module.__file__ = filename
+    previous = sys.modules.get("__main__")
+    sys.modules["__main__"] = module
+    try:
+        exec(compile(original, filename, "exec", dont_inherit=True), module.__dict__)
+    finally:
+        if previous is None:
+            sys.modules.pop("__main__", None)
+        else:
+            sys.modules["__main__"] = previous
 
 
 def main() -> int:
@@ -90,8 +105,7 @@ def main() -> int:
         "--output_root", str(output_root), "--mutation_steps",
         *map(str, args.mutation_steps),
     ]
-    namespace = {"__name__": "__main__", "__file__": synthetic_filename}
-    exec(compile(original, synthetic_filename, "exec"), namespace)
+    execute_author_source(original, synthetic_filename)
     return 0
 
 
