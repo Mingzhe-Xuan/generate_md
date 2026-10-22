@@ -78,3 +78,10 @@ server Slurm21.08.5) supplies I_MPI_PMI_LIBRARY. No system libraries are replace
 The Slurm entry compiles mpi_probe.c inside its allocation and requires8 distinct
 rank affinity masks before starting VASP via srun --mpi=pmi2 --cpu-bind=cores.
 Reference: https://slurm.schedmd.com/mpi_guide.html#intel_mpi
+
+predict_relaxed.sbatch reuses the exact archived CPU206 Crystalformer definitions
+without executing optimization main, verifies archive/source/checkpoint hashes,
+and compares original exported POSCAR predictions to the recorded CSV as a
+control before reporting relaxation drift. SMOACS_PREDICT_LIMIT=2 selects a pilot.
+A control error above1e-3 is saved and fails the job for investigation. This is
+same-predictor property reevaluation, not independent DFT or stability evidence.
