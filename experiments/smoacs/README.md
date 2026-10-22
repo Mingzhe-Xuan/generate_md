@@ -159,3 +159,8 @@ CUDA backward gradients without changing tensors or optimizer updates. A fallbac
 encoder, missing gradients or non-finite outputs fails the job; the audit JSON
 accompanies the launch record. This establishes the Crystalformer path only,
 not ALIGNN's full GPU operation support or paper-scale reproduction.
+
+The Blackwell profile uses the official DGL 1.1.3+cu121 wheel: DGL 2.4 wheels
+pin torch<=2.4.0 and cannot resolve with Blackwell Torch. Dependency checking
+remains enabled; the runtime probe and Crystalformer smoke determine the actual
+supported scope. Do not assume this proves ALIGNN compatibility.
