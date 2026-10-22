@@ -29,3 +29,24 @@ It is not the low-cutoff two-Si capability test. Full stability screening needs
 consistent MatterSim-relaxed competing phases and MaterialsProject2020Compatibility,
 not just a negative candidate formation energy. Reference unavailability must
 remain unknown, never be treated as passing stability or novelty.
+
+Installation is performed by install.sbatch with SMOACS_STAGE=mattersim/dft.
+Each job validates its own direct PyPI route, installs into an already-created
+isolated venv and runs pip check/freeze. Native extension builds stay in Slurm.
+prepare_model.sbatch extracts the exact 5M file from the pinned official source
+archive and verifies its known SHA; a partial transfer is never loadable input.
+
+After inventory and environment/model preparation, relax.sbatch uses
+SMOACS_INVENTORY to select the audited128 manifest. SMOACS_RELAX_IDS selects an
+explicit pilot; SMOACS_REQUIRE_CONVERGED=1 makes that pilot fail unless every
+selected candidate converges. Omit these variables for the full batch. Existing
+completed records are reused only with matching input hashes. Per-candidate
+failures/unconverged states remain records in the128 denominator. The explicit
+ASE BFGS/ExpCellFilter/FixSymmetry sequence follows the author's Relaxer
+implementation, while recording the real optimizer convergence return value.
+The exact verified checkpoint uses the existing scoped legacy-load adapter;
+no global Torch loading defaults are modified.
+
+dft_prepare.sbatch builds a private PBE54 cache only from matching installed
+datasets, then checks actual POTCAR construction and MP flow creation in the
+paper-version DFT venv. Cache potential contents remain server-only and ignored.
