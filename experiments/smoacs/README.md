@@ -128,3 +128,13 @@ does not establish GPU compatibility or paper reproduction by itself.
 The archived script executes in a registered __main__ module with its own compile
 flags. Launcher future imports must not change author annotations; this matters
 for Pydantic models and dataclass type resolution. Author bytes remain unchanged.
+
+## Paper Section 2.1 assessment
+
+Set SMOACS_RESULT_CSV to the author's result.csv and SMOACS_EXPECTED_CANDIDATES
+to the full submitted candidate count, then submit summarize.sbatch (optionally
+with an afterok dependency). summarize_section21.py independently applies the
+paper bandgap [2.3,2.7] eV, formation energy < -0.5 eV/atom, neutrality and
+minimum-bond flags. Missing rows remain failures in the declared denominator.
+The original narrow-window success column is preserved and is not substituted
+for this assessment. Output JSON includes the source CSV SHA-256.
