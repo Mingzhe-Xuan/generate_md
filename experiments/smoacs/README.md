@@ -181,3 +181,18 @@ CUDA 12.8.0 redistribution; SHA-256:
 5bd3ac35ea8e8ab880e595d5054ee373abf6d9e53dcb8cef0a5c75358dbc0ae2.
 Keep the redistribution license with the extracted runtime. No system toolkit
 changes or removal of the original relocatable-device-code option are needed.
+
+## ALIGNN Blackwell smoke
+
+alignn_smoke.sbatch runs run_alignn_smoke.py against the pinned upstream CLI,
+using the existing Blackwell venv, prepared Section 2.3 2-12 atom templates,
+and official MEGNet bandgap/formation-energy ZIP weights in
+results/smoacs/alignn-weights. The launcher checks both manifest SHA-256 values
+before loading. Submit from the parent root: sbatch experiments/smoacs/alignn_smoke.sbatch.
+It runs 2 candidates, batch 2, 10 gradient steps, seed 42, target gap 2.5 eV
+and formation energy below -0.5 eV/atom. No force field or relaxation is enabled.
+Observational hooks require actual ALIGNN4inverse CUDA graphs/outputs and finite,
+nonzero backward gradients for atomic features, bond lengths and bond angles.
+The model and optimization code are unchanged. Outputs and cuda-audit.json are
+under results/smoacs/alignn-smoke-<jobid>; job_status.sh records the exit status.
+This is an execution smoke, not a paper-scale accuracy or stability assessment.
