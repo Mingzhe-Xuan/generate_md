@@ -97,3 +97,21 @@ on clusters without an accounting database. status_check.sbatch validates only t
 recorder, not models or optimization. Local tests need Bash and pytest; set
 SMOACS_TEST_BASH when Bash is not on PATH. A killed job may lack a final file, so
 a missing record must never be interpreted as successful completion.
+
+## Bounded transfer over the existing SOCKS route
+
+range_server.py serves only public .whl files from an explicitly selected local
+directory. It binds 127.0.0.1 on an ephemeral port and reports that port/PID.
+Each request is limited to 256 KiB and includes a SHA-256; HTTP/1.1 permits
+connection reuse. Keep it private and stop the task-owned helper after use.
+
+range_fetch.py runs as a lightweight download command with an explicit socks5h
+proxy, verifies every range before appending, and checkpoints atomically. It
+truncates uncommitted tails and resumes verified offsets after interruption.
+Use --only <wheel-name> for a transport test; its report is marked subset.
+Without --only it fetches the full source manifest. Files remain resources
+under ignored results/smoacs, and still need installation/runtime validation.
+
+Run both sides following the root network rules: one dedicated SSH proxy, an
+end-to-end health check, and ordinary work connections with forwarding disabled.
+This route does not require public HTTP hosting or a direct-download exception.
