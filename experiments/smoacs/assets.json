@@ -1,0 +1,17 @@
+{
+  "reproducibility.tar.gz": {
+    "sha256": "7321e5dd5a82e71418ed00bdac37b8e334bb9810ccb0fa2c73d2059cf9e604de",
+    "bytes": 21739958,
+    "source": "https://drive.google.com/file/d/1AkoDieWZFWFm8UgBXrS61XvfiHjtiEGC/view"
+  },
+  "crystalformer_weights.zip": {
+    "sha256": "704565ea9d6e9ab97defff0e69b4cbf72f91f2f79718ec2e1db6d1b694692a2d",
+    "bytes": 67026884,
+    "source": "https://drive.google.com/file/d/1yEmwnWflYHGlwQia1xb3G91u2Edz8H2a/view"
+  },
+  "crystalformer_default.json": {
+    "sha256": "0b094015efde198ffbfb74d92d593734b32af0dd235eb6e7d26539f2dfdac5c4",
+    "source": "https://github.com/omron-sinicx/crystalformer/blob/83fdc6805818ba14208c8db05920f915800acff7/params/latticeformer/default.json",
+    "note": "SHA-256 identifies the downloaded working copy, including its line endings."
+  }
+}

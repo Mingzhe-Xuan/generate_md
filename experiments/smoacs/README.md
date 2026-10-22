@@ -49,3 +49,17 @@ as numerical reproduction.
 Follow the root AGENTS.md for environment records, source synchronization and
 Slurm-only computation. Edit and commit source locally; do not patch tracked
 source on the server.
+
+## Verified asset preparation
+
+assets.json pins the public archive sizes and SHA-256 digests. Copy the two archives
+and crystalformer_default.json into results/smoacs/downloads, then submit
+`sbatch experiments/smoacs/prepare.sbatch` from the parent root. The job writes a new
+results/smoacs/assets-<job_id> directory, verifies archives, extracts only template
+data and the two layer-4 checkpoints, and writes prepared.json. It excludes source
+scripts, rejects unsafe paths and refuses to overwrite an existing output.
+
+requirements-paper.txt describes the initial paper runtime; obtain Torch/DGL CUDA
+wheels from the official indexes separately. Treat installed-version snapshots and
+Slurm runtime checks as evidence; installation alone does not certify GPU compatibility.
+Run the tiny preparation tests with python -m pytest -q experiments/smoacs/test_prepare_assets.py.
