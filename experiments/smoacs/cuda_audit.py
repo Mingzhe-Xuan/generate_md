@@ -1,6 +1,7 @@
 """Observe real Crystalformer CUDA encoder forwards and their backward gradients."""
 from __future__ import annotations
 import json
+import os
 from pathlib import Path
 
 class CudaKernelAudit:
@@ -12,6 +13,9 @@ class CudaKernelAudit:
 
     def __enter__(self):
         import torch
+        if os.environ.get("SMOACS_CUDA_COMPILER", "upstream") == "nvrtc":
+            from cuda_nvrtc import enable_plain_nvrtc
+            self.report.update(enable_plain_nvrtc())
         from crystalformer.models.cuda_funcs import CUPY_AVAILABLE
         from crystalformer.models.indexed_latticeformer_encoder import CrystalformerEncoderCUDA
         if not CUPY_AVAILABLE or not torch.cuda.is_available():

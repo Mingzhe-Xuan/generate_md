@@ -164,3 +164,10 @@ The Blackwell profile uses the official DGL 1.1.3+cu121 wheel: DGL 2.4 wheels
 pin torch<=2.4.0 and cannot resolve with Blackwell Torch. Dependency checking
 remains enabled; the runtime probe and Crystalformer smoke determine the actual
 supported scope. Do not assume this proves ALIGNN compatibility.
+
+SMOACS_CUDA_COMPILER=nvrtc opts the audited smoke into direct NVRTC compilation
+of the unchanged Crystalformer CUDA kernel sources. Only kernel_manager sees
+the compiler adapter; normal CuPy behavior remains intact. An absolute include
+path resolves the original local headers, replacing legacy Jitify header discovery.
+cuda_compile_probe.py can isolate representative kernel compilation in Slurm
+before a full audited smoke. Compilation alone is not model validation.
