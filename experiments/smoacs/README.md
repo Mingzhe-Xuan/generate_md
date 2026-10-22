@@ -171,3 +171,13 @@ the compiler adapter; normal CuPy behavior remains intact. An absolute include
 path resolves the original local headers, replacing legacy Jitify header discovery.
 cuda_compile_probe.py can isolate representative kernel compilation in Slurm
 before a full audited smoke. Compilation alone is not model validation.
+
+The original -dc option requires libcudadevrt.a, which the pip runtime wheel
+does not provide. Extract the official NVIDIA cuda_cudart Linux x86_64 12.8.57
+redistribution into results/smoacs/cuda-12.8-runtime and set
+SMOACS_CUDA_RUNTIME_ROOT=$PWD/results/smoacs/cuda-12.8-runtime for the jobs.
+The archive is cuda_cudart-linux-x86_64-12.8.57-archive.tar.xz from NVIDIA's
+CUDA 12.8.0 redistribution; SHA-256:
+5bd3ac35ea8e8ab880e595d5054ee373abf6d9e53dcb8cef0a5c75358dbc0ae2.
+Keep the redistribution license with the extracted runtime. No system toolkit
+changes or removal of the original relocatable-device-code option are needed.
