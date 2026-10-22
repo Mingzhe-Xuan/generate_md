@@ -70,3 +70,11 @@ and unconverged entries stay in the denominator. Latest per-candidate DFT
 attempts are included. Stability/novelty and S.U.N. fractions stay unknown when
 consistent MP reference phases/structures are unavailable; proposal uniqueness
 alone must not be reported as S.U.N.
+
+Use native Slurm PMI2 launch for DFT. The server's Intel Hydra default bound
+all ranks to one core despite an8-CPU allocation; this was measured from /proc
+and CPU usage. A task-private Ubuntu libpmi2-0 21.08.5-2ubuntu1 (matching the
+server Slurm21.08.5) supplies I_MPI_PMI_LIBRARY. No system libraries are replaced.
+The Slurm entry compiles mpi_probe.c inside its allocation and requires8 distinct
+rank affinity masks before starting VASP via srun --mpi=pmi2 --cpu-bind=cores.
+Reference: https://slurm.schedmd.com/mpi_guide.html#intel_mpi

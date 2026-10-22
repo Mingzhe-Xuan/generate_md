@@ -31,8 +31,9 @@ def main():
     out = root/'dft'/Path(args.candidate_id).stem/('attempt-'+os.environ['SLURM_JOB_ID'])
     out.mkdir(parents=True, exist_ok=False)
     config = out/'atomate2.yaml'
-    config.write_text('VASP_CMD: mpirun -np '+os.environ['SLURM_NTASKS']+' /opt/vasp.5.4.4/bin/vasp_std\n'
-                      'VASP_GAMMA_CMD: mpirun -np '+os.environ['SLURM_NTASKS']+' /opt/vasp.5.4.4/bin/vasp_gam\n')
+    launcher = 'srun --mpi=pmi2 --cpu-bind=cores -n '+str(int(os.environ['SLURM_NTASKS']))
+    config.write_text('VASP_CMD: '+launcher+' /opt/vasp.5.4.4/bin/vasp_std\n'
+                      'VASP_GAMMA_CMD: '+launcher+' /opt/vasp.5.4.4/bin/vasp_gam\n')
     os.environ['ATOMATE2_CONFIG_FILE'] = str(config)
     os.environ['PMG_VASP_PSP_DIR'] = str(root/'dft-config/psp')
     os.environ['PMG_DEFAULT_FUNCTIONAL'] = 'PBE_54'
