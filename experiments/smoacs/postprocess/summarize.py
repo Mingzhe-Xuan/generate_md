@@ -91,6 +91,38 @@ def main():
         for index, _ in group:
             rows[index]['unique_group_representative'] = rows[group[0][0]]['candidate_id']
     summary = count_statuses(rows, inventory['denominator'])
+    for path in sorted(args.root.glob('predictor-*/summary.json'),
+                       key=lambda p:int(p.parent.name.split('-')[-1]), reverse=True):
+        prediction_summary = json.loads(path.read_text())
+        if prediction_summary.get('candidate_count') != len(rows) or not prediction_summary.get('control_passed'):
+            continue
+        predictions = list(csv.DictReader((path.parent/'predictions.csv').open()))
+        by_id = {r['candidate_id']:r for r in predictions}
+        if len(by_id) != len(rows) or set(by_id) != {r['candidate_id'] for r in rows}:
+            raise ValueError('Prediction identity mismatch.')
+        retained = gained = original_hits = 0
+        for candidate, row in zip(inventory['candidates'], rows):
+            prediction = by_id[row['candidate_id']]
+            before = (2.3 <= candidate['original_gap'] <= 2.7 and candidate['original_eform'] < -0.5
+                      and str(candidate['original_valid']).lower() == 'true')
+            after = all(prediction.get(k) == 'True' for k in ['relaxed_gap_target_success',
+                        'relaxed_eform_target_success','relaxed_geometry_valid']) and row['status'] == 'converged'
+            original_hits += before
+            retained += before and after
+            gained += not before and after
+            row.update({('predictor_'+k):v for k,v in prediction.items() if k != 'candidate_id'})
+        summary['same_predictor_assessment'] = dict(original_joint=original_hits,
+            relaxed_joint=prediction_summary['relaxed_joint_count'], retained_joint=retained,
+            newly_joint=gained, denominator=len(rows),
+            original_control_max_error=prediction_summary['max_original_control_error'],
+            note='Not DFT or S.U.N. success rates.')
+        break
+    completed_dft = [r for r in rows if r['dft_status'] == 'completed']
+    summary['dft_assessment'] = dict(evaluated_candidates=len(completed_dft),
+        target_gap_hits=sum(bool(r.get('dft_target_gap_success')) for r in completed_dft),
+        full128_gap_success_rate=None if len(completed_dft)!=len(rows) else
+            sum(bool(r.get('dft_target_gap_success')) for r in completed_dft)/len(rows),
+        note='Pseudopotential availability determines the evaluated subset; do not extrapolate.')
     summary.update(unique_relaxed_groups=len(groups),
                    dft_status_counts=dict(Counter(r['dft_status'] for r in rows)),
                    stable_fraction=None, sun_fraction=None,
