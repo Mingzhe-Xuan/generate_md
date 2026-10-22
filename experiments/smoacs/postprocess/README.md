@@ -95,3 +95,9 @@ VASP executable. There is no global fallback. Unit tests protect other stage/job
 launchers and unrelated children. Physics, validators and correction limits are
 unchanged; interrupted attempts are retained rather than counted as material
 failures. Do not remove this isolation when running old Custodian concurrently.
+
+Install the paper DFT venv before the final inventory.sbatch. The resource
+audit now obtains POTCAR symbols from actual MPGGARelaxSetGenerator public
+get_input_set(potcar_spec=True), not a newer standalone MPRelaxSet. It scans
+both installed6.4.3 test-potential roots. Every audit uses a new outputdirectory;
+previous manifests and active DFT caches are never rewritten by this audit.

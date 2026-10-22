@@ -36,8 +36,10 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
     from pymatgen.core import Structure
-    from pymatgen.io.vasp.inputs import Potcar, PotcarSingle
-    from pymatgen.io.vasp.sets import MPRelaxSet
+    from pymatgen.io.vasp.inputs import Potcar
+    from paper_dft import make_paper_maker, stage_makers
+    from importlib.metadata import version
+    generator = stage_makers(make_paper_maker())[0].input_set_generator
     sources = json.loads(Path(__file__).with_name('sources.json').read_text())
     csv_path = args.input/'result.csv'
     if sha256(csv_path) != sources['cpu_result_csv_sha256']:
@@ -48,7 +50,7 @@ def main():
     requested = set()
     for row, path in zip(rows, paths):
         structure = Structure.from_file(path)
-        symbols = MPRelaxSet(structure, user_potcar_functional='PBE_54').potcar_symbols
+        symbols = generator.get_input_set(structure, potcar_spec=True).potcar
         requested.update(symbols)
         records.append(dict(candidate_id=row['original_fnames'],
                             source=str(path.resolve()), sha256=sha256(path),
@@ -61,8 +63,10 @@ def main():
                             original_valid=row.get('valid_structure')))
     available = {}
     errors = []
-    potential_root = Path('/opt/vasp.6.4.3/testsuite/POTCARS')
-    for path in sorted(potential_root.glob('POTCAR.*')):
+    potential_roots = [Path('/opt/vasp.6.4.3/testsuite/POTCARS'),
+                       Path('/opt/vasp.6.4.3-wannier90/testsuite/POTCARS')]
+    paths_to_scan = sorted(p for root in potential_roots for p in root.glob('POTCAR.*'))
+    for path in paths_to_scan:
         try:
             # Only retain identities; never publish or commit potential contents.
             potentials = Potcar.from_file(path)
@@ -82,6 +86,8 @@ def main():
                   available_pbe54=available,
                   missing_pbe54=sorted(requested-set(available)),
                   potential_parse_errors=errors,
+                  potcar_generator=type(generator).__name__,
+                  python_packages={n:version(n) for n in ['atomate2','pymatgen']},
                   source_versions=sources)
     (args.output/'inventory.json').write_text(json.dumps(report, indent=2)+'\n')
     print(json.dumps(dict(candidates=len(records), required_potcars=sorted(requested),

@@ -9,6 +9,6 @@ set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:?}"
 source experiments/smoacs/job_status.sh
 export OMP_NUM_THREADS=2
-.venv-smoacs-blackwell/bin/python experiments/smoacs/postprocess/inventory.py \
+.venv-smoacs-dft/bin/python experiments/smoacs/postprocess/inventory.py \
  --input results/smoacs/optimization/section21-Struct-AtomicMask-grad-206 \
  --output "results/smoacs/postprocess-206/inventory-${SLURM_JOB_ID}"
