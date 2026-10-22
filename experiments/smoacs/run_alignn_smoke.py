@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import runpy
 import sys
+import zipfile
 
 
 def main():
@@ -33,15 +34,25 @@ def main():
                   checkpoints={})
     expected = {'mp_gappbe_alignnn': '8e9309fcb435a88481ccbc945d16cb1343f9ac24d8198607f753ce59b687242e',
                 'mp_e_form_alignnn': '848fb8f5844445ab2c751a7a7790ad69d7d3c6c385eb645758c48049e2bd8e71'}
+    checkpoint_digests = []
     for name, digest in expected.items():
         actual = hashlib.sha256((weights / (name+'.zip')).read_bytes()).hexdigest()
         if actual != digest:
             raise RuntimeError('Checkpoint hash mismatch: ' + name)
         report['checkpoints'][name] = actual
+        with zipfile.ZipFile(weights / (name+'.zip')) as archive:
+            for member in archive.namelist():
+                if ('checkpoint_' in member and 'pt' in member) or 'best_model.pt' in member:
+                    checkpoint_digests.append(hashlib.sha256(archive.read(member)).hexdigest())
     sys.path.insert(0, str(source))
     os.environ['SMOACS_ROOT'] = str(assets)
     os.environ['MPLBACKEND'] = 'Agg'
     from src.models.alignn4inv import ALIGNN4inverse
+    from src.models import alignn_loader
+    from alignn_checkpoint import TrustedCheckpointTorch
+    original_loader_torch = alignn_loader.torch
+    alignn_loader.torch = TrustedCheckpointTorch(torch, checkpoint_digests)
+    report['legacy_checkpoint_digests'] = checkpoint_digests
 
     def check(tensor):
         if not tensor.is_cuda or not torch.isfinite(tensor).all().item():
@@ -96,6 +107,7 @@ def main():
         report['error'] = f'{type(exc).__name__}: {exc}'
         raise
     finally:
+        alignn_loader.torch = original_loader_torch
         handle.remove()
         (output/'cuda-audit.json').write_text(json.dumps(report, indent=2)+'\n', encoding='utf-8')
 

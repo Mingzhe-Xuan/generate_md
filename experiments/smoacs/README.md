@@ -196,3 +196,9 @@ nonzero backward gradients for atomic features, bond lengths and bond angles.
 The model and optimization code are unchanged. Outputs and cuda-audit.json are
 under results/smoacs/alignn-smoke-<jobid>; job_status.sh records the exit status.
 This is an execution smoke, not a paper-scale accuracy or stability assessment.
+
+PyTorch >=2.6 defaults to weights_only loading; these official legacy ZIPs also
+contain optimizer/scheduler state. alignn_checkpoint.py restores the old loading
+mode only inside the upstream alignn_loader module, only after checking the exact
+checkpoint member digest from the already hash-pinned ZIP. Other Torch loaders
+are unaffected and the module binding is restored after execution.
