@@ -209,3 +209,16 @@ reference (https://ndownloader.figshare.com/files/26724977). Prepare its complet
 submission. ATOMGPTLAB_CACHE is confined to this task directory. The Slurm run
 checks ZIP CRC/member/size and records its SHA-256 before processing; large
 reference parsing and integrity checks happen inside the allocated job.
+
+## VASP capability check
+
+vasp_capability.sbatch checks an existing server VASP installation using a two-Si
+static PBE SCF, 4 CPU MPI ranks, ENCUT300, 2x2x2 kmesh, EDIFF1e-6 and NSW0.
+It loads the installed Intel oneAPI environment, checks shared libraries, and
+requires electronic convergence, finite TOTEN and the normal timing footer.
+The existing Si test POTCAR is copied only into the ignored server task result
+directory; never commit or redistribute it. Override the executable or potential
+using SMOACS_VASP_EXECUTABLE / SMOACS_VASP_SI_POTCAR. Submit from the parent root.
+Results are under results/smoacs/vasp-capability-<jobid>; the standard status trap
+records exit code. This is a CPU execution capability check, not a test of GPU
+VASP, broad pseudopotential coverage, structure relaxation or paper DFT accuracy.
