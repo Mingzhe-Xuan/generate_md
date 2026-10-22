@@ -81,3 +81,10 @@ The archived author script uses a 0.04 eV training window in its saved summary.
 Recompute the paper 0.2 eV assessment from all per-candidate rows separately.
 Report candidate count, actual saved configuration, device implementation, and any
 difference from the paper; keep CPU smoke results separate from CUDA reproduction.
+
+When the full predictor ZIP is expensive to transfer, extract its two layer-4 files
+locally without changing their bytes and transfer them separately. checkpoints.json
+pins their individual hashes and their original archive provenance. Set
+SMOACS_DIRECT_CHECKPOINTS=1 when submitting prepare.sbatch to verify these files
+instead of requiring the complete four-model ZIP. prepared.json records exactly
+which inputs were verified; both modes produce the same two model files.

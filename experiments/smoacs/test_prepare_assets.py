@@ -84,3 +84,34 @@ def test_cli_refuses_bulk_work_without_slurm(tmp_path):
     assert result.returncode == 2
     assert "through Slurm" in result.stderr
     assert not output.exists()
+
+
+def direct_fixture(downloads):
+    direct = {}
+    for name in ("megnet-bandgap-layer4.ckpt", "megnet-e_form-layer4.ckpt"):
+        content = b"fixture"
+        (downloads / name).write_bytes(content)
+        direct[name] = {"sha256": hashlib.sha256(content).hexdigest(), "bytes": len(content)}
+    return direct
+
+
+def test_direct_checkpoint_mode_preserves_the_same_model_bytes(tmp_path):
+    downloads, manifest = fixture_archives(tmp_path)
+    direct = direct_fixture(downloads)
+    (downloads / "crystalformer_weights.zip").unlink()
+    output = tmp_path / "prepared"
+    result = module.prepare(downloads, output, manifest, direct)
+    assert result["weights_source"] == "direct_checkpoints"
+    assert "crystalformer_weights.zip" not in result["verified_inputs"]
+    for name in direct:
+        assert (output / "models/crystalformer" / name).read_bytes() == b"fixture"
+
+
+def test_direct_mode_rejects_altered_checkpoint_before_output(tmp_path):
+    downloads, manifest = fixture_archives(tmp_path)
+    direct = direct_fixture(downloads)
+    (downloads / "megnet-bandgap-layer4.ckpt").write_bytes(b"changed")
+    output = tmp_path / "prepared"
+    with pytest.raises(ValueError):
+        module.prepare(downloads, output, manifest, direct)
+    assert not output.exists()

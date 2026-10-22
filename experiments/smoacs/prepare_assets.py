@@ -30,8 +30,11 @@ def digest(path: Path) -> str:
     return result.hexdigest()
 
 
-def prepare(downloads: Path, output: Path, manifest: dict) -> dict:
-    for name, spec in manifest.items():
+def prepare(downloads: Path, output: Path, manifest: dict, checkpoints: dict | None = None) -> dict:
+    verification = {name: spec for name, spec in manifest.items()
+                    if checkpoints is None or name != "crystalformer_weights.zip"}
+    verification.update(checkpoints or {})
+    for name, spec in verification.items():
         path = downloads / name
         if "bytes" in spec and path.stat().st_size != spec["bytes"]:
             raise ValueError(f"Size mismatch: {name}")
@@ -59,17 +62,24 @@ def prepare(downloads: Path, output: Path, manifest: dict) -> dict:
     model_dir.mkdir(parents=True)
     names = ["megnet-bandgap-layer4.ckpt", "megnet-e_form-layer4.ckpt"]
     model_hashes = {}
-    with zipfile.ZipFile(downloads / "crystalformer_weights.zip") as archive:
+    if checkpoints is None:
+        with zipfile.ZipFile(downloads / "crystalformer_weights.zip") as archive:
+            for name in names:
+                with archive.open("weights/" + name) as source, (model_dir / name).open("xb") as destination:
+                    shutil.copyfileobj(source, destination)
+    else:
         for name in names:
-            with archive.open("weights/" + name) as source, (model_dir / name).open("xb") as destination:
-                shutil.copyfileobj(source, destination)
-            model_hashes[name] = digest(model_dir / name)
+            shutil.copyfile(downloads / name, model_dir / name)
+    for name in names:
+        model_hashes[name] = digest(model_dir / name)
     shutil.copyfile(downloads / "crystalformer_default.json", model_dir / "default.json")
     if files == 0:
         raise ValueError("Archive contained no selected template data.")
     report = {"job_id": os.environ.get("SLURM_JOB_ID"), "data_files": files,
               "data_bytes": total_bytes, "checkpoint_sha256": model_hashes,
-              "input_manifest": manifest, "source_extracted": False}
+              "input_manifest": manifest, "verified_inputs": verification,
+              "weights_source": "original_zip" if checkpoints is None else "direct_checkpoints",
+              "source_extracted": False}
     (output / "prepared.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     return report
 
@@ -78,6 +88,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--downloads", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--direct-checkpoints", action="store_true",
+                        help="Verify and use the two unchanged layer-4 files instead of the full ZIP.")
     args = parser.parse_args()
     if not os.environ.get("SLURM_JOB_ID"):
         parser.error("Run bulk preparation through Slurm.")
@@ -86,7 +98,10 @@ def main() -> int:
     if not output.is_relative_to(allowed) or output == allowed:
         parser.error("Output must be a new child directory under results/smoacs.")
     manifest = json.loads(Path(__file__).with_name("assets.json").read_text(encoding="utf-8"))
-    report = prepare(args.downloads.resolve(), output, manifest)
+    checkpoints = None
+    if args.direct_checkpoints:
+        checkpoints = json.loads(Path(__file__).with_name("checkpoints.json").read_text(encoding="utf-8"))
+    report = prepare(args.downloads.resolve(), output, manifest, checkpoints)
     print(json.dumps(report, indent=2))
     return 0
 

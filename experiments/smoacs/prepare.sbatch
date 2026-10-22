@@ -7,6 +7,10 @@
 #SBATCH --error=results/smoacs/logs/prepare-%j.err
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:?Submit from the parent repository root}"
+task_extra=()
+if [[ "${SMOACS_DIRECT_CHECKPOINTS:-0}" == 1 ]]; then
+  task_extra+=(--direct-checkpoints)
+fi
 python3 experiments/smoacs/prepare_assets.py \
   --downloads results/smoacs/downloads \
-  --output "results/smoacs/assets-${SLURM_JOB_ID}"
+  --output "results/smoacs/assets-${SLURM_JOB_ID}" "${task_extra[@]}"

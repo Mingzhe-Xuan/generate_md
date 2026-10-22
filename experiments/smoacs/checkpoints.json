@@ -1,0 +1,12 @@
+{
+  "megnet-bandgap-layer4.ckpt": {
+    "sha256": "79510a83df7209495ffa54e80b1978bb6ca842b214694b24f0d1f36813f40865",
+    "bytes": 13734961,
+    "source_archive_sha256": "704565ea9d6e9ab97defff0e69b4cbf72f91f2f79718ec2e1db6d1b694692a2d"
+  },
+  "megnet-e_form-layer4.ckpt": {
+    "sha256": "43c7096432423bea32c02b060a6d50ec75de5ebc487082bde9854108ae0b2257",
+    "bytes": 13734961,
+    "source_archive_sha256": "704565ea9d6e9ab97defff0e69b4cbf72f91f2f79718ec2e1db6d1b694692a2d"
+  }
+}
