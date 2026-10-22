@@ -9,3 +9,5 @@ __pycache__/
 *.pth
 *.pt
 .pytest_cache/
+/init_poscars/
+/train_data_data_range
