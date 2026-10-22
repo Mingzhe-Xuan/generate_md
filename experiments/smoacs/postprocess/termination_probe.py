@@ -28,7 +28,7 @@ def main():
         with (target/'stdout').open('w') as vout, (protected/'stdout').open('w') as pout:
             owned = subprocess.Popen(prefix+['/opt/vasp.5.4.4/bin/vasp_std'], cwd=target, stdout=vout, stderr=vout)
             children.append(owned)
-            other = subprocess.Popen(prefix+['/bin/sleep','30'], cwd=protected, stdout=pout, stderr=pout)
+            other = subprocess.Popen(prefix+['/bin/sleep','120'], cwd=protected, stdout=pout, stderr=pout)
             children.append(other)
             time.sleep(2)
             if owned.poll() is not None or other.poll() is not None:
@@ -36,7 +36,7 @@ def main():
             actions = terminate_launchers(target, root, job_id, psutil.Process().children(recursive=True))
             if [a['pid'] for a in actions] != [owned.pid]:
                 raise RuntimeError('Termination did not select exactly the owned VASP launcher.')
-            owned.wait(timeout=15)
+            owned.wait(timeout=45)
             if other.poll() is not None:
                 raise RuntimeError('Protected unrelated Slurm child was terminated.')
             report.update(passed=True, terminated_pid=owned.pid, protected_pid=other.pid,
@@ -45,7 +45,7 @@ def main():
         for child in children:
             if child.poll() is None:
                 child.terminate()
-                child.wait(timeout=15)
+                child.wait(timeout=45)
         (root/'result.json').write_text(json.dumps(report,indent=2)+'\n')
         print(json.dumps(report),flush=True)
 

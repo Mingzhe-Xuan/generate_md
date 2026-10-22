@@ -9,17 +9,19 @@ class SafeTerminationTests(unittest.TestCase):
     def test_only_owned_launcher_in_exact_stage_can_be_terminated(self):
         with tempfile.TemporaryDirectory() as directory:
             stage=Path(directory)/'stage';stage.mkdir()
-            def child(pid, cwd=stage, job='123', command=None):
+            def child(pid, cwd=stage, job='123', command=None, parent=1):
                 process=Mock(pid=pid)
                 process.cmdline.return_value=command or ['srun','/opt/vasp.5.4.4/bin/vasp_std']
                 process.cwd.return_value=str(cwd)
                 process.environ.return_value={'SLURM_JOB_ID':job}
+                process.ppid.return_value=parent
                 return process
             owned=child(100)
             other_stage=child(101,cwd=directory)
             other_job=child(102,job='124')
             unrelated=child(103,command=['srun','python'])
-            processes=[owned,other_stage,other_job,unrelated]
+            owned_control=child(104,parent=100)
+            processes=[owned,other_stage,other_job,unrelated,owned_control]
             actions=terminate_launchers(stage,directory,'123',processes)
             self.assertEqual([a['pid'] for a in actions],[100])
             owned.terminate.assert_called_once()

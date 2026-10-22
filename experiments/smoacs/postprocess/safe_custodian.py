@@ -13,6 +13,7 @@ def terminate_launchers(directory, root, job_id, children):
     if not directory.is_relative_to(root) or not job_id:
         raise ValueError('Refusing termination outside this DFT attempt.')
     actions = []
+    matches = []
     for process in children:
         try:
             command = process.cmdline()
@@ -21,6 +22,15 @@ def terminate_launchers(directory, root, job_id, children):
                     or Path(process.cwd()).resolve() != directory
                     or process.environ().get('SLURM_JOB_ID') != job_id):
                 continue
+            matches.append((process, command, process.ppid()))
+        except (ProcessLookupError, psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+    matching_ids = {process.pid for process, _, _ in matches}
+    for process, command, parent_id in matches:
+        # srun can fork a second control process with the same command line.
+        if parent_id in matching_ids:
+            continue
+        try:
             action = dict(pid=process.pid, command=command, cwd=str(directory), job_id=job_id)
             # SIGTERM to the owned srun cancels its own step, not other VASP jobs.
             process.terminate()
