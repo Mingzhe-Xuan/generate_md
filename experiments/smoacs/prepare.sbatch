@@ -7,6 +7,7 @@
 #SBATCH --error=results/smoacs/logs/prepare-%j.err
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:?Submit from the parent repository root}"
+source experiments/smoacs/job_status.sh
 task_extra=()
 if [[ "${SMOACS_DIRECT_CHECKPOINTS:-0}" == 1 ]]; then
   task_extra+=(--direct-checkpoints)

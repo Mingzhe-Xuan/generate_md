@@ -8,6 +8,7 @@
 #SBATCH --error=results/smoacs/logs/section21-%j.err
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:?Submit from the parent repository root}"
+source experiments/smoacs/job_status.sh
 task_assets="${SMOACS_ASSETS:?Set SMOACS_ASSETS to the prepared asset directory}"
 task_python="${SMOACS_PYTHON:-$PWD/.venv-smoacs-paper/bin/python}"
 export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK:-4}"

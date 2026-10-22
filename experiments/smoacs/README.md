@@ -88,3 +88,12 @@ pins their individual hashes and their original archive provenance. Set
 SMOACS_DIRECT_CHECKPOINTS=1 when submitting prepare.sbatch to verify these files
 instead of requiring the complete four-model ZIP. prepared.json records exactly
 which inputs were verified; both modes produce the same two model files.
+
+## Durable job status
+
+Every batch entry sources job_status.sh and writes results/smoacs/status/job-<id>.json
+with its real exit code and UTC finish time. This supplements controller observations
+on clusters without an accounting database. status_check.sbatch validates only this
+recorder, not models or optimization. Local tests need Bash and pytest; set
+SMOACS_TEST_BASH when Bash is not on PATH. A killed job may lack a final file, so
+a missing record must never be interpreted as successful completion.

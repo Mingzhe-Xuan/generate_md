@@ -9,6 +9,7 @@
 set -euo pipefail
 task_root="${SLURM_SUBMIT_DIR:?Submit from the parent repository root}"
 cd "$task_root"
+source experiments/smoacs/job_status.sh
 task_python="${SMOACS_PYTHON:-$task_root/.venv-smoacs-paper/bin/python}"
 export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK:-2}"
 export DGLBACKEND=pytorch
