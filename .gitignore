@@ -1,0 +1,11 @@
+tmp/
+results/
+logs/
+.venv*/
+__pycache__/
+*.pyc
+
+*.ckpt
+*.pth
+*.pt
+.pytest_cache/
