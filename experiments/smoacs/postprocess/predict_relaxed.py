@@ -13,6 +13,15 @@ import types
 from inventory import sha256
 
 
+def prediction_counts(rows):
+    converged = [r for r in rows if r.get('relaxation_status') == 'converged']
+    return dict(relaxed_bandgap_count=sum(r.get('relaxed_gap_target_success', False) for r in converged),
+                relaxed_eform_count=sum(r.get('relaxed_eform_target_success', False) for r in converged),
+                relaxed_joint_count=sum(r.get('relaxed_gap_target_success', False)
+                    and r.get('relaxed_eform_target_success', False)
+                    and r.get('relaxed_geometry_valid', False) for r in converged))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--inventory', type=Path, required=True)
@@ -75,15 +84,19 @@ def main():
         record_path = args.root/'relaxation'/Path(candidate['candidate_id']).stem/'result.json'
         if record_path.exists():
             record = json.loads(record_path.read_text())
+            if record['input_sha256'] != candidate['sha256']:
+                raise ValueError('Relaxation record input hash mismatch.')
             row['relaxation_status'] = record['status']
             if record['status'] in ['converged','unconverged']:
                 if sha256(record['relaxed_path']) != record['relaxed_sha256']:
                     raise ValueError('Relaxed structure changed.')
                 gap_after, ef_after = predict(record['relaxed_path'])
+                relaxed_structure = Structure.from_file(record['relaxed_path'])
                 row.update(gap_after=gap_after, eform_after=ef_after,
                            gap_drift=gap_after-gap, eform_drift=ef_after-ef,
                            relaxed_gap_target_success=abs(gap_after-2.5)<=0.2,
-                           relaxed_eform_target_success=ef_after< -0.5)
+                           relaxed_eform_target_success=ef_after< -0.5,
+                           relaxed_geometry_valid=not any(relaxed_structure.get_all_neighbors(0.5)))
         rows.append(row)
         print(json.dumps(row),flush=True)
     out = args.root/('predictor-'+os.environ['SLURM_JOB_ID'])
@@ -96,6 +109,7 @@ def main():
                 max_original_control_error=control_error, control_tolerance=1e-3,
                 control_passed=control_error<=1e-3,
                 purpose='same-predictor relaxation drift; not DFT or stability validation')
+    report.update(prediction_counts(rows))
     (out/'summary.json').write_text(json.dumps(report,indent=2)+'\n')
     if not report['control_passed']:
         raise RuntimeError('Original POSCAR control differs from CPU206 CSV beyond tolerance.')
