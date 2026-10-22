@@ -1,10 +1,18 @@
 import tempfile
 from pathlib import Path
 import unittest
+import json
+import re
 from inventory import candidate_files
 
 
 class IdentityTests(unittest.TestCase):
+    def test_pinned_digests_have_sha256_length(self):
+        sources = json.loads(Path(__file__).with_name('sources.json').read_text())
+        for value in [sources['cpu_result_csv_sha256'], sources['mattersim']['archive_sha256'],
+                      sources['mattersim']['checkpoint_sha256']]:
+            self.assertRegex(value, r'^[0-9a-f]{64}$')
+
     def test_denominator_duplicates_and_missing_are_errors(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

@@ -9,6 +9,7 @@ torchmetrics==1.5.2
 e3nn==0.5.1
 Cython==3.0.12
 setuptools-scm
+setuptools==75.8.0
 wheel
 azure-identity
 azure-storage-blob
