@@ -62,3 +62,11 @@ All settings/input hashes and stage-level convergence are retained. E_hull is
 explicitly unknown until consistent reference phases are available. Per-job
 attempt directories preserve failed runs. Do not confuse successful workflow
 execution with meeting bandgap or S.U.N. criteria.
+
+summarize.sbatch assesses all128 original IDs after relaxation. It validates
+structure hashes/composition, records energy/volume/force changes, and groups
+relaxed proposals with the author's StructureMatcher settings. Failed, missing
+and unconverged entries stay in the denominator. Latest per-candidate DFT
+attempts are included. Stability/novelty and S.U.N. fractions stay unknown when
+consistent MP reference phases/structures are unavailable; proposal uniqueness
+alone must not be reported as S.U.N.
