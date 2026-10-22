@@ -85,3 +85,13 @@ and compares original exported POSCAR predictions to the recorded CSV as a
 control before reporting relaxation drift. SMOACS_PREDICT_LIMIT=2 selects a pilot.
 A control error above1e-3 is saved and fails the job for investigation. This is
 same-predictor property reevaluation, not independent DFT or stability evidence.
+
+Legacy Custodian2024's VaspJob.terminate can fall back to killall when its open-file
+lookup fails. This was observed to interrupt another simultaneous DFT job.
+safe_custodian.py replaces only the current runner's VaspJob class for the duration
+of this flow. It terminates only child srun launchers whose exact cwd is inside
+this attempt, whose Slurm job ID matches, and whose command names the intended
+VASP executable. There is no global fallback. Unit tests protect other stage/job
+launchers and unrelated children. Physics, validators and correction limits are
+unchanged; interrupted attempts are retained rather than counted as material
+failures. Do not remove this isolation when running old Custodian concurrently.

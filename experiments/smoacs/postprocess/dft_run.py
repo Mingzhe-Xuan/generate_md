@@ -42,6 +42,7 @@ def main():
     from maggma.stores import MemoryStore
     from jobflow import JobStore, run_locally
     from paper_dft import make_paper_maker, leaf_jobs
+    from safe_custodian import scoped_vasp_jobs
     from atomate2 import SETTINGS
     structure = Structure.from_file(relaxed_record['relaxed_path'])
     if structure.composition != Structure.from_file(candidate['source']).composition:
@@ -61,7 +62,8 @@ def main():
     (out/'result.json').write_text(json.dumps(record, indent=2)+'\n')
     store = JobStore(MemoryStore())
     try:
-        run_locally(flow, store=store, create_folders=True, root_dir=out/'workflow', ensure_success=True)
+        with scoped_vasp_jobs(out):
+            run_locally(flow, store=store, create_folders=True, root_dir=out/'workflow', ensure_success=True)
         for job in jobs:
             task = store.get_output(job.uuid, load=True)
             directory = task['dir_name'] if isinstance(task, dict) else task.dir_name
