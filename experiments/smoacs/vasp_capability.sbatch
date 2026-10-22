@@ -9,7 +9,9 @@
 set -eo pipefail
 cd "${SLURM_SUBMIT_DIR:?Submit from parent repository}"
 source experiments/smoacs/job_status.sh
-source /opt/intel/oneapi/setvars.sh > /dev/null 2>&1
+if [[ "${SETVARS_COMPLETED:-}" != 1 ]]; then
+  source /opt/intel/oneapi/setvars.sh > "results/smoacs/logs/oneapi-${SLURM_JOB_ID}.out" 2>&1
+fi
 set -u
 export OMP_NUM_THREADS=1
 export MKL_NUM_THREADS=1
