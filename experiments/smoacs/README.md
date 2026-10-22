@@ -115,3 +115,12 @@ under ignored results/smoacs, and still need installation/runtime validation.
 Run both sides following the root network rules: one dedicated SSH proxy, an
 end-to-end health check, and ordinary work connections with forwarding disabled.
 This route does not require public HTTP hosting or a direct-download exception.
+
+## Offline environment installation
+
+After downloading complete Linux/Python-compatible binary wheels, submit
+SMOACS_WHEELS=results/smoacs/direct-wheels sbatch experiments/smoacs/install_env.sbatch
+from the repository root. This installs only into SMOACS_PYTHON (default the task
+venv), uses no network, requires the pinned Torch/DGL builds, runs pip check and
+saves freeze-<job_id>.txt. A successful install is followed by probe.sbatch; it
+does not establish GPU compatibility or paper reproduction by itself.
