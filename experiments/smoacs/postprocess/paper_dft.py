@@ -4,11 +4,19 @@
 def make_paper_maker():
     from atomate2.vasp.flows.mp import MPGGADoubleRelaxStaticMaker
     from atomate2.vasp.jobs.mp import MPGGAStaticMaker
-    from pymatgen.io.vasp.sets import MPStaticSet
-    static_maker = MPGGAStaticMaker(input_set_generator=MPStaticSet(
-        force_gamma=True, auto_metal_kpoints=True, inherit_incar=False,
+    from atomate2.vasp.sets.mp import MPGGAStaticSetGenerator
+    static_maker = MPGGAStaticMaker(input_set_generator=MPGGAStaticSetGenerator(
         user_incar_settings={'NEDOS': 2001}))
-    return MPGGADoubleRelaxStaticMaker(static_maker=static_maker)
+    maker = MPGGADoubleRelaxStaticMaker(static_maker=static_maker)
+    # The paper-version generator defaults to PBE despite PMG_DEFAULT_FUNCTIONAL.
+    # Select the identified PBE54 datasets consistently in all three stages.
+    for stage in stage_makers(maker):
+        stage.input_set_generator.potcar_functional = 'PBE_54'
+    return maker
+
+
+def stage_makers(maker):
+    return (maker.relax_maker.relax_maker1, maker.relax_maker.relax_maker2, maker.static_maker)
 
 
 def leaf_jobs(flow):

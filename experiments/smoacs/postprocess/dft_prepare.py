@@ -46,7 +46,7 @@ def main():
     SETTINGS['PMG_VASP_PSP_DIR'] = os.environ['PMG_VASP_PSP_DIR']
     SETTINGS['PMG_DEFAULT_FUNCTIONAL'] = 'PBE_54'
     from pymatgen.core import Structure
-    from paper_dft import make_paper_maker, leaf_jobs
+    from paper_dft import make_paper_maker, leaf_jobs, stage_makers
     maker = make_paper_maker()
     (args.output/'maker.json').write_text(json.dumps(maker.as_dict(), indent=2, default=str)+'\n')
     ready = []
@@ -59,6 +59,14 @@ def main():
             potentials = MPRelaxSet(structure, user_potcar_functional='PBE_54').potcar
             if len(potentials) != len(candidate['potcar_symbols']):
                 raise RuntimeError('Incomplete candidate POTCAR construction.')
+            stage_settings = []
+            for stage in stage_makers(maker):
+                inputs = stage.input_set_generator.get_input_set(structure)
+                stage_settings.append(dict(name=stage.name,
+                    generator=type(stage.input_set_generator).__name__,
+                    potcar_functional=stage.input_set_generator.potcar_functional,
+                    incar=dict(inputs.incar)))
+            row['stage_settings'] = stage_settings
             flow = maker.make(structure)
             row['flow_name'] = flow.name
             row['job_count'] = len(list(leaf_jobs(flow)))
