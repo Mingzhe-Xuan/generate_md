@@ -15,6 +15,7 @@ def main() -> int:
     parser.add_argument("--source", type=Path, required=True)
     parser.add_argument("--device", choices=["cpu", "cuda"], required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--cupy", action="store_true")
     args = parser.parse_args()
     if not os.environ.get("SLURM_JOB_ID"):
         parser.error("Run this compute probe through Slurm.")
@@ -48,6 +49,21 @@ def main() -> int:
         graph.ndata["h"] = torch.ones(2, 1, device=device)
         return {"device": str(graph.device), "nodes": graph.num_nodes()}
 
+    def cupy_probe():
+        import cupy as cp
+        from cupy.cuda import nvrtc
+        runtime = cp.cuda.runtime.runtimeGetVersion()
+        compiler = nvrtc.getVersion()
+        assert runtime >= 12080 and compiler >= (12, 8), (runtime, compiler)
+        data = cp.asarray([1.0, 2.0], dtype=cp.float32)
+        kernel = cp.RawKernel(
+            '#include <cuda_runtime.h>\nextern "C" __global__ void twice(float* x) { x[threadIdx.x] *= 2; }',
+            "twice")
+        kernel((1,), (2,), (data,))
+        cp.cuda.get_current_stream().synchronize()
+        assert cp.asnumpy(data).tolist() == [2.0, 4.0]
+        return {"runtime": runtime, "nvrtc": compiler, "cuda_path": os.environ.get("CUDA_PATH")}
+
     def cli_probe():
         completed = subprocess.run(
             [sys.executable, str(args.source.resolve() / "main.py"), "--help"],
@@ -59,7 +75,7 @@ def main() -> int:
 
     versions = {}
     for package in ("pip", "numpy", "torch", "dgl", "torch-geometric",
-                    "pymatgen", "ase", "smact", "periodictable"):
+                    "pymatgen", "ase", "smact", "periodictable", "cupy-cuda12x", "pytorch-pfn-extras"):
         try:
             versions[package] = importlib.metadata.version(package)
         except importlib.metadata.PackageNotFoundError:
@@ -69,6 +85,8 @@ def main() -> int:
     if args.device == "cuda":
         run("torch_cuda_gradient", lambda: torch_probe("cuda"))
         run("dgl_cuda_graph", lambda: dgl_probe("cuda"))
+    if args.cupy:
+        run("cupy_cuda_rawkernel", cupy_probe)
     run("main_cli_imports", cli_probe)
     report = {
         "job_id": os.environ["SLURM_JOB_ID"], "python": sys.version,

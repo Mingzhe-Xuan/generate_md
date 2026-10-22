@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import nullcontext
 import hashlib
 import json
 import os
@@ -46,7 +47,10 @@ def main() -> int:
     parser.add_argument("--steps", type=int, default=200)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--mutation-steps", type=int, nargs="+", default=[100, 150])
+    parser.add_argument("--require-cuda-kernels", action="store_true")
     args = parser.parse_args()
+    if args.require_cuda_kernels and args.device != "cuda":
+        parser.error("--require-cuda-kernels requires --device cuda")
     if not os.environ.get("SLURM_JOB_ID"):
         parser.error("Run optimization through Slurm.")
     if Path(args.exp_name).name != args.exp_name or args.exp_name in {".", ".."}:
@@ -105,7 +109,13 @@ def main() -> int:
         "--output_root", str(output_root), "--mutation_steps",
         *map(str, args.mutation_steps),
     ]
-    execute_author_source(original, synthetic_filename)
+    if args.require_cuda_kernels:
+        from cuda_audit import CudaKernelAudit
+        audit = CudaKernelAudit(output_root / (args.exp_name + "-cuda-audit.json"))
+    else:
+        audit = nullcontext()
+    with audit:
+        execute_author_source(original, synthetic_filename)
     return 0
 
 

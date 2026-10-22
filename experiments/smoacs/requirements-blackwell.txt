@@ -1,0 +1,7 @@
+# Hardware adaptation: author task dependencies, with Blackwell-capable Torch.
+-r requirements-paper.txt
+torch==2.7.1+cu128
+# Retained for the archived script's imports; GPU compatibility is probed.
+dgl==2.4.0+cu124
+nvidia-cuda-nvcc-cu12==12.8.93
+pip==24.3.1

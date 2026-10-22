@@ -13,6 +13,11 @@ source experiments/smoacs/job_status.sh
 task_python="${SMOACS_PYTHON:-$task_root/.venv-smoacs-paper/bin/python}"
 export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK:-2}"
 export DGLBACKEND=pytorch
+task_extra_args=()
+if [[ "${SMOACS_CUDA_WHEEL_RUNTIME:-0}" == 1 ]]; then
+  source experiments/smoacs/blackwell_runtime.sh
+  task_extra_args+=(--cupy)
+fi
 "$task_python" experiments/smoacs/env_probe.py \
   --source third_party/SMOACS --device "${SMOACS_DEVICE:-cuda}" \
-  --output "results/smoacs/env/probe-${SLURM_JOB_ID}.json"
+  --output "results/smoacs/env/probe-${SLURM_JOB_ID}.json" "${task_extra_args[@]}"

@@ -138,3 +138,24 @@ paper bandgap [2.3,2.7] eV, formation energy < -0.5 eV/atom, neutrality and
 minimum-bond flags. Missing rows remain failures in the declared denominator.
 The original narrow-window success column is preserved and is not substituted
 for this assessment. Output JSON includes the source CSV SHA-256.
+
+## RTX 5090 / Blackwell profile
+
+Keep the paper environment intact. Create .venv-smoacs-blackwell using Python
+venv --without-pip before installation, and download the requirements-blackwell.txt
+binary wheels into ignored runtime directories. install_blackwell.sbatch installs
+offline using the paper interpreter only as a pip bootstrap, targeting the new venv.
+This profile changes Torch to 2.7.1+cu128 and records all resolved versions.
+
+Set SMOACS_PYTHON=$PWD/.venv-smoacs-blackwell/bin/python and
+SMOACS_CUDA_WHEEL_RUNTIME=1 for probe.sbatch and section21.sbatch.
+blackwell_runtime.sh selects CUDA headers and libraries from that venv rather than
+an older system toolkit. The probe includes a real CuPy RawKernel compilation.
+
+For GPU smoke, also set SMOACS_REQUIRE_CUDA_KERNELS=1, SMOACS_DEVICE=cuda,
+SMOACS_CANDIDATES=2, SMOACS_BATCH_SIZE=2, SMOACS_STEPS=10 and the prepared assets.
+cuda_audit.py observes the real CrystalformerEncoderCUDA forward calls and finite
+CUDA backward gradients without changing tensors or optimizer updates. A fallback
+encoder, missing gradients or non-finite outputs fails the job; the audit JSON
+accompanies the launch record. This establishes the Crystalformer path only,
+not ALIGNN's full GPU operation support or paper-scale reproduction.

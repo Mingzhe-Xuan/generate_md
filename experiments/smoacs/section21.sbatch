@@ -13,6 +13,13 @@ task_assets="${SMOACS_ASSETS:?Set SMOACS_ASSETS to the prepared asset directory}
 task_python="${SMOACS_PYTHON:-$PWD/.venv-smoacs-paper/bin/python}"
 export OMP_NUM_THREADS="${SLURM_CPUS_PER_TASK:-4}"
 export DGLBACKEND=pytorch
+task_extra_args=()
+if [[ "${SMOACS_CUDA_WHEEL_RUNTIME:-0}" == 1 ]]; then
+  source experiments/smoacs/blackwell_runtime.sh
+fi
+if [[ "${SMOACS_REQUIRE_CUDA_KERNELS:-0}" == 1 ]]; then
+  task_extra_args+=(--require-cuda-kernels)
+fi
 "$task_python" experiments/smoacs/run_section21.py \
  --source third_party/SMOACS --assets "$task_assets" \
  --archive results/smoacs/downloads/reproducibility.tar.gz \
@@ -23,4 +30,4 @@ export DGLBACKEND=pytorch
  --method "${SMOACS_METHOD:-grad}" --seed "${SMOACS_SEED:-42}" \
  --candidates "${SMOACS_CANDIDATES:-256}" --batch-size "${SMOACS_BATCH_SIZE:-256}" \
  --steps "${SMOACS_STEPS:-200}" \
- --mutation-steps ${SMOACS_MUTATION_STEPS:-100 150}
+ --mutation-steps ${SMOACS_MUTATION_STEPS:-100 150} "${task_extra_args[@]}"
