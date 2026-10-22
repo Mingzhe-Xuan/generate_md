@@ -1,0 +1,14 @@
+{
+  "cpu_result_csv_sha256": "c5be7ffa4867533b2891f4dd20facbfa878e8b95f69e76104eee4a56370088884",
+  "expected_candidates": 128,
+  "mattersim": {
+    "repository": "https://github.com/AkiraTOSEI/differentiable-mattersim",
+    "commit": "d458f54d42bb9c23fcd0957b33e00135e541125c",
+    "archive_sha256": "830a99afbd6de32061924d473c711f1176ede13ad39cf1351f9a8dcdd67e71af",
+    "checkpoint": "mattersim-v1.0.0-5M.pth",
+    "checkpoint_sha256": "e3df9fa708725e3d453140646c7d1838324b347a3d1214cf1440522146f872b5",
+    "unavailable_readme_commit": "71d640e21c4d3293ae4a968bc64c12e118f42a92"
+  },
+  "dft_repository": "https://github.com/AkiraTOSEI/atomate2-dft",
+  "dft_commit": "3fd683f50610a4e34d5ca7216cf5eaad57dba17b"
+}

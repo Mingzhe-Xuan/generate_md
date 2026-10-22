@@ -1,0 +1,10 @@
+numpy==1.26.4
+atomate2==0.0.12
+pymatgen==2024.8.9
+jobflow==0.1.19
+custodian==2024.10.16
+emmet-core==0.84.2
+mp-api==0.43.0
+pandas==2.3.0
+scipy==1.13.1
+matplotlib==3.9.4
