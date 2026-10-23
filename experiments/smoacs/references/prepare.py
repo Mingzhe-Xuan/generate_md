@@ -115,8 +115,31 @@ def is_reference(row, systems, thermo_ids):
         return False
     hull = row.get('energy_above_hull')
     if hull is None:
-        return len(elements) == 1 and row['nsites'] <= 10
+        return False
     return row['material_id'] in thermo_ids and math.isfinite(hull) and hull <= .3
+
+
+def entry_material_ids(table):
+    ids, differences = set(), []
+    for row in table.to_pylist():
+        parent = row['material_id']
+        for _, entry in row['entries']:
+            mid = (entry.get('data') or {}).get('material_id')
+            if not mid:
+                identifier = entry.get('entry_id')
+                if isinstance(identifier, dict):
+                    mid = identifier.get('identifier')
+                    suffix = identifier.get('suffix')
+                    if suffix:
+                        mid = str(mid)+identifier.get('separator', '-')+str(suffix)
+                else:
+                    mid = identifier
+            if not isinstance(mid, str) or not mid.startswith(('mp-', 'mvc-')):
+                raise ValueError('Unresolved nested thermo entry material ID.')
+            ids.add(mid)
+            if mid != parent:
+                differences.append(dict(parent=parent, entry_material_id=mid))
+    return ids, differences
 
 
 def main():
@@ -132,12 +155,19 @@ def main():
     args.output.mkdir(parents=True, exist_ok=True)
     selected_dir = args.output/('selected-'+os.environ['SLURM_JOB_ID'])
     selected_dir.mkdir(exist_ok=False)
-    thermo_ids = set()
+    thermo_ids, id_audits = set(), []
     for key in THERMO:
         with CachedHTTP(key, args.output/'range-cache', proxy) as source:
-            table = pq.read_table(source, columns=['material_id'], pre_buffer=False, use_threads=False)
-            thermo_ids.update(table.column('material_id').to_pylist())
+            parquet = pq.ParquetFile(source, pre_buffer=False)
+            paths = [parquet.metadata.schema.column(i).path for i in range(parquet.metadata.num_columns)]
+            columns = ['material_id']+[p for p in paths if p.startswith('entries.') and (
+                p.endswith('.key') or p.endswith('.data.material_id') or '.entry_id.' in p)]
+            table = parquet.read(columns=columns, use_threads=False)
+            nested_ids, differences = entry_material_ids(table)
+            thermo_ids.update(nested_ids)
+            id_audits.append(dict(key=key, nested_ids=len(nested_ids), parent_differences=differences))
             print('THERMO_IDS', key, len(thermo_ids), flush=True)
+    (selected_dir/'thermo-entry-id-audit.json').write_text(json.dumps(id_audits, indent=2)+'\n')
     seen, references, terminals = set(), [], set()
     counts = dict(rows=0, nondeprecated=0, references=0)
     columns = ['material_id', 'chemsys', 'nsites', 'deprecated', 'energy_above_hull', 'structure']
@@ -173,7 +203,8 @@ def main():
     manifest = dict(snapshot='2026-04-13', summary_key=SUMMARY, thermo_keys=THERMO,
                     counts=counts, thermo_ids=len(thermo_ids), denominator=128,
                     inventory_sha256=hashlib.sha256(args.inventory.read_bytes()).hexdigest(),
-                    entry_id_mapping='parent thermo IDs; nested entry IDs not yet audited',
+                    entry_id_mapping='nested entries.data.material_id, then entry_id fallback; audited',
+                    reference_filter='published Zenodo20149017 fetch_mp_structures: public hull <=0.3, excludes missing hull',
                     stability='unknown_until_reference_relaxation_and_coverage_validation')
     (selected_dir/'summary.json').write_text(json.dumps(manifest, indent=2)+'\n')
     print(json.dumps(manifest), flush=True)

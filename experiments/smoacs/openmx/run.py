@@ -63,6 +63,11 @@ def main():
             for key in ('original_sha256', 'mattersim_sha256', 'inventory_sha256', 'executable_sha256'):
                 if previous[key] != result[key]:
                     raise ValueError('Reuse provenance mismatch: '+key)
+            previous_resources = json.loads((args.reuse_attempt/'resources.json').read_text())
+            for element in candidate['elements']:
+                for key in ('vps_sha256', 'pao_sha256'):
+                    if previous_resources['species'][element][key] != resources['species'][element][key]:
+                        raise ValueError('Reused stage resource hash mismatch.')
         atoms = read(source, format='vasp')
         write(out/'mattersim-input.vasp', atoms, format='vasp')
         grid = list(Kpoints.automatic_density(AseAtomsAdaptor.get_structure(atoms), 503).kpts[0])

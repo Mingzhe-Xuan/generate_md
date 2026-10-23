@@ -8,10 +8,13 @@ ignored results/smoacs/mp-public-reference. No API credentials are printed.
 
 prepare.py reads selected Parquet columns through cached byte-range requests,
 pins each object's ETag/size, and records hashes for every cached range. It collects
-parent material IDs from the three paper thermo collections, then summary
-structures/hull values. Parent material IDs need not equal every nested entry's
-data.material_id; this remains an explicit provenance difference until audited.
-Summary selection follows <=0.3eV/atom, and missing-hull elemental <=10sites.
+nested entry material IDs from the three paper thermo collections, then summary
+structures/hull values. It explicitly audits differences from parent material IDs.
+Low-level ParquetFile.read supports map-leaf projection; dataset read_table does
+not, so the former retrieves entry IDs without downloading whole energy entries.
+Summary selection follows the published Zenodo20149017 function: <=0.3eV/atom,
+excluding missing hull values. A later GitHub change adding missing-hull elemental
+<=10site structures is deliberately excluded from this published-protocol selection.
 All candidate chemical subsystems and all selected phases are retained without
 random truncation. Unfiltered structures are also kept for novelty comparisons.
 

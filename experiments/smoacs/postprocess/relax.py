@@ -62,7 +62,8 @@ def main():
                        torch=torch.__version__, checkpoint_sha256=sha256(args.checkpoint),
                        source_versions=sources, inventory_sha256=sha256(args.inventory),
                        steps=400, fmax=0.01, optimizer='BFGS', filter='ExpCellFilter',
-                       constrain_symmetry=True, total_denominator=128)
+                       constrain_symmetry=True, total_denominator=inventory.get('denominator', len(candidates)),
+                       input_role=inventory.get('role', 'cpu206_proposals'))
     (args.output/('environment-'+os.environ['SLURM_JOB_ID']+'.json')).write_text(json.dumps(environment, indent=2)+'\n')
     for candidate in candidates:
         name = candidate['candidate_id']
