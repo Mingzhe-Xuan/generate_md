@@ -28,8 +28,8 @@ def run_cycles(context,hard_predictions,prepared_protocol,steps=200,cycles=3,sch
     from solver import gram_check
     from policy import geometry_change
     output=context['output'];args=context['args'];ids=context['ids'];n=len(ids)
-    if args.resume or n!=(4 if args.pilot else 128) or args.max_rounds!=cycles or (steps,cycles) not in ((200,3),(600,1)):
-        raise ValueError('Expected a fresh four- or128-template Adam200x3 or Adam600x1 experiment.')
+    if n!=(4 if args.pilot else 128) or args.max_rounds!=cycles or (steps,cycles) not in ((200,3),(600,1)):
+        raise ValueError('Expected a four- or128-template Adam200x3 or Adam600x1 experiment.')
     if schedule not in ('per_phase','restart200'):raise ValueError('Unknown LR schedule.')
     gpu_info=prepare_cuda(context)
     targets=context['targets'];optimizers=context['optimizers'];forward=context['forward'];slices=context['slices']
@@ -56,7 +56,7 @@ def run_cycles(context,hard_predictions,prepared_protocol,steps=200,cycles=3,sch
         b_fmax=.01,b_maxstep=.05,b_max_steps=1600,denominator=n,
         comparison='Fixed-budget GPU experiment; no joint convergence claim.')
     protocol.update(gpu_info)
-    (output/'protocol.json').write_text(json.dumps(protocol,indent=2)+'\n')
+    if not args.resume:(output/'protocol.json').write_text(json.dumps(protocol,indent=2)+'\n')
     active=torch.ones(n,dtype=torch.bool,device=targets[0].device);states=[dict(candidate_id=k,status='active') for k in ids]
     rounds=[];neutral_cache={};workers=[];logs=[]
 
@@ -88,13 +88,28 @@ def run_cycles(context,hard_predictions,prepared_protocol,steps=200,cycles=3,sch
         os.replace(output/'checkpoint.tmp',output/'checkpoint.pt')
 
     with torch.no_grad():_,_,_,out=forward(.01);initial=points(out,output/'initial')
-    previous=initial;save(0,'initial')
+    previous=initial;start_cycle=1;resume_pending=False
+    if args.resume:
+        from resume import restore
+        saved,active,start_cycle,resume_pending=restore(output,protocol,targets,optimizers,[lower,upper,angle_lower,angle_upper])
+        event=dict(source_commit=protocol['source_commit'],job_id=os.environ['SLURM_JOB_ID'],
+                   cycle=saved['current_cycle'],phase=saved['phase'],checkpoint_sha256=digest(output/'checkpoint.pt'))
+        protocol=saved['protocol'];protocol.setdefault('resume_events',[]).append(event)
+        rounds=saved['cycles'];states=saved['states']
+        for prior in rounds:
+            if prior['cycle']>=start_cycle:continue
+            for i,row in enumerate(prior['candidates']):
+                if row['status']=='completed':previous[i]=row['B']
+        (output/'protocol.json').write_text(json.dumps(protocol,indent=2)+'\n')
+        print(json.dumps(dict(resume=event,next_cycle=start_cycle,skip_completed_A=resume_pending)),flush=True)
+    else:save(0,'initial')
     audit=GPUAudit(context,output/'gpu-audit.json')
     try:
-        for cycle in range(1,cycles+1):
-            cycle_dir=output/('cycle-'+str(cycle));cycle_dir.mkdir()
+        for cycle in range(start_cycle,cycles+1):
+            pending=resume_pending and cycle==start_cycle
+            cycle_dir=output/('cycle-'+str(cycle));cycle_dir.mkdir(exist_ok=pending)
             eligible=active.clone();updates=[0]*n;step_times=[];started=time.perf_counter()
-            for step in range(steps):
+            for step in range(0 if pending else steps):
                 if not active.any():break
                 step_started=time.perf_counter()
                 set_rates(optimizers,step%200 if schedule=='restart200' else step,200 if schedule=='restart200' else steps)
@@ -128,13 +143,19 @@ def run_cycles(context,hard_predictions,prepared_protocol,steps=200,cycles=3,sch
                     with (output/'A-trace.jsonl').open('a') as stream:stream.write(json.dumps(record)+'\n')
                     print(json.dumps(record),flush=True)
             set_rates(optimizers,200 if schedule=='restart200' else steps,200 if schedule=='restart200' else steps)
-            with torch.no_grad():_,_,_,out=forward(.01);a_points=points(out,cycle_dir/'A')
-            rows=[]
-            for i in range(n):
-                rows.append(dict(candidate_id=ids[i],cycle=cycle,A=a_points[i],a_updates=updates[i],eligible_at_start=bool(eligible[i]),
-                    status='B_pending' if active[i] else 'not_eligible',reason=None if active[i] else dict(states[i]),
-                    a_phase_seconds=time.perf_counter()-started,a_step_seconds=step_times))
-            rounds.append(dict(cycle=cycle,candidates=rows));save(cycle,'B_pending')
+            if pending:
+                rows=rounds[-1]['candidates']
+                if rounds[-1]['cycle']!=cycle or [r['candidate_id'] for r in rows]!=ids:raise ValueError('Saved B cohort differs.')
+                for row in rows:
+                    if digest(row['A']['source'])!=row['A']['sha256']:raise ValueError('Saved A endpoint changed.')
+            else:
+                with torch.no_grad():_,_,_,out=forward(.01);a_points=points(out,cycle_dir/'A')
+                rows=[]
+                for i in range(n):
+                    rows.append(dict(candidate_id=ids[i],cycle=cycle,A=a_points[i],a_updates=updates[i],eligible_at_start=bool(eligible[i]),
+                        status='B_pending' if active[i] else 'not_eligible',reason=None if active[i] else dict(states[i]),
+                        a_phase_seconds=time.perf_counter()-started,a_step_seconds=step_times))
+                rounds.append(dict(cycle=cycle,candidates=rows));save(cycle,'B_pending')
             tasks=[dict(candidate_id=ids[i],source=rows[i]['A']['source'],output=str(cycle_dir/'B'/Path(ids[i]).stem)) for i in range(n) if active[i]]
             if tasks:
                 torch.cuda.empty_cache()

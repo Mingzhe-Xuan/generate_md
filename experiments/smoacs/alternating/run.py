@@ -139,7 +139,8 @@ def main(driver=None):
         property_delta=.001,patience=5,cycle_patience=10,
         boundary_policy='Expand original cell bounds only as necessary to contain actual B geometry; preserve B without clipping.',
         source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip())
-    (output/'protocol.json').write_text(json.dumps(protocol,indent=2)+'\n')
+    if not (driver is not None and args.resume):
+        (output/'protocol.json').write_text(json.dumps(protocol,indent=2)+'\n')
     protocol_sha=hashlib.sha256(json.dumps({k:v for k,v in protocol.items() if k not in
         ('source_commit','max_rounds','initial_control_error')},sort_keys=True).encode()).hexdigest()
     if driver is not None:

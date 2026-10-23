@@ -10,5 +10,7 @@ set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:?}"
 source experiments/smoacs/job_status.sh
 export OMP_NUM_THREADS=4 MKL_NUM_THREADS=4 OPENBLAS_NUM_THREADS=1 DGLBACKEND=pytorch
+task_resume=()
+if [[ -f "$SMOACS_FULL_RUN/checkpoint.pt" && ! -f "$SMOACS_FULL_RUN/complete.json" ]]; then task_resume=(--resume); fi
 .venv-smoacs-blackwell/bin/python experiments/smoacs/full_comparison/run.py \
- --output "${SMOACS_FULL_RUN:?}" --workers 4 --max-rounds "${SMOACS_FULL_CYCLE:?}"
+ --output "${SMOACS_FULL_RUN:?}" --workers 4 --max-rounds "${SMOACS_FULL_CYCLE:?}" "${task_resume[@]}"

@@ -54,4 +54,12 @@ B endpoint remains eligible for physical evaluation in that cycle, while later
 cycles retain explicit stopped placeholders. Matrix reconstruction tolerances
 scale with the full Gram matrix to handle float32 off-diagonal roundoff.
 
+`resume.py` restores matching initial, B-pending or completed-cycle checkpoints:
+all five tensors, three Adam states, cell bounds, active mask and trajectory rows.
+A B-pending resume skips its completed A phase and reuses only B cache records
+with matching immutable input hashes and optimizer settings. The checkpoint and
+JSON phase must match. The original numerical protocol remains in provenance;
+resume events record the new job/source and checkpoint hash. Slurm requeues of
+the full comparison entry point enable this path via `SLURM_RESTART_COUNT`.
+
 Tests: `python -m unittest discover -s experiments/smoacs/adam_cycles`.

@@ -11,6 +11,8 @@ shared=importlib.util.module_from_spec(spec);spec.loader.exec_module(shared)
 
 
 if __name__=='__main__':
+    if int(os.environ.get('SLURM_RESTART_COUNT','0'))>0 and '--resume' not in sys.argv:
+        sys.argv.append('--resume')
     arm=os.environ['SMOACS_FULL_ARM']
     if arm not in ('single','alternating','restart200'):raise ValueError('Unknown comparison arm.')
     steps,cycles=(200,3) if arm=='alternating' else (600,1)
