@@ -12,6 +12,7 @@ class FormatsTests(unittest.TestCase):
         gapped = output('kloop=0\n1 -.1 -.1\n2 .1 .1\nkloop=1\n1 -.09 -.09\n2 .12 .12\n')
         result = parse_output(gapped)
         self.assertAlmostEqual(result['sampled_bandgap_eV'], .19*HARTREE_EV)
+        self.assertEqual(parse_output(gapped.replace('Hatree', 'Hartree')), result)
         metal = gapped.replace('1 -.09 -.09', '1 .01 .01')
         self.assertEqual(parse_output(metal)['sampled_bandgap_eV'], 0)
 

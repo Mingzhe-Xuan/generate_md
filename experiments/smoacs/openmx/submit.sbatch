@@ -21,4 +21,6 @@ task_probe="$PWD/results/smoacs/openmx-206/runtime/mpi-probe-${SLURM_JOB_ID}"
 mpicc -O0 experiments/smoacs/postprocess/mpi_probe.c -o "$task_probe"
 srun --mpi=pmi2 --cpu-bind=cores -n "$SLURM_NTASKS" "$task_probe"
 unset ALL_PROXY HTTP_PROXY HTTPS_PROXY
-.venv-smoacs-postprocess/bin/python experiments/smoacs/openmx/run.py --candidate-id "${SMOACS_OPENMX_ID:?}"
+task_extra=()
+if [[ -n "${SMOACS_OPENMX_REUSE:-}" ]]; then task_extra+=(--reuse-attempt "$SMOACS_OPENMX_REUSE"); fi
+.venv-smoacs-postprocess/bin/python experiments/smoacs/openmx/run.py --candidate-id "${SMOACS_OPENMX_ID:?}" "${task_extra[@]}"

@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import shutil
 import traceback
 
 from formats import input_text, parse_output, restart_atoms, validate_log
@@ -22,6 +23,7 @@ def main():
     parser.add_argument('--data', type=Path, default=Path('/opt/openmx3.9/DFT_DATA19'))
     parser.add_argument('--executable', type=Path, default=Path('/opt/openmx3.9/source/openmx'))
     parser.add_argument('--root', type=Path, default=Path('results/smoacs/openmx-206'))
+    parser.add_argument('--reuse-attempt', type=Path)
     args = parser.parse_args()
     job = os.environ['SLURM_JOB_ID']
     out = (args.root/Path(args.candidate_id).stem/f'attempt-{job}').resolve()
@@ -50,6 +52,14 @@ def main():
             raise ValueError('Missing converged/hash-matched MatterSim input.')
         result.update(original_sha256=candidate['sha256'], mattersim_sha256=digest(source),
                       inventory_sha256=digest(args.inventory), executable_sha256=digest(args.executable))
+        if args.reuse_attempt:
+            args.reuse_attempt = args.reuse_attempt.resolve()
+            if args.reuse_attempt.parent != out.parent or args.reuse_attempt == out:
+                raise ValueError('Reuse attempt must be a previous attempt of this candidate.')
+            previous = json.loads((args.reuse_attempt/'result.json').read_text())
+            for key in ('original_sha256', 'mattersim_sha256', 'inventory_sha256', 'executable_sha256'):
+                if previous[key] != result[key]:
+                    raise ValueError('Reuse provenance mismatch: '+key)
         atoms = read(source, format='vasp')
         write(out/'mattersim-input.vasp', atoms, format='vasp')
         grid = list(Kpoints.automatic_density(AseAtomsAdaptor.get_structure(atoms), 503).kpts[0])
@@ -71,11 +81,23 @@ def main():
                           input_sha256=digest(stage_dir/'input.dat'), status='running')
             result['stages'].append(record)
             dump(out/'result.json', result)
-            with (stage_dir/'calc.log').open('w') as log, (stage_dir/'stderr.txt').open('w') as err:
-                completed = subprocess.run(command, cwd=stage_dir, stdout=log, stderr=err, check=False)
-            record['exit_code'] = completed.returncode
-            if completed.returncode != 0:
-                raise RuntimeError(f'{name}: OpenMX exit {completed.returncode}')
+            reusable = args.reuse_attempt/name if args.reuse_attempt else None
+            if reusable and (reusable/'calc.out').is_file():
+                if digest(reusable/'input.dat') != record['input_sha256']:
+                    raise ValueError('Reuse stage input differs.')
+                validate_log((reusable/'calc.log').read_text(), relax)
+                parse_output((reusable/'calc.out').read_text())
+                for filename in ('calc.log', 'calc.out', 'input.dat#'):
+                    if (reusable/filename).exists():
+                        shutil.copy2(reusable/filename, stage_dir/filename)
+                record.update(exit_code=0, reused_from=str(reusable),
+                              reused_output_sha256=digest(reusable/'calc.out'))
+            else:
+                with (stage_dir/'calc.log').open('w') as log, (stage_dir/'stderr.txt').open('w') as err:
+                    completed = subprocess.run(command, cwd=stage_dir, stdout=log, stderr=err, check=False)
+                record['exit_code'] = completed.returncode
+                if completed.returncode != 0:
+                    raise RuntimeError(f'{name}: OpenMX exit {completed.returncode}')
             record.update(validate_log((stage_dir/'calc.log').read_text(), relax))
             record.update(parse_output((stage_dir/'calc.out').read_text()))
             record['output_sha256'] = digest(stage_dir/'calc.out')

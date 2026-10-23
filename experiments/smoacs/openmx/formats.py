@@ -76,7 +76,7 @@ def parse_output(text):
     if 'Total Computational Time' not in text:
         raise ValueError('Missing normal completion footer.')
     energy = re.findall(r'^\s*Utot\.\s+([\d.Ee+\-]+)', text, re.M)
-    mu = re.findall(r'Chemical Potential \(Hatree\)\s*=\s*([\d.Ee+\-]+)', text)
+    mu = re.findall(r'Chemical Potential \(Har?tree\)\s*=\s*([\d.Ee+\-]+)', text)
     if not energy or not mu or not all(math.isfinite(float(v)) for v in (energy[-1], mu[-1])):
         raise ValueError('Missing or nonfinite energy/chemical potential.')
     eigen_section = text.rsplit('Eigenvalues (Hartree) of SCF KS-eq.', 1)[-1]
