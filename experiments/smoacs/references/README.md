@@ -26,6 +26,10 @@ access is never assumed. If unavailable, the job fails before network reads.
 Reference structures subsequently require the same MatterSim5M relaxation and
 MP2020Compatibility protocol as proposals before a hull can be evaluated.
 Raw MP hull values select references; they are not the final MatterSim hull.
+For new experiments, prepare.py accepts --cache to reuse the same ETag-verified
+range cache. convert.py and assess.py accept --proposal-root, defaulting to the
+original postprocess-206 layout. Alternate roots must provide their own immutable
+inventory and relaxation records; changed compositions require a new selection.
 
 Optional parallel.sbatch keeps independent per-structure BFGS optimizers and
 the same5M calculator in separate processes within one GPU allocation. Switching

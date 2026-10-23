@@ -21,6 +21,15 @@ def digest(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 class Captured(BaseException):pass
 
 
+def read_response(stream, diagnostic):
+    for line in stream:
+        prefix,found,body=line.partition('__AB_RPC__')
+        if prefix:
+            with Path(diagnostic).open('a') as log:log.write(prefix)
+        if found:return json.loads(body)
+    raise RuntimeError('B worker exited without a protocol response; inspect its stdout/stderr logs.')
+
+
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output',type=Path,required=True)
@@ -159,9 +168,7 @@ def main():
                 stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=log,text=True,env=env,bufsize=1))
         ready=[]
         for index,w in enumerate(workers):
-            line=w.stdout.readline()
-            if not line:raise RuntimeError('B worker exited during initialization; inspect worker-'+str(index)+' stderr.')
-            ready.append(json.loads(line))
+            ready.append(read_response(w.stdout,output/('worker-'+str(index)+'.stdout')))
         if not all(v['ready'] for v in ready):raise RuntimeError('B worker initialization failed.')
         (output/'workers.json').write_text(json.dumps(ready,indent=2)+'\n')
         while any(s['status']=='active' for s in states):
@@ -179,7 +186,8 @@ def main():
                     if states[i]['status']=='active' and previous[i] is not None:
                         status=stop_status(residual[i],atom_residual[i],states[i].get('a_step_max',1.),
                             states[i]['stable_rounds'],temperature==.0001 and states[i].get('last_temperature')==temperature,
-                            states[i].get('b_converged',False))
+                            states[i].get('b_converged',False),atom_step=states[i].get('atom_step_max',1.),
+                            a_rms=states[i].get('a_geometry_rms',1.),a_cell=states[i].get('a_cell_relative',1.))
                         if status:states[i].update(status=status,a_gradient_residual=residual[i])
                 if iteration>=args.max_rounds:
                     for i,state in enumerate(states):
@@ -189,6 +197,8 @@ def main():
                 if not active.any():break
                 masks=[active[:,None],active[:,None],active[batch,None],active[batch,None],active[:,None]]
                 before=[p.detach().clone() for p in targets]
+                before_cell=out['lattice_vectors'].detach().clone()
+                before_frac=out['normed_batch_dir_coords'].detach().clone()
                 for opt,rate in zip(optimizers,(.002,.007,.005)):
                     opt.zero_grad();opt.param_groups[0]['lr']=rate*fraction
                 for p,g,m in zip(targets,gradients,masks):p.grad=g*m/n
@@ -210,17 +220,19 @@ def main():
                                 targets[3][sl]-before[3][sl],targets[4][i]-before[4][i]]
                     info[ids[i]]=dict(a_gradient_residual=residual[i],atom_gradient_residual=atom_residual[i],
                         a_step_max=max(float(v.detach().abs().max()) for v in increments),
+                        atom_step_max=max(float(v.detach().abs().max()) for v in increments[3:]),
                         a_gap=float(hg.reshape(-1)[i]),a_eform=float(he.reshape(-1)[i]),temperature=temperature,
                         a_batch_seconds=time.perf_counter()-started)
-                    states[i].update(a_steps=iteration,a_source=str(folder/'A.vasp'))
+                    rms,relative=geometry_change(before_cell[i].numpy(),before_frac[sl].numpy(),
+                        out['lattice_vectors'][i].detach().numpy(),out['normed_batch_dir_coords'][sl].detach().numpy())
+                    info[ids[i]].update(a_geometry_rms=rms,a_cell_relative=relative)
+                    states[i].update(info[ids[i]],a_steps=iteration,a_source=str(folder/'A.vasp'))
                 phase='B_pending';save()
             groups=[tasks[i::len(workers)] for i in range(len(workers))]
             for w,group in zip(workers,groups):w.stdin.write(json.dumps(dict(tasks=group))+'\n');w.stdin.flush()
             returned=[]
-            for w in workers:
-                line=w.stdout.readline()
-                if not line:raise RuntimeError('B worker exited unexpectedly.')
-                returned.extend(json.loads(line)['results'])
+            for index,w in enumerate(workers):
+                returned.extend(read_response(w.stdout,output/('worker-'+str(index)+'.stdout'))['results'])
             results={r['candidate_id']:r for r in returned}
             if set(results)!={t['candidate_id'] for t in tasks}:raise ValueError('B response IDs mismatch.')
             current={}

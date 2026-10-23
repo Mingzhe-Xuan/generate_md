@@ -41,6 +41,7 @@ def convert_record(record, output):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--selection', type=Path, required=True)
+    parser.add_argument('--proposal-root', type=Path, default=Path('results/smoacs/postprocess-206'))
     args = parser.parse_args()
     if not os.environ.get('SLURM_JOB_ID'):
         parser.error('Submit through Slurm.')
@@ -50,7 +51,7 @@ def main():
     output = args.selection/'mattersim-inputs'
     output.mkdir(exist_ok=False)
     source = args.selection/'reference-structures.jsonl.gz'
-    proposal_root = Path('results/smoacs/postprocess-206')
+    proposal_root = args.proposal_root
     proposals = json.loads((proposal_root/'inventory-249/inventory.json').read_text())
     systems, proposal_ids = [], []
     for candidate in proposals['candidates']:
@@ -76,7 +77,7 @@ def main():
     manifest = dict(role='MP_reference_phases', denominator=len(candidates)+len(failures),
                     candidates=candidates, conversion_failures=failures,
                     snapshot=selection['snapshot'], selection_sha256=digest(args.selection/'summary.json'),
-                    reference_records_sha256=digest(source), proposal_denominator=128,
+                    reference_records_sha256=digest(source), proposal_denominator=proposals['denominator'],
                     eligible_proposal_ids=proposal_ids, scope_excluded_reference_ids=excluded)
     (args.selection/'mattersim-inventory.json').write_text(json.dumps(manifest, indent=2)+'\n')
     print(json.dumps(dict(converted=len(candidates), failures=len(failures), selection=str(args.selection))), flush=True)

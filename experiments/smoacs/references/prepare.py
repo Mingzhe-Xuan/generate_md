@@ -146,6 +146,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--inventory', type=Path, default=Path('results/smoacs/postprocess-206/inventory-249/inventory.json'))
     parser.add_argument('--output', type=Path, default=Path('results/smoacs/mp-public-reference'))
+    parser.add_argument('--cache', type=Path, help='Reuse an existing immutable HTTP range cache.')
     args = parser.parse_args()
     if not os.environ.get('SLURM_JOB_ID'):
         parser.error('Submit through Slurm.')
@@ -153,11 +154,12 @@ def main():
     inventory = json.loads(args.inventory.read_text())
     systems = [frozenset(c['elements']) for c in inventory['candidates']]
     args.output.mkdir(parents=True, exist_ok=True)
+    cache = args.cache or args.output/'range-cache'
     selected_dir = args.output/('selected-'+os.environ['SLURM_JOB_ID'])
     selected_dir.mkdir(exist_ok=False)
     thermo_ids, id_audits = set(), []
     for key in THERMO:
-        with CachedHTTP(key, args.output/'range-cache', proxy) as source:
+        with CachedHTTP(key, cache, proxy) as source:
             parquet = pq.ParquetFile(source, pre_buffer=False)
             paths = [parquet.metadata.schema.column(i).path for i in range(parquet.metadata.num_columns)]
             columns = ['material_id']+[p for p in paths if p.startswith('entries.') and (
@@ -171,7 +173,7 @@ def main():
     seen, references, terminals = set(), [], set()
     counts = dict(rows=0, nondeprecated=0, references=0)
     columns = ['material_id', 'chemsys', 'nsites', 'deprecated', 'energy_above_hull', 'structure']
-    with CachedHTTP(SUMMARY, args.output/'range-cache', proxy) as source:
+    with CachedHTTP(SUMMARY, cache, proxy) as source:
         parquet = pq.ParquetFile(source, pre_buffer=False)
         print('SUMMARY_METADATA_ROWS', parquet.metadata.num_rows, flush=True)
         with gzip.open(selected_dir/'novelty-structures.jsonl.gz', 'wt') as novelty:

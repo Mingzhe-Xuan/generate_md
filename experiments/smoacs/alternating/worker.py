@@ -38,7 +38,7 @@ def main():
             calc=MatterSimCalculator(load_path=str(args.checkpoint.resolve()),device='cuda',load_training_state=False)
     finally:potential.torch=old
     if not all(p.is_cuda for p in calc.potential.model.parameters()):raise RuntimeError('NonCUDA calculator.')
-    print(json.dumps(dict(ready=True,checkpoint_sha256=expected,torch=torch.__version__)),flush=True)
+    print('__AB_RPC__'+json.dumps(dict(ready=True,checkpoint_sha256=expected,torch=torch.__version__)),flush=True)
     for line in sys.stdin:
         request=json.loads(line)
         if request.get('stop'):break
@@ -73,7 +73,7 @@ def main():
             except Exception as error:row.update(status='failed',error=repr(error))
             row['elapsed_seconds']=time.perf_counter()-started
             target.write_text(json.dumps(row,indent=2)+'\n');results.append(row)
-        print(json.dumps(dict(results=results)),flush=True)
+        print('__AB_RPC__'+json.dumps(dict(results=results)),flush=True)
 
 
 if __name__=='__main__':main()

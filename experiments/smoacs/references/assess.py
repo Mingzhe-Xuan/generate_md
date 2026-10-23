@@ -126,12 +126,13 @@ def load_relaxed(candidate, root):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--selection', type=Path, required=True)
+    parser.add_argument('--proposal-root', type=Path, default=Path('results/smoacs/postprocess-206'))
     args = parser.parse_args()
     if not os.environ.get('SLURM_JOB_ID'):
         parser.error('Submit through Slurm.')
     from pymatgen.core import Structure, Composition
     from pymatgen.analysis.structure_matcher import StructureMatcher
-    proposal_root = Path('results/smoacs/postprocess-206')
+    proposal_root = args.proposal_root
     inventory = json.loads((proposal_root/'inventory-249/inventory.json').read_text())
     reference_inventory = json.loads((args.selection/'mattersim-inventory.json').read_text())
     output = args.selection/('assessment-'+os.environ['SLURM_JOB_ID'])
@@ -223,7 +224,7 @@ def main():
         row['sun'] = False if False in flags else True if all(v is True for v in flags) else None
         print(json.dumps(row), flush=True)
         (output/'candidates.json').write_text(json.dumps(rows, indent=2)+'\n')
-    summary = dict(denominator=128, stable_known=sum(r['stable'] is not None for r in rows),
+    summary = dict(denominator=inventory['denominator'], stable_known=sum(r['stable'] is not None for r in rows),
                    stable_pass=sum(r['stable'] is True for r in rows),
                    sun_pass=sum(r['sun'] is True for r in rows), sun_unknown=sum(r['sun'] is None for r in rows),
                    unique_pass=sum(r['unique'] is True for r in rows),

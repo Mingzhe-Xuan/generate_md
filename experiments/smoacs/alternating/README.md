@@ -30,9 +30,13 @@ gradient<=1e-3, previous A update<=1e-3, B converged, and five consecutive fixed
 temperature rounds with identical composition, positional RMS<=1e-3angstrom,
 relative cell change<=1e-4 and gap/Ef changes<=1e-3. Gradient/update tolerances
 refer to scaled optimization variables, not physical forces.
+The A proposal itself must also move positions/cell by no more than the geometric
+tolerances; B returning to the same point alone cannot meet joint convergence.
 
 Ten stable physical rounds with negligible elemental/oxidation gradients but
 remaining A gradients are `nonjoint_physical_cycle`, not joint convergence.
+This additionally requires elemental/oxidation updates<=1e-5, so ongoing
+composition search is not stopped merely because hard assignments stay fixed.
 `outer_limit`, `B_unconverged` and `B_failed` remain distinct. Default300 rounds
 is a guard, not evidence that convergence is guaranteed. The A and B objectives
 can conflict; a common stationary state may not exist.
@@ -57,5 +61,15 @@ and final-iterate properties separately. Recompute composition neutrality and
 reference coverage because A can change elements; old reference coverage must
 not be assumed. Use the same Crystalformer/ALIGNN targets and MP/MatterSim SUN
 criteria as earlier, with any missing competitors explicitly unknown.
+
+`evaluate.sbatch` exports final A/B inputs, recomputes common-oxidation neutrality,
+independently checks Crystalformer predictions and runs frozen ALIGNN inference.
+`references.sbatch` reselects phases for changed final compositions from the same
+official snapshot, reuses hash-matched existing5M phases, benchmarks the same
+parallel physical relaxer, computes SUN and writes a baseline comparison report.
+Reuse of the HTTP range cache does not bypass object ETag/size verification;
+the reference job explicitly verifies its direct network route in its allocation.
+DFT is not part of either evaluation job despite using the existing compatibility
+environment for MP2020 corrections.
 
 Tests: `python -m unittest discover -s experiments/smoacs/alternating`.

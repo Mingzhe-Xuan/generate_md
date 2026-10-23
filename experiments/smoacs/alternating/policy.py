@@ -21,11 +21,11 @@ def geometry_change(old_cell, old_frac, cell, frac):
 
 
 def stop_status(gradient, atom_gradient, a_step, stable_rounds, fixed_temperature, b_converged,
-                patience=5, cycle_patience=10):
+                patience=5, cycle_patience=10, atom_step=0., a_rms=0., a_cell=0.):
     if not b_converged:return None
     if not fixed_temperature:return None
-    if stable_rounds>=patience and gradient<=.001 and a_step<=.001:
+    if stable_rounds>=patience and gradient<=.001 and a_step<=.001 and a_rms<=.001 and a_cell<=1e-4:
         return 'jointly_converged'
-    if stable_rounds>=cycle_patience and atom_gradient<=.001 and gradient>.001:
+    if stable_rounds>=cycle_patience and atom_gradient<=.001 and atom_step<=1e-5 and gradient>.001:
         return 'nonjoint_physical_cycle'
     return None
