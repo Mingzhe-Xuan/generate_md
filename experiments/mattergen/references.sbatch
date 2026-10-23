@@ -11,7 +11,7 @@ cd "${SLURM_SUBMIT_DIR:?}"
 source experiments/smoacs/job_status.sh
 export OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
 export ALL_PROXY=socks5h://127.0.0.1:1080 HTTP_PROXY=socks5h://127.0.0.1:1080 HTTPS_PROXY=socks5h://127.0.0.1:1080
-if curl --fail --proxy "$ALL_PROXY" --head --connect-timeout 10 --max-time 30 https://github.com/ >/dev/null; then
+if [[ "${MATTERGEN_FORCE_DIRECT:-0}" != 1 ]] && curl --fail --proxy "$ALL_PROXY" --head --connect-timeout 10 --max-time 30 https://github.com/ >/dev/null; then
  export SMOACS_REFERENCE_PROXY="$ALL_PROXY"
 else
  curl --fail --noproxy '*' --head --connect-timeout 10 --max-time 30 \
