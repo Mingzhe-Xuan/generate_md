@@ -28,6 +28,7 @@ def main():
     parser.add_argument('--assets', type=Path, required=True)
     parser.add_argument('--root', type=Path, required=True)
     parser.add_argument('--limit', type=int)
+    parser.add_argument('--device',choices=['cpu','cuda'],default='cpu')
     args = parser.parse_args()
     if not os.environ.get('SLURM_JOB_ID'):
         parser.error('Inference must run through Slurm.')
@@ -58,15 +59,21 @@ def main():
     from pymatgen.core import Structure
     torch.set_num_threads(4)
     bandgap, eform = module.Load_Pretrained_Crystalformers(device='cpu')
+    if args.device=='cuda':
+        if not torch.cuda.is_available():raise RuntimeError('CUDA predictor requested but unavailable.')
+        torch.backends.cuda.matmul.allow_tf32=False;torch.backends.cudnn.allow_tf32=False
+        bandgap.to('cuda');eform.to('cuda')
+        if not all(p.is_cuda for m in (bandgap,eform) for p in m.parameters()):raise RuntimeError('CPU predictor fallback forbidden.')
     def predict(path):
         structure = Structure.from_file(path)
         n = len(structure)
-        atomic = torch.nn.functional.one_hot(torch.tensor(structure.atomic_numbers)-1, num_classes=98).float()
-        cell = torch.tensor(structure.lattice.matrix, dtype=torch.float32)
-        coords = torch.tensor(structure.frac_coords, dtype=torch.float32)@cell
+        atomic = torch.nn.functional.one_hot(torch.tensor(structure.atomic_numbers,device=args.device)-1, num_classes=98).float()
+        cell = torch.tensor(structure.lattice.matrix, dtype=torch.float32,device=args.device)
+        coords = torch.tensor(structure.frac_coords, dtype=torch.float32,device=args.device)@cell
         with torch.no_grad():
             gap, ef = module.Crystalformer_prediction(bandgap, eform, atomic, coords,
-                torch.zeros(n,dtype=torch.long), cell[None,:,:], torch.tensor([n],dtype=torch.long))
+                torch.zeros(n,dtype=torch.long,device=args.device), cell[None,:,:], torch.tensor([n],dtype=torch.long,device=args.device))
+        if args.device=='cuda' and not (gap.is_cuda and ef.is_cuda):raise RuntimeError('Predictor output is not on CUDA.')
         values = float(gap.reshape(-1)[0]), float(ef.reshape(-1)[0])
         if not all(math.isfinite(x) for x in values):
             raise ValueError('Non-finite CPU predictor output.')
@@ -105,7 +112,7 @@ def main():
         writer=csv.DictWriter(stream,fieldnames=sorted(set().union(*(r.keys() for r in rows))))
         writer.writeheader();writer.writerows(rows)
     control_error=max(max(r['gap_control_error'],r['eform_control_error']) for r in rows)
-    report=dict(candidate_count=len(rows), source_sha256=SOURCE_SHA256, device='cpu',
+    report=dict(candidate_count=len(rows), source_sha256=SOURCE_SHA256, device=args.device,
                 max_original_control_error=control_error, control_tolerance=1e-3,
                 control_passed=control_error<=1e-3,
                 purpose='same-predictor relaxation drift; not DFT or stability validation')

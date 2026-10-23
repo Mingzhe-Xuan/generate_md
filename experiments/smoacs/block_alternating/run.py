@@ -17,7 +17,7 @@ spec=importlib.util.spec_from_file_location('alternating_initialization',OLD/'ru
 legacy=importlib.util.module_from_spec(spec);spec.loader.exec_module(legacy)
 
 
-def run_blocks(context):
+def run_blocks(context,driver=None):
     import numpy as np
     import torch
     from pymatgen.core import Structure
@@ -53,6 +53,7 @@ def run_blocks(context):
         adapter_control_calls=ExactGaussianAverage.calls,
         hinge_subgradient_boundary_eV=1e-7,
         note='Fixed-T feasibility method, not original Adam/annealing. Constrained and raw stationarity reported separately.')
+    if driver is not None:return driver(context,hard_predictions,protocol)
     (output/'protocol.json').write_text(json.dumps(protocol,indent=2)+'\n')
     if os.environ.get('SMOACS_BLOCK_PROBE')=='1':
         from probe import run

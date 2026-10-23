@@ -2,7 +2,6 @@ import tempfile
 from pathlib import Path
 import unittest
 import json
-import re
 from inventory import candidate_files
 
 

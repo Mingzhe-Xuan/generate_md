@@ -225,6 +225,7 @@ def main():
         row['sun'] = False if False in flags else True if all(v is True for v in flags) else None
         print(json.dumps(row), flush=True)
         (output/'candidates.json').write_text(json.dumps(rows, indent=2)+'\n')
+    (output/'candidates.json').write_text(json.dumps(rows, indent=2)+'\n')
     summary = dict(denominator=inventory['denominator'], stable_known=sum(r['stable'] is not None for r in rows),
                    stable_pass=sum(r['stable'] is True for r in rows),
                    sun_pass=sum(r['sun'] is True for r in rows), sun_unknown=sum(r['sun'] is None for r in rows),

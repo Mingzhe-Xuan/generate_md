@@ -112,3 +112,8 @@ published README, so it must not be described as a paper-mandated revision.
 The actual installed MatterSim revision and checkpoint hash remain explicit.
 The real Slurm termination probe248 passed while a protected sibling step stayed
 alive. Resource inventory249 uses the exact paper DFT environment.
+
+`predict_relaxed.py --device cuda` loads the same frozen weights into the native
+PyTorch CUDA encoder and requires CUDA parameters, inputs and outputs. Use the
+Blackwell-capable environment on RTX5090. Default `--device cpu` preserves prior
+jobs; both devices retain the same1e-3 original-structure prediction control.
