@@ -57,3 +57,11 @@ mandatory. `cache_wheels.sbatch` fetches CUDA wheels and
 `cache_checkpoint.sbatch` fetches the checkpoint with resumable transfers.
 The sampler audit wraps native lazy preparation at its existing call site;
 it does not prewarm the model before the upstream seed is set.
+
+For charge neutrality, `neutrality.py` computes exactly whether zero total charge
+is reachable using the same per-atom four-way oxidation-state intersection as
+the pinned SUPER_COMMON check. This preserves mixed valence and the boolean
+criterion while avoiding enumeration of billions of neutral assignments that
+the evaluator never uses. Small composition cases are cross-checked against
+the author's implementation at runtime. Partial exports verify existing POSCARs
+against immutable generated structures and preserve completed sampling.

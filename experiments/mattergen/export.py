@@ -11,6 +11,7 @@ import tarfile
 import types
 
 from fetch import digest
+from neutrality import super_common
 
 
 def main():
@@ -36,13 +37,18 @@ def main():
     models=author.Load_Pretrained_Crystalformers(device='cpu')
     data=json.loads((args.run/'generated/structures.json').read_text());completion=json.loads((args.run/'generated/complete.json').read_text())
     if not completion['completed'] or len(data)!=completion['count']:raise ValueError('Incomplete generated cohort.')
-    folder=args.run/'structures';folder.mkdir();structures=[];paths=[]
+    folder=args.run/'structures';folder.mkdir(exist_ok=True);structures=[];paths=[]
     for i,value in enumerate(data):
         structure=Structure.from_dict(value)
         if not np.isfinite(structure.lattice.matrix).all() or structure.volume<=1e-6 or not np.isfinite(structure.frac_coords).all():
             raise ValueError('Invalid generated geometry at index '+str(i)+'; cohort retained, evaluation blocked.')
         if not structure.is_ordered or not all(1<=z<=98 for z in structure.atomic_numbers):raise ValueError('Unsupported generated species.')
-        path=folder/f'mattergen-{i:04d}.vasp';structure.to(filename=str(path),fmt='poscar')
+        path=folder/f'mattergen-{i:04d}.vasp'
+        if path.exists():
+            existing=Structure.from_file(path)
+            if list(existing.atomic_numbers)!=list(structure.atomic_numbers) or not np.allclose(existing.lattice.matrix,structure.lattice.matrix,rtol=0,atol=1e-10) or not np.allclose(existing.frac_coords,structure.frac_coords,rtol=0,atol=1e-10):
+                raise ValueError('Existing generated POSCAR differs from immutable generator output.')
+        else:structure.to(filename=str(path),fmt='poscar')
         paths.append(path);structures.append(Structure.from_file(path))
     def predict(structure,device):
         count=len(structure);cell=torch.tensor(structure.lattice.matrix,dtype=torch.float32,device=device)
@@ -58,11 +64,11 @@ def main():
         if not all(parameter.is_cuda for parameter in model.parameters()):raise RuntimeError('Predictor CPU fallback.')
     gpu=[predict(s,'cuda') for s in structures];control=max(abs(a-b) for row,reference in zip(gpu,cpu) for a,b in zip(row,reference))
     if control>1e-3:raise ValueError('Frozen CPU/GPU export control failed.')
-    candidates=[];csv_rows=[];neutral_cache={}
+    candidates=[];csv_rows=[];neutral_cache={};neutral_controls=[]
     for structure,path,(gap,ef) in zip(structures,paths,gpu):
         counts=Counter(s.specie.symbol for s in structure);key=tuple(sorted(counts.items()))
         if key not in neutral_cache:
-            neutral_cache[key]=bool(author.elec_neutral_check_SUPER_COMMON(0,len(data),[e for e,c in key],[[c] for e,c in key],True)[0])
+            neutral_cache[key],check=super_common(key,author);neutral_controls.append(check)
         neutral=neutral_cache[key];separated=not any(n.nn_distance<.5 for group in structure.get_all_neighbors(.5) for n in group)
         candidates.append(dict(candidate_id=path.name,source=str(path.resolve()),sha256=digest(path),num_atoms=len(structure),
             formula=structure.composition.formula,elements=sorted(counts),original_gap=gap,original_eform=ef,original_valid=str(neutral and separated)))
@@ -73,7 +79,8 @@ def main():
         writer=csv.DictWriter(stream,fieldnames=list(csv_rows[0]));writer.writeheader();writer.writerows(csv_rows)
     inventory=dict(role='MatterGen_dft_band_gap_2.5_de_novo',denominator=len(data),candidates=candidates,
         source_csv_sha256=digest(csv_path),generation_manifest_sha256=digest(args.run/'generated/complete.json'),
-        cpu_gpu_control_error=control,author_source_sha256=SOURCE_SHA256)
+        cpu_gpu_control_error=control,author_source_sha256=SOURCE_SHA256,
+        neutrality_method='Exact per-atom reachable-charge DP, identical SUPER_COMMON oxidation-state intersection',neutrality_controls=neutral_controls)
     (args.run/'inventory-249').mkdir();(args.run/'inventory-249/inventory.json').write_text(json.dumps(inventory,indent=2)+'\n')
     print(json.dumps(dict(exported=len(data),cpu_gpu_control_error=control)),flush=True)
 
