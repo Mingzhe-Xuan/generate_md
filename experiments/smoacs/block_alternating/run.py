@@ -33,9 +33,10 @@ def run_blocks(context):
     with torch.no_grad():double_gap,double_ef,_,_=forward(.01)
     precision_error=max(float((double_gap-original_gap).abs().max()),float((double_ef-original_ef).abs().max()))
     if precision_error>1e-3:raise ValueError('Float64 forward differs from pinned float32 control: '+str(precision_error))
-    from models import indexed_lattice_multi_head_attention as attention
+    from crystalformer.models import indexed_lattice_multi_head_attention as attention
     attention.AverageGaussiansBySoftmaxXYFunc_=ExactGaussianAverage
     with torch.no_grad():exact_gap,exact_ef,_,_=forward(.01)
+    if ExactGaussianAverage.calls==0:raise RuntimeError('No actual predictor Gaussian adapter forward was observed.')
     adapter_error=max(float((exact_gap-double_gap).abs().max()),float((exact_ef-double_ef).abs().max()))
     if adapter_error>1e-8:raise ValueError('Gaussian derivative adapter changed predictor values: '+str(adapter_error))
     def hard_predictions(out):
@@ -48,6 +49,7 @@ def run_blocks(context):
         joint_patience=3,gram_rtol=2e-6,gram_atol=1e-5,a_dtype='float64',precision_control_error=precision_error,
         elemental_oxidation_lower_bound=1e-6,
         gaussian_derivative='ordinary_autograd_including_distance_basis',adapter_control_error=adapter_error,
+        adapter_control_calls=ExactGaussianAverage.calls,
         hinge_subgradient_boundary_eV=1e-7,
         note='Fixed-T feasibility method, not original Adam/annealing. Constrained and raw stationarity reported separately.')
     (output/'protocol.json').write_text(json.dumps(protocol,indent=2)+'\n')

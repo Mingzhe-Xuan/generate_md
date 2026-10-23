@@ -18,8 +18,8 @@ class SolverTests(unittest.TestCase):
         from pathlib import Path
         import torch
         from gaussian import ExactGaussianAverage
-        sys.path.insert(0,str(Path(__file__).resolve().parents[3]/'third_party/SMOACS/src/crystalformer'))
-        from models.indexed_lattice_multi_head_attention import AverageGaussiansBySoftmaxXYFunc_
+        sys.path.insert(0,str(Path(__file__).resolve().parents[3]/'third_party/SMOACS/src'))
+        from crystalformer.models.indexed_lattice_multi_head_attention import AverageGaussiansBySoftmaxXYFunc_
         x=torch.tensor([.3,1.2,2.4],dtype=torch.float64).reshape(1,1,3,1).requires_grad_()
         y=torch.tensor([-.7,-1.1],dtype=torch.float64).reshape(1,2,1,1).requires_grad_()
         w=torch.arange(16,dtype=torch.float64).reshape(2,2,4).div(10).requires_grad_()

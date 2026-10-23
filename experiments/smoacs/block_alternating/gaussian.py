@@ -4,8 +4,11 @@ import torch
 
 
 class ExactGaussianAverage:
+    calls=0
+
     @staticmethod
     def apply(m,K,x,y,dim,W=None,width_scale=1.,basis_func='',keepdim=False):
+        ExactGaussianAverage.calls+=1
         if basis_func not in ('',None,'cgcnn') or dim not in (-2,2):
             raise ValueError('Only the audited Gaussian encoding configuration is supported.')
         positive=x>0
