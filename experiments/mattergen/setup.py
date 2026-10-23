@@ -6,6 +6,8 @@ from pathlib import Path
 import subprocess
 import tarfile
 
+from fetch import download
+
 
 def digest(path):
     h=hashlib.sha256()
@@ -35,19 +37,20 @@ def main():
     site_path=environment/'lib/python3.10/site-packages'
     if not site_path.exists():raise ValueError('Expected task Python3.10 environment.')
     (site_path/'blackwell_readonly.pth').write_text(str(root/'.venv-smoacs-blackwell/lib/python3.10/site-packages')+'\n')
+    import requests
+    wheels=assets/'wheels';wheel_records=[]
+    with requests.Session() as session:
+        for name,version in [('torch_scatter','2.1.2'),('torch_sparse','0.6.18'),('torch_cluster','1.6.3')]:
+            filename=f'{name}-{version}+pt27cu128-cp310-cp310-linux_x86_64.whl'
+            url='https://data.pyg.org/whl/torch-2.7.0%2Bcu128/'+filename.replace('+','%2B')
+            sha=download(session,url,wheels/filename)
+            wheel_records.append(dict(filename=filename,url=url,sha256=sha))
+    (assets/'wheel-manifest.json').write_text(json.dumps(wheel_records,indent=2)+'\n')
     subprocess.run([str(base),'-m','pip','--python',str(python),'install','-r',str(module/'requirements.txt'),
-        '--find-links','https://data.pyg.org/whl/torch-2.7.0+cu128.html','--only-binary','torch-scatter,torch-sparse,torch-cluster'],check=True)
+        '--find-links',str(wheels),'--only-binary','torch-scatter,torch-sparse,torch-cluster'],check=True)
     checkpoint=assets/'checkpoints/dft_band_gap/checkpoints/last.ckpt';checkpoint.parent.mkdir(parents=True,exist_ok=True)
     if not checkpoint.exists() or digest(checkpoint)!=spec['checkpoint_sha256']:
-        import requests
-        temporary=checkpoint.with_suffix('.download')
-        with requests.get(spec['checkpoint_url'],stream=True,timeout=(30,120)) as response:
-            response.raise_for_status()
-            with temporary.open('wb') as out:
-                for part in response.iter_content(1024*1024):out.write(part)
-        if temporary.stat().st_size!=spec['checkpoint_size_bytes'] or digest(temporary)!=spec['checkpoint_sha256']:
-            raise ValueError('Downloaded checkpoint hash/size mismatch.')
-        temporary.replace(checkpoint)
+        with requests.Session() as session:download(session,spec['checkpoint_url'],checkpoint,spec['checkpoint_sha256'],spec['checkpoint_size_bytes'])
     (checkpoint.parent.parent/'config.yaml').write_bytes(config.read_bytes())
     freeze=subprocess.check_output([str(base),'-m','pip','--python',str(python),'freeze'],text=True)
     (assets/'environment-freeze.txt').write_text(freeze)
