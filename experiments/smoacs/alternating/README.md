@@ -96,3 +96,5 @@ update safety cap, keeping fmax0.01 and all physical constraints unchanged.
 Compare against an additional A200+B control with this same B profile; keep the
 old maxstep/default400-step baseline visible separately. These are optimizer
 numerical changes and are not silently attributed to alternating A/B itself.
+
+The shared rpc.py module decodes __AB_RPC__ worker frames using only Python's standard library. Parent launchers can reuse it without importing optimization policies or NumPy; scientific dependencies remain in the worker environment.

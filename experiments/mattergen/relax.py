@@ -1,6 +1,5 @@
 """Apply the current candidate B profile through persistent MatterSim workers."""
 import argparse
-import importlib.util
 import json
 import os
 from pathlib import Path
@@ -12,9 +11,10 @@ def main():
     args=p.parse_args()
     if not os.environ.get('SLURM_JOB_ID'):p.error('Use Slurm.')
     if not 1<=args.workers<=int(os.environ['SLURM_CPUS_PER_TASK']):p.error('Worker count exceeds allocation.')
-    root=Path(__file__).resolve().parents[1]/'smoacs';spec=importlib.util.spec_from_file_location('mattergen_worker_rpc',root/'alternating/run.py')
+    root=Path(__file__).resolve().parents[1]/'smoacs'
     import sys
-    sys.path.insert(0,str(root/'alternating'));module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module)
+    sys.path.insert(0,str(root/'alternating'))
+    from rpc import read_response
     inventory=json.loads((args.run/'inventory-249/inventory.json').read_text());candidates=inventory['candidates']
     if len(candidates)!=inventory['denominator']:raise ValueError('B cohort missing inputs.')
     tasks=[dict(candidate_id=c['candidate_id'],source=c['source'],output=str(args.run/'relaxation'/Path(c['candidate_id']).stem)) for c in candidates]
@@ -27,9 +27,9 @@ def main():
                 stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=log,text=True,bufsize=1,
                 env=dict(os.environ,OMP_NUM_THREADS='1',MKL_NUM_THREADS='1',OPENBLAS_NUM_THREADS='1'))
             workers.append(worker)
-            if not module.read_response(worker.stdout,args.run/('worker-'+str(i)+'.stdout'))['ready']:raise RuntimeError('MatterSim worker not ready.')
+            if not read_response(worker.stdout,args.run/('worker-'+str(i)+'.stdout'))['ready']:raise RuntimeError('MatterSim worker not ready.')
         for i,worker in enumerate(workers):worker.stdin.write(json.dumps(dict(tasks=tasks[i::len(workers)]))+'\n');worker.stdin.flush()
-        for i,worker in enumerate(workers):records.extend(module.read_response(worker.stdout,args.run/('worker-'+str(i)+'.stdout'))['results'])
+        for i,worker in enumerate(workers):records.extend(read_response(worker.stdout,args.run/('worker-'+str(i)+'.stdout'))['results'])
         if len(records)!=len(tasks) or {r['candidate_id'] for r in records}!={t['candidate_id'] for t in tasks}:raise ValueError('B IDs differ.')
         scope=[dict(candidate_id=c['candidate_id'],elements=c['elements']) for c in candidates
                if next(r for r in records if r['candidate_id']==c['candidate_id'])['status']=='converged']

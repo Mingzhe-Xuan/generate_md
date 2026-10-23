@@ -11,6 +11,7 @@ import time
 import types
 
 from policy import schedule,stop_status,geometry_change
+from rpc import read_response
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -19,15 +20,6 @@ def digest(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
 class Captured(BaseException):pass
-
-
-def read_response(stream, diagnostic):
-    for line in stream:
-        prefix,found,body=line.partition('__AB_RPC__')
-        if prefix:
-            with Path(diagnostic).open('a') as log:log.write(prefix)
-        if found:return json.loads(body)
-    raise RuntimeError('B worker exited without a protocol response; inspect its stdout/stderr logs.')
 
 
 def main(driver=None):
