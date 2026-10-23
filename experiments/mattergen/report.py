@@ -37,13 +37,18 @@ def audit(root,selection,expected_count=128):
     if not any(r['status']=='converged' for r in relaxation):raise ValueError('No force-converged B endpoints; end-to-end evaluation not established.')
     if not any(r['stable'] is not None for r in sun):raise ValueError('All stability values unknown; evaluation incomplete.')
     if not any(r['status']=='completed' for r in after):raise ValueError('No complete cross-predictor B evaluation.')
+    atom_counts=[c['num_atoms'] for c in candidates]
     result=dict(verified_end_to_end=True,denominator=expected_count,generation=generation,gpu_audit=gpu,
+        thresholds=dict(gap_eV=[2.3,2.7],eform_eV_atom_less_than=-.5,hull_eV_atom_less_than=.1,joint_requires_structure_validity=True),
+        atom_counts=dict(min=min(atom_counts),max=max(atom_counts),histogram=dict(Counter(atom_counts)),above10=sum(n>10 for n in atom_counts)),
         before_B=stats.property_stats(before,ids),after_B=stats.property_stats(after,ids),SUN=stats.sun_stats(sun,after,ids),
         relaxation_status_counts=dict(Counter(r['status'] for r in relaxation)),
         reference_selection=str(selection),reference_inventory_sha256=digest(selection/'mattersim-inventory.json'),
         reference_summary=json.loads((root/'SUN/summary.json').read_text()),
         prediction_sha256=digest(root/'cross-prediction/predictions.json'),sun_sha256=digest(root/'SUN/candidates.json'),
-        note='Official pretrained de novo gap-conditioned MatterGen; Ef is evaluated, not jointly conditioned. '
+        note='Official pretrained de novo gap-conditioned MatterGen with the default ALEX_MP20 atom-count distribution (up to20); '
+             'SMOACS templates have up to10 atoms, so these are task metrics rather than a matched-template performance comparison. '
+             'Ef is evaluated, not jointly conditioned. '
              'Same frozen CF/ALIGNN and candidate B/SUN definitions; all generated samples remain in the denominator. '
              'Unknown reference coverage is explicit. No DFT or original-paper training reproduction claim.')
     return result
@@ -53,7 +58,9 @@ def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--run',required=True,type=Path);p.add_argument('--selection',required=True,type=Path)
     p.add_argument('--expected-count',type=int,default=128);args=p.parse_args();result=audit(args.run,args.selection,args.expected_count)
     (args.run/'report.json').write_text(json.dumps(result,indent=2,allow_nan=False)+'\n')
-    lines=['# MatterGen: current property and SUN task','', '| Metric | Before B | After B |','|---|---:|---:|']
+    lines=['# MatterGen: current property and SUN task','',
+           'Gap2.3-2.7eV; formation energy < -0.5eV/atom; joint also requires structural validity. S uses MatterSim/MP2020 hull <0.1eV/atom.',
+           '', '| Metric | Before B | After B |','|---|---:|---:|']
     def cell(value):return f"{value['pass_count']}/{value['denominator']} ({100*value['confirmed_rate']:.2f}%; unknown {value['unknown_count']})"
     for metric,value in result['before_B'].items():lines.append('| '+metric+' | '+cell(value)+' | '+cell(result['after_B'][metric])+' |')
     lines+=['','| SUN metric | Passes |','|---|---:|']

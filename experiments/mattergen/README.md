@@ -4,6 +4,10 @@ Use the official pinned MatterGen dft_band_gap model, target2.5eV,
 classifier-free guidance2.0, seed42 and its unchanged1000-step sampler.
 Generate128 de novo structures. These are independent generated samples,
 not paired reconstructions of the128 SMOACS starting templates.
+The default ALEX_MP20 distribution permits up to20 atoms, while the current
+SMOACS templates have up to10. Reports retain all samples and disclose the
+actual atom-count histogram; task metrics do not establish a matched-template
+performance comparison.
 The public checkpoint conditions on band gap; formation energy is an evaluation
 constraint rather than an additional learned conditioning input.
 

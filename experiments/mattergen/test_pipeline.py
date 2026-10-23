@@ -21,7 +21,7 @@ class PipelineTests(unittest.TestCase):
             rows=[];sun=[];candidates=[]
             for i,identifier in enumerate(ids):
                 source=root/'structures'/identifier;source.parent.mkdir(exist_ok=True);source.write_text('fixture'+identifier)
-                candidates.append(dict(candidate_id=identifier,source=str(source),sha256=digest(source)))
+                candidates.append(dict(candidate_id=identifier,source=str(source),sha256=digest(source),num_atoms=20 if i==127 else 4))
                 b=root/'relaxation'/Path(identifier).stem/'relaxed.vasp';b.parent.mkdir(parents=True);b.write_text('relaxed fixture'+identifier)
                 write(b.with_name('result.json'),dict(input_sha256=digest(source),status='converged' if i<127 else 'failed',relaxed_path=str(b),relaxed_sha256=digest(b)))
                 for stage in ('before','after'):
@@ -38,6 +38,7 @@ class PipelineTests(unittest.TestCase):
             self.assertTrue(result['verified_end_to_end']);self.assertEqual(result['after_B']['crystalformer_gap']['pass_count'],127)
             self.assertEqual(result['after_B']['crystalformer_gap']['denominator'],128)
             self.assertEqual(result['SUN']['sun']['pass_count'],125);self.assertEqual(result['SUN']['stable']['unknown_count'],2)
+            self.assertEqual(result['atom_counts'],dict(min=4,max=20,histogram={4:127,20:1},above10=1))
             rows[-1]['candidate_id']=ids[0];write(root/'cross-prediction/predictions.json',rows)
             with self.assertRaises(ValueError):audit(root,selection)
 
