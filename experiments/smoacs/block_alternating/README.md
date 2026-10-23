@@ -31,6 +31,10 @@ these same effective weights explicitly with a1e-6 lower bound; negative raw
 weights cannot represent additional distributions. Projected-gradient checks
 therefore include this boundary, not just the cell box. Save per-variable-block
 residuals, raw A state, and actual finite descent probes when A stalls.
+Pilot295 found measured negative-gradient descent after L-BFGS-B loss stopping.
+The solver now restarts its memory after a measured improving projected-gradient
+step. Up to16 attempts share the same1200-iteration/3000-evaluation budget;
+no measured descent, exhausted budgets or restart limits remain unconverged.
 B reuses the pinned MatterSim worker, symmetry, fmax0.01, maxstep0.05 and1600-step
 safety cap. Numerical/B failures are recorded individually.
 
