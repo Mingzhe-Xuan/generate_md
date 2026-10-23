@@ -26,6 +26,10 @@ MP2020Compatibility protocol as proposals before a hull can be evaluated.
 Raw MP hull values select references; they are not the final MatterSim hull.
 
 convert.sbatch writes hash-identified POSCARs and a separate reference inventory;
+only subsystems needed by converged hash-matched proposals undergo expensive
+reference relaxation. Raw selections remain intact, and excluded reference IDs
+and the115 eligible proposal IDs are recorded. This does not remove any competing
+phase for a proposal that can pass screening; all128 proposals remain in results.
 relax.sbatch uses the validated proposal MatterSim relaxer with identical physical
 settings and reference-specific metadata. Convert/relax failures remain explicit.
 assess.sbatch uses the paper-version DFT venv for MP2020Compatibility, with run

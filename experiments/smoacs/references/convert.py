@@ -12,6 +12,11 @@ def digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
+def needed_reference(chemsys, systems):
+    elements = set(chemsys.split('-'))
+    return any(elements <= system for system in systems)
+
+
 def convert_record(record, output):
     from pymatgen.core import Structure
     identifier = record['material_id']
@@ -45,10 +50,23 @@ def main():
     output = args.selection/'mattersim-inputs'
     output.mkdir(exist_ok=False)
     source = args.selection/'reference-structures.jsonl.gz'
-    candidates, failures = [], []
+    proposal_root = Path('results/smoacs/postprocess-206')
+    proposals = json.loads((proposal_root/'inventory-249/inventory.json').read_text())
+    systems, proposal_ids = [], []
+    for candidate in proposals['candidates']:
+        record = json.loads((proposal_root/'relaxation'/Path(candidate['candidate_id']).stem/'result.json').read_text())
+        if record['input_sha256'] != candidate['sha256']:
+            raise ValueError('Proposal relaxation source hash mismatch.')
+        if record['status'] == 'converged':
+            systems.append(set(candidate['elements']))
+            proposal_ids.append(candidate['candidate_id'])
+    candidates, failures, excluded = [], [], []
     with gzip.open(source, 'rt') as stream:
         for line in stream:
             record = json.loads(line)
+            if not needed_reference(record['chemsys'], systems):
+                excluded.append(record['material_id'])
+                continue
             try:
                 candidates.append(convert_record(record, output))
             except Exception as error:
@@ -58,7 +76,8 @@ def main():
     manifest = dict(role='MP_reference_phases', denominator=len(candidates)+len(failures),
                     candidates=candidates, conversion_failures=failures,
                     snapshot=selection['snapshot'], selection_sha256=digest(args.selection/'summary.json'),
-                    reference_records_sha256=digest(source))
+                    reference_records_sha256=digest(source), proposal_denominator=128,
+                    eligible_proposal_ids=proposal_ids, scope_excluded_reference_ids=excluded)
     (args.selection/'mattersim-inventory.json').write_text(json.dumps(manifest, indent=2)+'\n')
     print(json.dumps(dict(converted=len(candidates), failures=len(failures), selection=str(args.selection))), flush=True)
 

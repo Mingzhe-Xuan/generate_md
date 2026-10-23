@@ -2,10 +2,17 @@ from pathlib import Path
 import tempfile
 import unittest
 from pymatgen.core import Structure, Lattice
-from convert import convert_record, digest
+from convert import convert_record, digest, needed_reference
 
 
 class ConvertTests(unittest.TestCase):
+    def test_all_eligible_subsystems_retained(self):
+        systems = [set(['Ca','S']), set(['Si','O'])]
+        for chemistry in ('Ca', 'S', 'Ca-S', 'Si', 'O', 'O-Si'):
+            self.assertTrue(needed_reference(chemistry, systems))
+        for chemistry in ('Ca-O', 'Fe', 'Ca-Si-S'):
+            self.assertFalse(needed_reference(chemistry, systems))
+
     def test_identity_and_composition_not_silently_changed(self):
         structure = Structure(Lattice.cubic(3), ['Si'], [[0,0,0]])
         row = dict(material_id='mp-149', structure=structure.as_dict(), nsites=1,
