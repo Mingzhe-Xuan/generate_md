@@ -16,6 +16,9 @@ Interfaces:
   Both stages use the identical relaxed reference pool, MP2020Compatibility
   algorithm, StructureMatcher settings, and E_hull<0.1eV/atom threshold from
   `../references/assess.py`. Missing competitors and terminals stay explicit.
+  The full-inventory baseline also audits selected phases omitted from reference
+  relaxation because their proposals failed. These phases count as missing
+  competitors for those original geometries; they cannot silently certify S/N.
 - `paired_statistics.py`: identity validation, threshold classification, fixed
   denominator summaries, pass/fail transitions and paired continuous changes.
 - `singlepoint.sbatch` / `evaluate.sbatch`: GPU inference / CPU hull evaluation

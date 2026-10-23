@@ -2,6 +2,7 @@
 import argparse
 from collections import defaultdict
 import csv
+import gzip
 import json
 import os
 from pathlib import Path
@@ -19,6 +20,28 @@ from summarize_section21 import boolean
 def geometry_valid(structure):
     return not any(neighbor.nn_distance < .5 for neighbors in structure.get_all_neighbors(.5)
                    for neighbor in neighbors)
+
+
+def excluded_references(inventory, selection):
+    """Previously failed proposals may need phases outside the relaxation scope."""
+    from pymatgen.core import Structure
+    excluded = set(inventory.get('scope_excluded_reference_ids', []))
+    if not excluded:
+        return []
+    path = selection/'reference-structures.jsonl.gz'
+    if sha256(path) != inventory['reference_records_sha256']:
+        raise ValueError('Selected reference source changed.')
+    records = []
+    with gzip.open(path, 'rt') as stream:
+        for line in stream:
+            record = json.loads(line)
+            if record['material_id'] in excluded:
+                structure = Structure.from_dict(record['structure'])
+                records.append(dict(candidate_id=record['material_id']+'.vasp',
+                    elements=record['chemsys'].split('-'), formula=structure.composition.reduced_formula))
+    if len(records) != len(excluded) or len({r['candidate_id'] for r in records}) != len(excluded):
+        raise ValueError('Excluded reference coverage audit failed.')
+    return records
 
 
 def main():
@@ -61,6 +84,7 @@ def main():
         raise ValueError('Single-point provenance mismatch.')
     args.output.mkdir(parents=True, exist_ok=False)
     reference_inventory = json.loads((args.selection/'mattersim-inventory.json').read_text())
+    excluded = excluded_references(reference_inventory, args.selection)
     references, geometries, formulas, failures = {}, {}, defaultdict(list), []
     for candidate in reference_inventory['candidates']:
         identifier = candidate['candidate_id']
@@ -73,6 +97,8 @@ def main():
             references[identifier] = corrected_entry(path, record, identifier)
         except Exception as error:
             failures.append(dict(candidate_id=identifier, error=repr(error)))
+    for candidate in excluded:
+        formulas[candidate['formula']].append(candidate['candidate_id'])
     matcher = StructureMatcher(ltol=.2, stol=.3, angle_tol=5, primitive_cell=True,
                                scale=True, attempt_supercell=True)
     seen = {'before': [], 'after': []}
@@ -111,13 +137,16 @@ def main():
                 raise ValueError('Original single-point disagrees with relaxation initial energy by >1meV/atom.')
         elements = set(candidate['elements'])
         expected = [c['candidate_id'] for c in reference_inventory['candidates'] if set(c['elements']) <= elements]
+        missing_scope = [c['candidate_id'] for c in excluded if set(c['elements']) <= elements]
+        expected.extend(missing_scope)
         conversion_errors = [c for c in reference_inventory['conversion_failures']
                              if set(c['chemsys'].split('-')) <= elements]
         available = [references[i] for i in expected if i in references]
         terminals = {next(iter(e.composition.elements)).symbol for e in available if len(e.composition.elements) == 1}
         complete = len(available) == len(expected) and not conversion_errors and elements <= terminals
         row.update(reference_coverage_complete=complete, expected_references=len(expected)+len(conversion_errors),
-                   available_references=len(available), missing_terminals=sorted(elements-terminals))
+                   available_references=len(available), missing_terminals=sorted(elements-terminals),
+                   unrelaxed_scope_reference_ids=missing_scope)
         for stage, structure in structures.items():
             values = row[stage]
             values['unique'] = not any(matcher.fit(structure, previous) for previous in seen[stage])
@@ -181,6 +210,7 @@ def main():
                   reference_inventory_sha256=sha256(args.selection/'mattersim-inventory.json'),
                   full_inventory=summarize(rows), converged_pairs=summarize(paired),
                   reference_failures=failures, reference_conversion_failures=reference_inventory['conversion_failures'],
+                  selected_but_unrelaxed_reference_count=len(excluded),
                   thresholds=dict(gap_target=args.gap_target, gap_tolerance=args.gap_tolerance,
                                   eform_strict_upper=args.eform_ceiling, hull_strict_upper=.1),
                   interpretation='Identical relaxed MP reference pool, MatterSim5M and MP2020 correction algorithm in both stages. '

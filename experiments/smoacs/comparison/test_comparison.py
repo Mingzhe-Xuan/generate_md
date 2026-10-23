@@ -1,4 +1,5 @@
 import csv
+import gzip
 import json
 import math
 import os
@@ -47,6 +48,22 @@ class PairedStatisticsTests(unittest.TestCase):
         for distance, expected in ((.49,False), (.5,True), (.51,True)):
             structure = Structure(Lattice.cubic(4), ['Li','Li'], [[0,0,0],[distance,0,0]],coords_are_cartesian=True)
             self.assertEqual(geometry_valid(structure),expected)
+
+    def test_original_failed_proposal_reference_scope_is_not_silently_complete(self):
+        from evaluate import excluded_references
+        from inventory import sha256
+        from pymatgen.core import Structure, Lattice
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            path = root/'reference-structures.jsonl.gz'
+            structure = Structure(Lattice.cubic(3),['Li'],[[0,0,0]])
+            with gzip.open(path,'wt') as stream:
+                stream.write(json.dumps(dict(material_id='mp-extra',chemsys='Li',structure=structure.as_dict()))+'\n')
+            inv = dict(scope_excluded_reference_ids=['mp-extra'],reference_records_sha256=sha256(path))
+            self.assertEqual(excluded_references(inv,root),[dict(candidate_id='mp-extra.vasp',elements=['Li'],formula='Li')])
+            inv['scope_excluded_reference_ids'].append('mp-missing')
+            with self.assertRaises(ValueError):
+                excluded_references(inv,root)
 
     def test_complete_small_pipeline_and_paired_uniqueness(self):
         import evaluate
