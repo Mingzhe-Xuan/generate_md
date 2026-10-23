@@ -13,6 +13,8 @@ Archived update-count and wall-time histograms are provided by
 [`timing`](timing/README.md), with clock resolution and CPU/GPU units explicit.
 [`convergence`](convergence/README.md) checks archived200-step trajectories and
 finite geometry descent directions at the restored endpoint, without DFT.
+[`cross_predictor`](cross_predictor/README.md) independently predicts generated
+and MatterSim-relaxed structures with frozen ALIGNN and compares Crystalformer.
 
 - `preflight.py`: standard-library source, provenance and asset inventory. It does not import machine-learning packages or run optimization. Exit 0 means the listed assets are present and match; exit 2 means missing or mismatched assets. This is not an environment or paper-results certificate.
 - `env_probe.py`: Torch/DGL CPU and requested CUDA checks, gradients, and upstream CLI imports. It requires a Slurm job ID and exits 1 on any failed check. It never silently switches devices.
