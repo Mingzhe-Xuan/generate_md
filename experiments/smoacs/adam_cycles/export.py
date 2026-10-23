@@ -13,11 +13,12 @@ def digest(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--run',type=Path,required=True)
+    parser.add_argument('--cycles',nargs='+',type=int,default=[1,3])
     args=parser.parse_args()
     if not os.environ.get('SLURM_JOB_ID'):parser.error('Use Slurm for batch exports.')
     if not json.loads((args.run/'complete.json').read_text())['completed']:raise ValueError('Incomplete run.')
     data=json.loads((args.run/'results.json').read_text());ids=data['protocol']['ids'];scope=[]
-    for cycle in (1,3):
+    for cycle in args.cycles:
         rows=next(r['candidates'] for r in data['cycles'] if r['cycle']==cycle)
         if len(rows)!=4 or {r['candidate_id'] for r in rows}!=set(ids):raise ValueError('Cycle cohort mismatch.')
         root=args.run/('evaluation-cycle'+str(cycle));(root/'inventory-249').mkdir(parents=True,exist_ok=False)

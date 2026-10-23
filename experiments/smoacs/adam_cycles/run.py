@@ -1,4 +1,4 @@
-"""Exactly three Adam200/MatterSim cycles from the original four templates."""
+"""GPU Adam/MatterSim fixed-budget cycles from the original four templates."""
 from collections import Counter
 import hashlib
 import importlib.util
@@ -21,23 +21,25 @@ block=importlib.util.module_from_spec(spec);spec.loader.exec_module(block)
 def digest(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def run_cycles(context,hard_predictions,prepared_protocol):
+def run_cycles(context,hard_predictions,prepared_protocol,steps=200,cycles=3,schedule='per_phase'):
     import numpy as np
     import torch
     from pymatgen.core import Structure
     from solver import gram_check
     from policy import geometry_change
     output=context['output'];args=context['args'];ids=context['ids'];n=len(ids)
-    if args.resume or not args.pilot or n!=4 or args.max_rounds!=3:raise ValueError('Fresh four-template, three-cycle pilot required.')
+    if args.resume or not args.pilot or n!=4 or args.max_rounds!=cycles or (steps,cycles) not in ((200,3),(600,1)):
+        raise ValueError('Expected a fresh four-template Adam200x3 or Adam600x1 pilot.')
+    if schedule not in ('per_phase','restart200'):raise ValueError('Unknown LR schedule.')
     gpu_info=prepare_cuda(context)
     targets=context['targets'];optimizers=context['optimizers'];forward=context['forward'];slices=context['slices']
     batch=context['batch'];base=context['base'];lower,upper,angle_lower,angle_upper=[context[k] for k in ('lower','upper','angle_lower','angle_upper')]
     protocol={k:prepared_protocol[k] for k in ('ids','initial_control_error','baseline_npz_sha256','author_source_sha256',
         'source_commit','a_parameters','a_dtype','precision_control_error','gaussian_derivative','adapter_control_error','adapter_control_calls')}
-    protocol.update(method='Adam200_cosine_then_MatterSim_three_cycles',cycles=3,steps_per_A=200,
-        a_base_rates=BASE_RATES,temperature=.01,lr_cycle_policy='cosine restart each A200; moments persist',
+    protocol.update(method='Adam_cosine_then_MatterSim',cycles=cycles,steps_per_A=steps,
+        a_base_rates=BASE_RATES,temperature=.01,lr_cycle_policy=schedule,lr_period=200 if schedule=='restart200' else steps,
         b_fmax=.01,b_maxstep=.05,b_max_steps=1600,denominator=n,
-        comparison='Cycle1B versus Cycle3B from the same trajectory; fixed budget is not convergence.')
+        comparison='Fixed-budget GPU experiment; no joint convergence claim.')
     protocol.update(gpu_info)
     (output/'protocol.json').write_text(json.dumps(protocol,indent=2)+'\n')
     active=torch.ones(n,dtype=torch.bool,device=targets[0].device);states=[dict(candidate_id=k,status='active') for k in ids]
@@ -74,12 +76,13 @@ def run_cycles(context,hard_predictions,prepared_protocol):
     previous=initial;save(0,'initial')
     audit=GPUAudit(context,output/'gpu-audit.json')
     try:
-        for cycle in range(1,4):
+        for cycle in range(1,cycles+1):
             cycle_dir=output/('cycle-'+str(cycle));cycle_dir.mkdir()
             eligible=active.clone();updates=[0]*n;step_times=[];started=time.perf_counter()
-            for step in range(200):
+            for step in range(steps):
                 if not active.any():break
-                step_started=time.perf_counter();set_rates(optimizers,step)
+                step_started=time.perf_counter()
+                set_rates(optimizers,step%200 if schedule=='restart200' else step,200 if schedule=='restart200' else steps)
                 _,_,loss,_=forward(.01)
                 if not torch.isfinite(loss[active]).all():raise ValueError('Nonfinite active A input; retain last checkpoint.')
                 gradients=torch.autograd.grad(loss[active].sum()/n,targets)
@@ -107,7 +110,7 @@ def run_cycles(context,hard_predictions,prepared_protocol):
                                 rates=[o.param_groups[0]['lr'] for o in optimizers],step_seconds=elapsed)
                     with (output/'A-trace.jsonl').open('a') as stream:stream.write(json.dumps(record)+'\n')
                     print(json.dumps(record),flush=True)
-            set_rates(optimizers,200)
+            set_rates(optimizers,200 if schedule=='restart200' else steps,200 if schedule=='restart200' else steps)
             with torch.no_grad():_,_,_,out=forward(.01);a_points=points(out,cycle_dir/'A')
             rows=[]
             for i in range(n):
@@ -157,11 +160,11 @@ def run_cycles(context,hard_predictions,prepared_protocol):
             save(cycle,'cycle_completed')
             print(json.dumps(dict(cycle_completed=cycle,statuses=dict(Counter(r['status'] for r in rows)))),flush=True)
         for state in states:
-            if state['status']=='active':state['status']='three_cycles_completed_not_a_convergence_claim'
-        save(3,'complete')
+            if state['status']=='active':state['status']='fixed_cycles_completed_not_a_convergence_claim'
+        save(cycles,'complete')
         audit.close()
         if not audit.report['passed']:raise RuntimeError('No actual CUDA forward/backward optimization was observed.')
-        (output/'complete.json').write_text(json.dumps(dict(completed=True,cycles=3,denominator=n))+'\n')
+        (output/'complete.json').write_text(json.dumps(dict(completed=True,cycles=cycles,denominator=n))+'\n')
     finally:
         audit.close()
         if worker is not None and worker.poll() is None:

@@ -5,13 +5,13 @@ BASE_RATES=(.002,.007,.005)
 
 
 def cosine_fraction(step,steps=200):
-    if not 0<=step<=steps or steps!=200:raise ValueError('This protocol requires a200-update A phase.')
+    if not 0<=step<=steps or steps not in (200,600):raise ValueError('Expected a200- or600-update A phase.')
     return .5*(1+math.cos(math.pi*step/steps))
 
 
-def set_rates(optimizers,step):
+def set_rates(optimizers,step,steps=200):
     if len(optimizers)!=3:raise ValueError('Expected original three Adam groups.')
-    for optimizer,base in zip(optimizers,BASE_RATES):optimizer.param_groups[0]['lr']=base*cosine_fraction(step)
+    for optimizer,base in zip(optimizers,BASE_RATES):optimizer.param_groups[0]['lr']=base*cosine_fraction(step,steps)
 
 
 def valid_proposal(loss,cell,coords):

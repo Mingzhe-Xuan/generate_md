@@ -43,4 +43,7 @@ experiments/smoacs/adam_cycles/submit.py --output results/smoacs/adam-GPU-RUN`.
 It records job IDs in a sibling `*-jobs.json` and submits an afterok chain for
 optimization, properties, and shared-pool SUN. Repeating it preserves recorded jobs.
 
+The shared runner also exposes a600-update/one-B mode used by `../a600/`;
+the default command and200-update/three-cycle numerical schedule remain unchanged.
+
 Tests: `python -m unittest discover -s experiments/smoacs/adam_cycles`.
