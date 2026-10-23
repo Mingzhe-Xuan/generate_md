@@ -49,6 +49,15 @@ OpenMX total energies cannot be mixed with VASP energies for a convex hull.
 The paper's stability protocol instead uses consistently MatterSim-relaxed MP
 reference structures; reference snapshot/version/coverage must be audited.
 
+Production dispatch.sbatch requires SMOACS_REFERENCE_SELECTION,
+SMOACS_REFERENCE_ASSESSMENT and SMOACS_OPENMX_CALIBRATION directories. Submit it
+with afterok dependencies on the higher-basis calibration and reference assessment.
+It refuses uncertified calibration, keeps all128 candidate statuses, and queues
+only exactTrue SUN candidates with audited resources. Arrays run at most4 jobs
+concurrently. Every candidate still performs its own numerical checks. A final
+assessment uses afterany on the array so failed calculations remain visible.
+No certified calibration or no complete reference screen means no production DFT.
+
 References:
 https://openmx-square.org/openmx_man3.9/node54.html
 https://openmx-square.org/vps_pao2019/

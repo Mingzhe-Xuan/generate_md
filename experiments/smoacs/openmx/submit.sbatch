@@ -25,4 +25,8 @@ task_extra=()
 if [[ -n "${SMOACS_OPENMX_REUSE:-}" ]]; then task_extra+=(--reuse-attempt "$SMOACS_OPENMX_REUSE"); fi
 if [[ -n "${SMOACS_OPENMX_BASIS_LEVEL:-}" ]]; then task_extra+=(--basis-level "$SMOACS_OPENMX_BASIS_LEVEL"); fi
 if [[ -n "${SMOACS_OPENMX_MESH_INCREMENT:-}" ]]; then task_extra+=(--mesh-increment "$SMOACS_OPENMX_MESH_INCREMENT"); fi
-.venv-smoacs-postprocess/bin/python experiments/smoacs/openmx/run.py --candidate-id "${SMOACS_OPENMX_ID:?}" "${task_extra[@]}"
+task_candidate="${SMOACS_OPENMX_ID:-}"
+if [[ -z "$task_candidate" && -n "${SMOACS_OPENMX_SELECTION:-}" ]]; then
+ task_candidate="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["candidate_ids"][int(sys.argv[2])])' "$SMOACS_OPENMX_SELECTION" "${SLURM_ARRAY_TASK_ID:?}")"
+fi
+.venv-smoacs-postprocess/bin/python experiments/smoacs/openmx/run.py --candidate-id "${task_candidate:?}" "${task_extra[@]}"
