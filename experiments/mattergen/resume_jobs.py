@@ -26,7 +26,7 @@ def release(manifest,report_path):
         if owner is None or int(owner[1])!=os.getuid():raise ValueError('Saved job owner differs.')
         if 'JobName=full128-' not in text or 'WorkDir='+str(Path.cwd()) not in text:raise ValueError('Saved job is not this comparison.')
         if 'JobState=PENDING' in text:
-            if not ('JobHeldUser' in text or 'held state' in text):raise ValueError('Pending saved job not held by user.')
+            if not any(reason in text for reason in ('JobHeldUser','held state','job_requeued_in_held_state')):raise ValueError('Pending saved job not held by user.')
             subprocess.run(['scontrol','release',str(identifier)],check=True);released.append(identifier)
         elif not any('JobState='+status in text for status in ('RUNNING','COMPLETING','COMPLETED')):
             raise ValueError('Saved job is not safely resumable: '+text)

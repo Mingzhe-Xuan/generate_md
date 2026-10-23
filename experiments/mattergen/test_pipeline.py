@@ -58,6 +58,12 @@ class PipelineTests(unittest.TestCase):
                  patch.object(resume_jobs.subprocess,'run') as called:
                 with self.assertRaisesRegex(ValueError,'owner differs'):resume_jobs.release(manifest,report)
                 called.assert_not_called()
+            with patch.object(resume_jobs,'audit',return_value=dict(prediction_sha256='pred',sun_sha256='sun')),\
+                 patch('pathlib.Path.cwd',return_value=root),patch.object(os,'getuid',return_value=1010,create=True),\
+                 patch.object(resume_jobs.subprocess,'check_output',return_value='JobName=full128-AB UserId=xmz(1010) WorkDir='+str(root)+' JobState=PENDING Reason=job_requeued_in_held_state'),\
+                 patch.object(resume_jobs.subprocess,'run') as called:
+                self.assertEqual(resume_jobs.release(manifest,report),[312])
+                called.assert_called_once_with(['scontrol','release','312'],check=True)
 
     def test_submission_idempotency_and_dependencies(self):
         path=Path(__file__).with_name('submit.py');spec=importlib.util.spec_from_file_location('mattergen_submit_test',path)
