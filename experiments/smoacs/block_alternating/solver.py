@@ -1,11 +1,25 @@
 """Bounded minimization with explicit stationarity and geometry diagnostics."""
 import numpy as np
-from scipy.optimize import minimize
+from scipy.optimize import linprog,minimize
 
 
 def projected_gradient(x, gradient, lower, upper):
     x,g,lo,hi=map(np.asarray,(x,gradient,lower,upper))
     return np.where(((x<=lo+1e-8)&(g>0))|((x>=hi-1e-8)&(g<0)),0.,g)
+
+
+def hinge_subgradient(x,gap,gap_gradient,energy_gradient,lower,upper):
+    if abs(abs(gap-2.5)-.04)>1e-7:raise ValueError('Not at the band-gap hinge.')
+    x,d,e,lo,hi=map(np.asarray,(x,gap_gradient,energy_gradient,lower,upper))
+    use_upper=x>lo+1e-8;use_lower=x<hi-1e-8
+    matrix=np.concatenate([np.column_stack((d[use_upper],-np.ones(use_upper.sum()))),
+                           np.column_stack((-d[use_lower],-np.ones(use_lower.sum())))])
+    rhs=np.concatenate([-e[use_upper],e[use_lower]])
+    interval=(-1.,0.) if gap<2.5 else (0.,1.)
+    result=linprog([0.,1.],A_ub=matrix,b_ub=rhs,bounds=[interval,(0.,None)],method='highs')
+    if not result.success:raise ValueError('Hinge stationarity LP failed: '+result.message)
+    coefficient=float(result.x[0])
+    return e+coefficient*d,coefficient
 
 
 def solve(fun,x,lower,upper,maxiter=1200,maxfun=3000):

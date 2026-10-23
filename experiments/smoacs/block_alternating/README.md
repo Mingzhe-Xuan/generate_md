@@ -35,6 +35,24 @@ Pilot295 found measured negative-gradient descent after L-BFGS-B loss stopping.
 The solver now restarts its memory after a measured improving projected-gradient
 step. Up to16 attempts share the same1200-iteration/3000-evaluation budget;
 no measured descent, exhausted budgets or restart limits remain unconverged.
+
+Local float64 finite-difference checks found the pinned CPU
+`AverageGaussiansBySoftmaxXYFunc_` backward omits the derivative of its
+distance-dependent Gaussian basis. `gaussian.py` replaces this operator only
+inside this experimental process with ordinary PyTorch autograd. Preserve
+checkpoint weights and compare the full predictor outputs before/after within
+1e-8; float64-vs-original float32 control still applies. Tests compare forward
+values with/without projections, gradcheck distances/attention/projections, and
+check finite gradients for zero self-distances. Thus this is also a disclosed
+gradient correction relative to the original CPU baseline, not evidence that
+block alternation alone improved convergence. Prior baseline results stay intact.
+
+At the original band-gap hinge (2.46/2.54eV), a single autograd derivative need
+not vanish at a minimum. Within1e-7eV of this boundary, solve for the valid
+hinge subgradient coefficient ([-1,0] below or [0,1] above) that minimizes the
+box-KKT infinity residual. Record this coefficient and the raw autograd norm
+separately. The residual threshold stays1e-3. Joint constrained/hinge stationarity
+is labeled separately from vanishing raw autograd gradients.
 B reuses the pinned MatterSim worker, symmetry, fmax0.01, maxstep0.05 and1600-step
 safety cap. Numerical/B failures are recorded individually.
 

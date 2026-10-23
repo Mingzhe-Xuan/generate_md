@@ -8,7 +8,8 @@ import subprocess
 import sys
 import time
 
-from solver import gram_check,projected_gradient,solve
+from solver import gram_check,hinge_subgradient,projected_gradient,solve
+from gaussian import ExactGaussianAverage
 
 OLD=Path(__file__).resolve().parents[1]/'alternating'
 sys.path.insert(0,str(OLD))
@@ -32,6 +33,11 @@ def run_blocks(context):
     with torch.no_grad():double_gap,double_ef,_,_=forward(.01)
     precision_error=max(float((double_gap-original_gap).abs().max()),float((double_ef-original_ef).abs().max()))
     if precision_error>1e-3:raise ValueError('Float64 forward differs from pinned float32 control: '+str(precision_error))
+    from models import indexed_lattice_multi_head_attention as attention
+    attention.AverageGaussiansBySoftmaxXYFunc_=ExactGaussianAverage
+    with torch.no_grad():exact_gap,exact_ef,_,_=forward(.01)
+    adapter_error=max(float((exact_gap-double_gap).abs().max()),float((exact_ef-double_ef).abs().max()))
+    if adapter_error>1e-8:raise ValueError('Gaussian derivative adapter changed predictor values: '+str(adapter_error))
     def hard_predictions(out):
         onehot=torch.nn.functional.one_hot(out['normalized_dist'].argmax(1),98).to(targets[0].dtype)
         return context['author'].Crystalformer_prediction(context['gap_model'],context['ef_model'],onehot,
@@ -41,6 +47,8 @@ def run_blocks(context):
         anneal=None,a_maxiter=1200,a_maxfun=3000,a_projected_gradient_tolerance=.001,
         joint_patience=3,gram_rtol=2e-6,gram_atol=1e-5,a_dtype='float64',precision_control_error=precision_error,
         elemental_oxidation_lower_bound=1e-6,
+        gaussian_derivative='ordinary_autograd_including_distance_basis',adapter_control_error=adapter_error,
+        hinge_subgradient_boundary_eV=1e-7,
         note='Fixed-T feasibility method, not original Adam/annealing. Constrained and raw stationarity reported separately.')
     (output/'protocol.json').write_text(json.dumps(protocol,indent=2)+'\n')
     states=[dict(candidate_id=k,status='active',a_phases=0,stable_rounds=0) for k in ids]
@@ -71,9 +79,19 @@ def run_blocks(context):
             with torch.no_grad():
                 for p,s,part in zip(targets,selections,parts):
                     count=len(part);p[s].copy_(torch.as_tensor(x[offset:offset+count],dtype=p.dtype).reshape(p[s].shape));offset+=count
-            _,_,loss,_=forward(temperature)
-            gradients=torch.autograd.grad(loss[i],targets)
+            gap,ef,loss,_=forward(temperature)
+            at_hinge=abs(abs(float(gap[i].detach())-2.5)-.04)<=1e-7
+            gradients=torch.autograd.grad(loss[i],targets,retain_graph=at_hinge)
             flat=np.concatenate([g[s].detach().numpy().astype(float).ravel() for g,s in zip(gradients,selections)])
+            evaluate.raw_autograd_gradient=float(np.max(np.abs(flat)))
+            evaluate.hinge_coefficient=None
+            if at_hinge:
+                gap_grad=torch.autograd.grad(gap[i],targets,retain_graph=True)
+                ef_grad=torch.autograd.grad(ef[i],targets)
+                gap_flat=np.concatenate([g[s].detach().numpy().ravel() for g,s in zip(gap_grad,selections)])
+                ef_flat=np.concatenate([g[s].detach().numpy().ravel() for g,s in zip(ef_grad,selections)])
+                _,_,lo,hi=variables(i)
+                flat,evaluate.hinge_coefficient=hinge_subgradient(x,float(gap[i].detach()),gap_flat,ef_flat,lo,hi)
             value=float(loss[i].detach())
             if not np.isfinite(value) or not np.isfinite(flat).all():raise ValueError('Nonfinite A objective/gradient.')
             return value,flat
@@ -117,6 +135,7 @@ def run_blocks(context):
                               hinge_boundary_distance=abs(abs(after_a['continuous_gap']-2.5)-.04))
                 final_parts=[p[s].detach().numpy().astype(float).ravel() for p,s in zip(targets,selections)]
                 final_x=np.concatenate(final_parts);final_value,final_gradient=evaluate(final_x)
+                report.update(raw_autograd_gradient=evaluate.raw_autograd_gradient,hinge_coefficient=evaluate.hinge_coefficient)
                 pg=projected_gradient(final_x,final_gradient,lo,hi);offset=0;blocks=[]
                 for part in final_parts:
                     end=offset+len(part)
@@ -166,7 +185,8 @@ def run_blocks(context):
                 after_b=point(i);check=gram_check(structure.lattice.matrix,after_b['cell']);state['feedback_check']=check
                 if not check['passed']:
                     state.update(status='feedback_failed',error='Scale-aware cell Gram check failed.');dump();continue
-                selections,parts,lo,hi=variables(i);value,gradient=objective(i,selections,parts)(np.concatenate(parts))
+                selections,parts,lo,hi=variables(i);endpoint=objective(i,selections,parts)
+                value,gradient=endpoint(np.concatenate(parts))
                 residual=float(np.max(np.abs(projected_gradient(np.concatenate(parts),gradient,lo,hi))))
                 raw=float(np.max(np.abs(gradient)))
                 a_rms,a_cell=geometry_change(before['cell'],before['frac'],after_a['cell'],after_a['frac'])
@@ -181,12 +201,15 @@ def run_blocks(context):
                     and result['max_filter_force']<=.01)
                 state.update(stable_rounds=state['stable_rounds']+1 if qualifies else 0,
                     b_endpoint_a_projected_gradient=residual,b_endpoint_a_raw_gradient=raw,
+                    b_endpoint_a_autograd_gradient=endpoint.raw_autograd_gradient,
+                    b_endpoint_hinge_coefficient=endpoint.hinge_coefficient,
                     a_geometry_rms=a_rms,a_cell_relative=a_cell,b_geometry_rms=b_rms,b_cell_relative=b_cell,
                     b_gap=after_b['gap'],b_eform=after_b['eform'],minimum_assignment_probability=after_b['minimum_assignment_probability'],
                     volume_ratio_to_initial=float(structure.volume/initial_volumes[i]))
                 previous[i]=after_b
                 if state['stable_rounds']>=3:
-                    state.update(status='jointly_converged' if raw<=.001 else 'jointly_constrained_converged')
+                    state.update(status='jointly_converged' if endpoint.raw_autograd_gradient<=.001
+                                 else 'jointly_constrained_or_hinge_stationary')
                 with (output/'history.jsonl').open('a') as stream:stream.write(json.dumps(dict(round=round_index,**state))+'\n')
                 print(json.dumps(dict(round=round_index,**state)),flush=True);dump()
             dump()

@@ -2,10 +2,36 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 import numpy as np
-from solver import solve,projected_gradient,gram_check
+from solver import solve,projected_gradient,gram_check,hinge_subgradient
 
 
 class SolverTests(unittest.TestCase):
+    def test_hinge_stationarity_and_nonstationary_rejection(self):
+        gradient,coefficient=hinge_subgradient([.5],2.46,[2.],[1.],[0.],[1.])
+        np.testing.assert_allclose(gradient,0.,atol=1e-12);self.assertAlmostEqual(coefficient,-.5)
+        gradient,_=hinge_subgradient([.5],2.54,[2.],[1.],[0.],[1.])
+        self.assertGreaterEqual(abs(gradient[0]),1.)
+        with self.assertRaises(ValueError):hinge_subgradient([.5],2.5,[2.],[1.],[0.],[1.])
+
+    def test_gaussian_forward_and_distance_gradients(self):
+        import sys
+        from pathlib import Path
+        import torch
+        from gaussian import ExactGaussianAverage
+        sys.path.insert(0,str(Path(__file__).resolve().parents[3]/'third_party/SMOACS/src/crystalformer'))
+        from models.indexed_lattice_multi_head_attention import AverageGaussiansBySoftmaxXYFunc_
+        x=torch.tensor([.3,1.2,2.4],dtype=torch.float64).reshape(1,1,3,1).requires_grad_()
+        y=torch.tensor([-.7,-1.1],dtype=torch.float64).reshape(1,2,1,1).requires_grad_()
+        w=torch.arange(16,dtype=torch.float64).reshape(2,2,4).div(10).requires_grad_()
+        for projection in (None,w):
+            original=AverageGaussiansBySoftmaxXYFunc_.apply(3.,4,x,y,-2,projection,1.,'',False)
+            exact=ExactGaussianAverage.apply(3.,4,x,y,-2,projection)
+            torch.testing.assert_close(original,exact,rtol=1e-12,atol=1e-12)
+        self.assertTrue(torch.autograd.gradcheck(lambda x,y,w:ExactGaussianAverage.apply(3.,4,x,y,-2,w),(x,y,w)))
+        zero=torch.zeros_like(x,requires_grad=True)
+        ExactGaussianAverage.apply(3.,4,zero,y,-2).sum().backward()
+        self.assertTrue(torch.isfinite(zero.grad).all())
+
     def test_interior_stationarity(self):
         x,report=solve(lambda x:(float(((x-.4)**2).sum()),2*(x-.4)),[.9,.1],[0,0],[1,1])
         self.assertTrue(report['converged']);np.testing.assert_allclose(x,.4,atol=1e-4)
