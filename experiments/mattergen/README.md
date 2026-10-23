@@ -49,3 +49,11 @@ compute-node loopback proxy can use the previously authorized direct-download
 route only after explicit direct endpoint health checks. `fetch.py` validates
 ETags, every returned range, final checkpoint SHA and wheel ZIP CRC, preserving
 verified prefixes after interrupted downloads.
+
+If direct DNS fails, `cache_wheels.py` can use locally resolved public CDN
+addresses from ignored `network-hosts.json`. Curl retains the official HTTPS
+hostname and normal certificate verification; the final official SHA is still
+mandatory. `cache_wheels.sbatch` fetches CUDA wheels and
+`cache_checkpoint.sbatch` fetches the checkpoint with resumable transfers.
+The sampler audit wraps native lazy preparation at its existing call site;
+it does not prewarm the model before the upstream seed is set.

@@ -38,22 +38,27 @@ def main():
         config_overrides=["++lightning_module.diffusion_module.model.element_mask_func={_target_:'mattergen.denoiser.mask_disallowed_elements',_partial_:True}"])
     generator=CrystalGenerator(checkpoint_info=info,batch_size=args.batch_size,num_batches=args.count//args.batch_size,
         properties_to_condition_on={'dft_band_gap':2.5},diffusion_guidance_factor=2.,record_trajectories=False,seed=42)
-    old=lightning_module.torch;lightning_module.torch=TrustedCheckpointTorch(torch,[spec['checkpoint_sha256']])
-    try:generator.prepare()
-    finally:lightning_module.torch=old
-    model=generator.model.eval()
-    if not all(p.is_cuda for p in model.parameters()):raise RuntimeError('MatterGen model is not entirely on CUDA.')
     if generator.sampling_config.sampler_partial.N!=1000:raise ValueError('Official1000-step schedule changed.')
-    if 'dft_band_gap' not in model.diffusion_module.model.cond_fields_model_was_trained_on:raise ValueError('Checkpoint lacks gap conditioning.')
     args.output.mkdir(parents=True,exist_ok=False);audit=dict(score_calls=0,all_cuda=True,finite_positions_and_cells=True)
     def observe(module,inputs,output):
         tensors=[output.pos,output.cell,output.atomic_numbers]
         if not all(t.is_cuda for t in tensors):audit['all_cuda']=False;raise RuntimeError('MatterGen score output on CPU.')
         if not all(torch.isfinite(t).all() for t in tensors[:2]):audit['finite_positions_and_cells']=False;raise ValueError('Nonfinite score geometry.')
         audit['score_calls']+=1
-    handle=model.diffusion_module.model.register_forward_hook(observe);started=time.perf_counter()
+    original_prepare=generator.prepare;handles=[]
+    def prepare_with_audit():
+        old=lightning_module.torch;lightning_module.torch=TrustedCheckpointTorch(torch,[spec['checkpoint_sha256']])
+        try:original_prepare()
+        finally:lightning_module.torch=old
+        model=generator._model
+        if not all(p.is_cuda for p in model.parameters()):raise RuntimeError('MatterGen model is not entirely on CUDA.')
+        if 'dft_band_gap' not in model.diffusion_module.model.cond_fields_model_was_trained_on:raise ValueError('Checkpoint lacks gap conditioning.')
+        if not handles:handles.append(model.diffusion_module.model.register_forward_hook(observe))
+    generator.prepare=prepare_with_audit;started=time.perf_counter()
     try:structures=generator.generate(output_dir=args.output)
-    finally:handle.remove();(args.output/'gpu-audit.json').write_text(json.dumps(audit,indent=2)+'\n')
+    finally:
+        for handle in handles:handle.remove()
+        (args.output/'gpu-audit.json').write_text(json.dumps(audit,indent=2)+'\n')
     if len(structures)!=args.count or audit['score_calls']<1000 or not audit['all_cuda']:raise ValueError('Generation count or CUDA audit failed.')
     (args.output/'structures.json').write_text(json.dumps([s.as_dict() for s in structures])+'\n')
     (args.output/'complete.json').write_text(json.dumps(dict(completed=True,count=len(structures),device=torch.cuda.get_device_name(),

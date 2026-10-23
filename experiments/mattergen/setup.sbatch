@@ -19,8 +19,10 @@ else
    break
   fi
  done
- curl --fail --noproxy '*' --head --connect-timeout 10 --max-time 30 \
- https://media.githubusercontent.com/media/microsoft/mattergen/92423660a8bd70e83679086e88f88596d484dc16/checkpoints/dft_band_gap/checkpoints/last.ckpt >/dev/null
+ if [[ ! -f results/mattergen/checkpoints/dft_band_gap/checkpoints/last.ckpt ]]; then
+  curl --fail --noproxy '*' --head --connect-timeout 10 --max-time 30 \
+  https://media.githubusercontent.com/media/microsoft/mattergen/92423660a8bd70e83679086e88f88596d484dc16/checkpoints/dft_band_gap/checkpoints/last.ckpt >/dev/null
+ fi
  unset ALL_PROXY HTTP_PROXY HTTPS_PROXY all_proxy http_proxy https_proxy
  export MATTERGEN_NETWORK_ROUTE=verified_direct
 fi
