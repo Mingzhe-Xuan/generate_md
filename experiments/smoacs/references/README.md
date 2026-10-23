@@ -53,8 +53,10 @@ Per-candidate hull processes have a120second limit and are terminated only by
 their own handle. Energy corrections and the stable threshold are unchanged.
 Missing reference competitors cannot certify stability: a low incomplete hull
 remains unknown. Stability requires E_hull<0.1eV/atom. Uniqueness and novelty use
-the author StructureMatcher settings. OpenMX BG&SUN remains unknown unless the
-electronic-structure calculation and its numerical checks have completed.
+the author StructureMatcher settings. Assessment reports stable, unique, novel,
+and joint S.U.N. counts over all128 proposals, with unknown coverage explicit.
+DFT relaxation and electronic-structure validation are paused; this assessment
+does not read OpenMX results or calculate a band-gap/S.U.N. joint metric.
 Actual optimizer convergence is an additional validation requirement: the
 published relax_with_mattersim wrapper ignores the returned convergence flag.
 Finite400-step but unconverged geometries are recorded separately, never silently

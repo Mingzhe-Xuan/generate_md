@@ -151,7 +151,7 @@ def main():
     for candidate in inventory['candidates']:
         identifier = candidate['candidate_id']
         row = dict(candidate_id=identifier, stable=None, novel=None, unique=None,
-                   sun=None, hull_eV_atom=None, bg_and_sun=None)
+                   sun=None, hull_eV_atom=None)
         rows.append(row)
         try:
             path, record = load_relaxed(candidate, proposal_root/'relaxation')
@@ -160,7 +160,7 @@ def main():
             by_chemistry[frozenset(candidate['elements'])].append(identifier)
             row['status'] = 'awaiting_reference_check'
         except Exception as error:
-            row.update(status='proposal_relaxation_failed', error=repr(error), sun=False, bg_and_sun=False)
+            row.update(status='proposal_relaxation_failed', error=repr(error), sun=False)
     matcher = StructureMatcher(ltol=.2, stol=.3, angle_tol=5,
                                primitive_cell=True, scale=True, attempt_supercell=True)
     seen = []
@@ -221,22 +221,15 @@ def main():
             row.update(status='hull_unknown', error=repr(error))
         flags = [row['stable'], row['unique'], row['novel']]
         row['sun'] = False if False in flags else True if all(v is True for v in flags) else None
-        if row['sun'] is False:
-            row['bg_and_sun'] = False
-        attempts = list((Path('results/smoacs/openmx-206')/Path(candidate['candidate_id']).stem).glob('attempt-*/result.json'))
-        if attempts:
-            latest = max(attempts, key=lambda p:int(p.parent.name.split('-')[-1]))
-            dft = json.loads(latest.read_text())
-            if dft['status'] == 'completed' and dft.get('numerical_convergence_passed'):
-                row.update(openmx_bandgap_eV=dft['sampled_bandgap_eV'], openmx_job=dft['job_id'])
-                row['bg_and_sun'] = bool(row['sun'] and dft['target_gap_success']) if row['sun'] is not None else None
         print(json.dumps(row), flush=True)
         (output/'candidates.json').write_text(json.dumps(rows, indent=2)+'\n')
     summary = dict(denominator=128, stable_known=sum(r['stable'] is not None for r in rows),
                    stable_pass=sum(r['stable'] is True for r in rows),
                    sun_pass=sum(r['sun'] is True for r in rows), sun_unknown=sum(r['sun'] is None for r in rows),
-                   bg_and_sun_pass=sum(r['bg_and_sun'] is True for r in rows),
-                   snapshot='2026-04-13', method='MatterSim5M/MP2020 + OpenMX alternative BG',
+                   unique_pass=sum(r['unique'] is True for r in rows),
+                   novel_pass=sum(r['novel'] is True for r in rows),
+                   novel_unknown=sum(r['novel'] is None for r in rows),
+                   snapshot='2026-04-13', method='MatterSim5M/MP2020 S.U.N.',
                    convergence_policy='strict actual optimizer convergence; publication wrapper discards its returned flag',
                    reference_failures=len(reference_errors)+len(reference_inventory['conversion_failures']))
     (output/'summary.json').write_text(json.dumps(summary, indent=2)+'\n')
