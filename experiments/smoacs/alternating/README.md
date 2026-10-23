@@ -54,6 +54,14 @@ SMOACS_AB_PILOT=1 sbatch experiments/smoacs/alternating/run.sbatch
 sbatch experiments/smoacs/alternating/run.sbatch
 ```
 
+After the numerical-profile pilot has completed and exercised feedback,
+`python3 experiments/smoacs/alternating/submit.py --pilot-run <pilot-dir>
+--output <fresh-results-run-dir>` submits optimization, property cross-checks,
+and shared-pool SUN with afterok dependencies. A sibling -jobs.json registry
+preserves each job ID immediately; repeating submission fills missing stages
+without duplicating already recorded jobs. Pilot integration success does not
+claim that every pilot candidate reached a common A/B optimum.
+
 The pilot uses shortened2-round annealing/16-round guard solely to validate
 integration. It is not a numerical comparison with the200-update baseline.
 Full-run evaluation must retain all128 IDs and report both dual convergence
@@ -73,6 +81,14 @@ DFT is not part of either evaluation job despite using the existing compatibilit
 environment for MP2020 corrections.
 
 Tests: `python -m unittest discover -s experiments/smoacs/alternating`.
+
+After the numerical pilot completes, run the lightweight submission manager on
+the login node: `python3 experiments/smoacs/alternating/submit.py --pilot-run
+results/smoacs/alternating-AB-PILOT --output results/smoacs/alternating-full-RUN`.
+It verifies initialization and converged B feedback, then submits optimization,
+property evaluation and SUN as an `afterok` chain. The sibling `*-jobs.json`
+records submitted IDs so repeating the command preserves existing jobs.
+Passing this integration gate does not imply joint convergence.
 
 Pilot288 exposed large-strain FixSymmetry guards under the original BFGS step.
 The production numerical profile therefore uses maxstep0.05angstrom and a1600-
