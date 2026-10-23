@@ -15,6 +15,14 @@ class SolverTests(unittest.TestCase):
         self.assertLess(rows[-1]['relative_error'],1e-7)
         torch.testing.assert_close(before,parameter)
 
+    def test_wrapped_boundary_needs_one_sided_derivative(self):
+        import torch
+        from probe import directional_probe
+        parameter=torch.nn.Parameter(torch.tensor([0.],dtype=torch.float64))
+        row=directional_probe(lambda:torch.remainder(parameter,1.).square().sum(),parameter,torch.ones_like(parameter))[-1]
+        self.assertLess(abs(row['analytic']-row['right_derivative']),1e-6)
+        self.assertGreater(row['absolute_error'],1.)
+
     def test_hinge_stationarity_and_nonstationary_rejection(self):
         gradient,coefficient=hinge_subgradient([.5],2.46,[2.],[1.],[0.],[1.])
         np.testing.assert_allclose(gradient,0.,atol=1e-12);self.assertAlmostEqual(coefficient,-.5)

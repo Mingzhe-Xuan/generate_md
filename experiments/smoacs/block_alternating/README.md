@@ -81,3 +81,8 @@ templates. `probe.py` compares five groups of actual predictor input derivatives
 against central finite differences before/after the adapter; it restores every
 parameter and records all three step sizes. This does not optimize or relax any
 structure and may run alongside the small GPU-allocation experiment.
+The central-difference gate uses directions inside coordinate wraps and cell/
+weight bounds. Record one-sided coordinate-wrap diagnostics separately: a
+central difference across `remainder` at an initial coordinate0 is not a smooth
+derivative test. Probe299's boundary-crossing coordinate direction failed the
+1e-3 gate (error0.00110); preserve that result. The gate threshold is unchanged.
