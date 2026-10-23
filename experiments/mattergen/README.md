@@ -28,3 +28,24 @@ and hold its pending chain. Requeue the paused B-pending job in held state to
 release the GPU. Its phase-resume path restores all variables and Adam moments
 and skips the completed A phase. After successful MatterGen end-to-end
 verification, release exactly that chain and verify the saved trajectory resumes.
+
+`generate.py` audits actual CUDA score calls and uses trusted checkpoint loading
+only for the pinned official weight hash. `export.py` checks frozen CF CPU/GPU
+agreement and writes the existing immutable inventory/CSV interface. `relax.py`
+uses the unchanged B workers. `run.sbatch` then runs the existing CF/ALIGNN
+evaluators. `references.sbatch` selects/relaxes MP reference phases and calls the
+existing SUN assessor. `report.py` verifies geometry hashes, GPU/model controls,
+all128 IDs and nonempty successful evaluations before reporting rates and bounds.
+`resume_jobs.py` rechecks that report, the paused checkpoint digest, job ownership
+and task identity before releasing only saved held jobs. Actual resumed progress
+is checked separately; successful submission alone does not prove restoration.
+
+`submit.py --output results/mattergen/<run> --setup-job <id>
+--paused-manifest results/mattergen/paused-chain.json` submits a four-sample smoke
+with the full1000-step sampler, then128 samples, then SUN/report/restoration.
+The smoke samples are separate and never replace the128-sample denominator.
+The setup and reference jobs test their own network path. An unavailable
+compute-node loopback proxy can use the previously authorized direct-download
+route only after explicit direct endpoint health checks. `fetch.py` validates
+ETags, every returned range, final checkpoint SHA and wheel ZIP CRC, preserving
+verified prefixes after interrupted downloads.

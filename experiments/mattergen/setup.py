@@ -57,6 +57,7 @@ def main():
     subprocess.run([str(base),'-m','pip','--python',str(python),'check'],check=True)
     (assets/'setup-complete.json').write_text(json.dumps(dict(job_id=os.environ['SLURM_JOB_ID'],
         source=spec,environment=str(environment),base_readonly=str(base),upstream_torch_pin_override='2.7.1+cu128 for Blackwell',
+        network_route=os.environ.get('MATTERGEN_NETWORK_ROUTE'),
         package_scope='Inference dependencies; official source imported unmodified, no training extras.'),indent=2)+'\n')
 
 
