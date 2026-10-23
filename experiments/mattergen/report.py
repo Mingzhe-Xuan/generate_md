@@ -45,6 +45,7 @@ def audit(root,selection,expected_count=128):
         relaxation_status_counts=dict(Counter(r['status'] for r in relaxation)),
         reference_selection=str(selection),reference_inventory_sha256=digest(selection/'mattersim-inventory.json'),
         reference_summary=json.loads((root/'SUN/summary.json').read_text()),
+        reference_execution=json.loads((selection/'reference-execution.json').read_text()) if (selection/'reference-execution.json').exists() else None,
         prediction_sha256=digest(root/'cross-prediction/predictions.json'),sun_sha256=digest(root/'SUN/candidates.json'),
         note='Official pretrained de novo gap-conditioned MatterGen with the default ALEX_MP20 atom-count distribution (up to20); '
              'SMOACS templates have up to10 atoms, so these are task metrics rather than a matched-template performance comparison. '

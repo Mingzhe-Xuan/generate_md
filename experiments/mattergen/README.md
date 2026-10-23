@@ -69,3 +69,12 @@ criterion while avoiding enumeration of billions of neutral assignments that
 the evaluator never uses. Small composition cases are cross-checked against
 the author's implementation at runtime. Partial exports verify existing POSCARs
 against immutable generated structures and preserve completed sampling.
+
+If the full16-reference serial/parallel trajectory benchmark fails, do not relax
+its criteria or pick easier controls. `references_resume.sbatch` continues all
+missing phases through the unchanged canonical serial reference optimizer.
+`reference_resume.py` checks the original selection scope, all immutable input
+hashes, cached model/pose hashes and converged force flags first. Existing valid
+references and their failures stay in the same pool. The execution mode and
+failed parallel gate are recorded in the final report. Sampling, candidate
+relaxations, predictor results and all128 denominators are preserved.
