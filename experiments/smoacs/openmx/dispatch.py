@@ -9,7 +9,7 @@ import subprocess
 
 def select_rows(rows, calibration, resources):
     if (calibration['status'] != 'completed' or not calibration.get('numerical_convergence_passed')
-            or calibration.get('basis_level') != 1):
+            or calibration.get('basis_level') != 1 or calibration.get('mesh_increment', 0) != 0):
         raise ValueError('Production blocked: higher-basis calibration is not certified.')
     covered = set(resources['element_covered_ids'])
     eligible, statuses = [], []

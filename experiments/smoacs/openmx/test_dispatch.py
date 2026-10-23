@@ -4,8 +4,12 @@ from dispatch import select_rows
 
 class DispatchTests(unittest.TestCase):
     def test_no_production_before_calibration(self):
-        with self.assertRaises(ValueError):
-            select_rows([], {'status':'numerical_convergence_failed'}, {})
+        rows = [dict(candidate_id=f'mp-{i}.vasp', sun=False) for i in range(128)]
+        good = dict(status='completed', numerical_convergence_passed=True, basis_level=1, mesh_increment=0)
+        for change in (dict(status='numerical_convergence_failed'),
+                       dict(numerical_convergence_passed=False), dict(basis_level=0), dict(mesh_increment=2)):
+            with self.assertRaisesRegex(ValueError, 'Production blocked'):
+                select_rows(rows, dict(good, **change), {'element_covered_ids':[]})
 
     def test_unknown_sun_and_uncovered_candidates_stay_in_manifest(self):
         rows = [dict(candidate_id=f'mp-{i}.vasp', sun=False) for i in range(128)]
