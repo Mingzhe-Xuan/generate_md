@@ -1,0 +1,2 @@
+pyarrow==20.0.0
+requests[socks]==2.32.5
