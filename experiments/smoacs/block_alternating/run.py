@@ -40,6 +40,7 @@ def run_blocks(context):
     protocol=dict(context['protocol'],method='A_LBFGSB_until_stationary_then_B',temperature=.01,
         anneal=None,a_maxiter=1200,a_maxfun=3000,a_projected_gradient_tolerance=.001,
         joint_patience=3,gram_rtol=2e-6,gram_atol=1e-5,a_dtype='float64',precision_control_error=precision_error,
+        elemental_oxidation_lower_bound=1e-6,
         note='Fixed-T feasibility method, not original Adam/annealing. Constrained and raw stationarity reported separately.')
     (output/'protocol.json').write_text(json.dumps(protocol,indent=2)+'\n')
     states=[dict(candidate_id=k,status='active',a_phases=0,stable_rounds=0) for k in ids]
@@ -61,6 +62,7 @@ def run_blocks(context):
         hi=[(upper[i]/base[i]).numpy(),((angle_upper[i]-60)/60).numpy()]
         lo=[v.astype(float).ravel() for v in lo]+[np.full(len(v),-np.inf) for v in parts[2:]]
         hi=[v.astype(float).ravel() for v in hi]+[np.full(len(v),np.inf) for v in parts[2:]]
+        lo[3][:]=1e-6;lo[4][:]=1e-6
         return selections,parts,np.concatenate(lo),np.concatenate(hi)
 
     def objective(i,selections,parts):
@@ -113,6 +115,25 @@ def run_blocks(context):
                 after_a=point(i)
                 report.update(continuous_gap=after_a['continuous_gap'],continuous_eform=after_a['continuous_eform'],
                               hinge_boundary_distance=abs(abs(after_a['continuous_gap']-2.5)-.04))
+                final_parts=[p[s].detach().numpy().astype(float).ravel() for p,s in zip(targets,selections)]
+                final_x=np.concatenate(final_parts);final_value,final_gradient=evaluate(final_x)
+                pg=projected_gradient(final_x,final_gradient,lo,hi);offset=0;blocks=[]
+                for part in final_parts:
+                    end=offset+len(part)
+                    blocks.append(dict(raw=float(np.abs(final_gradient[offset:end]).max()),
+                                       projected=float(np.abs(pg[offset:end]).max())))
+                    offset=end
+                report['gradient_blocks_lengths_angles_coords_elements_oxidation']=blocks
+                if not report['converged']:
+                    direction=-pg/max(float(np.abs(pg).max()),1e-12);probes=[]
+                    for step in (1e-3,1e-4,1e-5,1e-6,1e-7):
+                        trial=np.clip(final_x+step*direction,lo,hi)
+                        try:trial_value,_=evaluate(trial);probes.append(dict(step=step,loss_change=trial_value-final_value))
+                        except ValueError:probes.append(dict(step=step,status='invalid_trial'))
+                    evaluate(final_x)
+                    report['finite_descent_probe']=probes
+                torch.save(dict(targets=[p[s].detach().clone() for p,s in zip(targets,selections)],
+                                lower=lo.tolist(),upper=hi.tolist(),candidate_id=ids[i]),folder/'A-state.pt')
                 (folder/'A-result.json').write_text(json.dumps(report,indent=2)+'\n')
                 Structure(after_a['cell'],after_a['numbers'],after_a['frac']).to(filename=str(folder/'A.vasp'),fmt='poscar')
                 state.update(a_source=str(folder/'A.vasp'),a_gap=after_a['gap'],a_eform=after_a['eform'])

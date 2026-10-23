@@ -26,6 +26,11 @@ inputs to float64, verifying initial predictions against the unchanged float32
 models within1e-3. This precision change is recorded in the protocol; it does
 not change MatterSim precision or convergence thresholds. Record the continuous
 gap's distance to the hinge boundary to diagnose nonsmooth stopping separately.
+The author masks elemental/oxidation weights using `clip(min=1e-6)`. Represent
+these same effective weights explicitly with a1e-6 lower bound; negative raw
+weights cannot represent additional distributions. Projected-gradient checks
+therefore include this boundary, not just the cell box. Save per-variable-block
+residuals, raw A state, and actual finite descent probes when A stalls.
 B reuses the pinned MatterSim worker, symmetry, fmax0.01, maxstep0.05 and1600-step
 safety cap. Numerical/B failures are recorded individually.
 
