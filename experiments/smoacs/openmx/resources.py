@@ -1,6 +1,5 @@
 """Audit installed PBE19 potentials and matching orbital files; no dataset edits."""
 import hashlib
-import json
 from pathlib import Path
 import re
 

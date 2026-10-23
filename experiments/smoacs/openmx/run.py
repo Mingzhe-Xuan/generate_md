@@ -27,6 +27,7 @@ def main():
     parser.add_argument('--basis-level', type=int, default=0)
     parser.add_argument('--mesh-increment', type=int, default=0)
     parser.add_argument('--physics-manifest', type=Path)
+    parser.add_argument('--starting-attempt', type=Path)
     args = parser.parse_args()
     job = os.environ['SLURM_JOB_ID']
     out = (args.root/Path(args.candidate_id).stem/f'attempt-{job}').resolve()
@@ -90,6 +91,29 @@ def main():
                       hubbard_U=bool(physics and any(v['U_eff_eV'] for v in physics['hubbards'].values())),
                       initial_moments_source='MP generator' if physics else '1muB/atom calibration')
         result['base_grid'] = grid
+        if args.starting_attempt:
+            if args.physics_manifest:
+                raise ValueError('Calibration warmstarts are forbidden for production physics-manifest runs.')
+            previous_path = args.starting_attempt.resolve()
+            if previous_path.parent != out.parent or previous_path == out:
+                raise ValueError('Starting geometry must come from this same candidate.')
+            previous = json.loads((previous_path/'result.json').read_text())
+            if (previous['original_sha256'] != result['original_sha256']
+                    or previous['mattersim_sha256'] != result['mattersim_sha256']
+                    or previous.get('basis_level', 0) >= args.basis_level or previous.get('hubbard_U')):
+                raise ValueError('Incompatible calibration warmstart provenance.')
+            stage = previous['stages'][1]
+            warm = previous_path/'relax2/relaxed.vasp'
+            if (stage['name'] != 'relax2' or stage['status'] != 'completed'
+                    or stage['generalized_gradient_Ha_Bohr'] >= 1e-4 or digest(warm) != stage['relaxed_sha256']):
+                raise ValueError('Calibration starting geometry was not validated.')
+            refined = read(warm, format='vasp')
+            if Counter(refined.get_chemical_symbols()) != Counter(atoms.get_chemical_symbols()):
+                raise ValueError('Calibration warmstart composition differs.')
+            atoms = refined
+            write(out/'calibration-start.vasp', atoms, format='vasp')
+            result['calibration_warmstart'] = dict(attempt=str(previous_path), structure_sha256=digest(warm),
+                                                  purpose='numerical profile tuning only')
         launch = ['srun', '--mpi=pmi2', '--cpu-bind=cores', '-n', os.environ['SLURM_NTASKS'], str(args.executable.resolve())]
         dump(out/'result.json', result)
         stages = [('relax1', True, 200, False, grid), ('relax2', True, 200, False, grid),

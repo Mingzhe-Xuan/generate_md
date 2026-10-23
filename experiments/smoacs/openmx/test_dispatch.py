@@ -1,8 +1,13 @@
 import unittest
-from dispatch import select_rows
+from dispatch import select_rows, calibration_profile
 
 
 class DispatchTests(unittest.TestCase):
+    def test_production_preserves_certified_larger_basis(self):
+        profile = calibration_profile(dict(status='completed', numerical_convergence_passed=True,
+                                            basis_level=2, mesh_increment=0))
+        self.assertEqual(profile, dict(basis_level=2, mesh_increment=0))
+
     def test_no_production_before_calibration(self):
         rows = [dict(candidate_id=f'mp-{i}.vasp', sun=False) for i in range(128)]
         good = dict(status='completed', numerical_convergence_passed=True, basis_level=1, mesh_increment=0)

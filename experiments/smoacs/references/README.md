@@ -16,7 +16,9 @@ Summary selection follows the published Zenodo20149017 function: <=0.3eV/atom,
 excluding missing hull values. A later GitHub change adding missing-hull elemental
 <=10site structures is deliberately excluded from this published-protocol selection.
 All candidate chemical subsystems and all selected phases are retained without
-random truncation. Unfiltered structures are also kept for novelty comparisons.
+random truncation. Unfiltered structures are kept for a secondary raw-MP novelty
+diagnostic; primary novelty follows the archived MP-only Stage4 and compares
+against MatterSim-relaxed selected reference phases of the same reduced formula.
 
 Install requirements.txt in a new Python3.10 venv .venv-smoacs-reference.
 prepare.sbatch tests the proxy path inside its allocation; login-node loopback
@@ -53,6 +55,10 @@ Missing reference competitors cannot certify stability: a low incomplete hull
 remains unknown. Stability requires E_hull<0.1eV/atom. Uniqueness and novelty use
 the author StructureMatcher settings. OpenMX BG&SUN remains unknown unless the
 electronic-structure calculation and its numerical checks have completed.
+Actual optimizer convergence is an additional validation requirement: the
+published relax_with_mattersim wrapper ignores the returned convergence flag.
+Finite400-step but unconverged geometries are recorded separately, never silently
+certified as stable. This distinction must remain explicit in reproduction claims.
 This covers the primary MatterSim/MP benchmark screening; the paper's additional
 representative examples use MP+Alexandria and DFT-derived hulls, which require
 additional reference acquisition and consistent alternative DFT calculations.

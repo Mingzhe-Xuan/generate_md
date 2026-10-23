@@ -22,6 +22,13 @@ Pilot: SMOACS_OPENMX_ID=mp-2730.vasp sbatch experiments/smoacs/openmx/submit.sba
 The initial basis-level0 pilot showed a0.14eV gap shift on basis expansion and
 is NOT certified for production. SMOACS_OPENMX_BASIS_LEVEL=1 increases every
 radial multiplicity, then checks the next larger basis at the original tolerances.
+Level1 passed the gap check but its10.315meV/atom energy change exceeded the
+unchanged10meV/atom criterion; level2 is the next calibration profile. Explicit
+SMOACS_OPENMX_STARTING_ATTEMPT may warmstart only calibration from an earlier
+validated lower-basis relax2 geometry, with all provenance/geometry hashes checked.
+Production physics-manifest runs forbid calibration warmstarts and always start
+from the original hash-matched MatterSim structure. Dispatch exports the actual
+certified basis level rather than silently using a smaller fixed production basis.
 SMOACS_OPENMX_MESH_INCREMENT=2 similarly refines the base/check mesh together.
 Changed physical profiles require fresh relaxations; original attempts are kept.
 Default profile: GGA-PBE, collinear spin, 300K,200Ry real-space grid,

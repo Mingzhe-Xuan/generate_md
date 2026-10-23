@@ -1,8 +1,16 @@
 import unittest
-from assess import stable_status, hull_query
+from assess import stable_status, hull_query, novel_status
 
 
 class StabilityTests(unittest.TestCase):
+    def test_missing_relaxed_reference_cannot_certify_novelty(self):
+        from pymatgen.core import Structure, Lattice
+        from pymatgen.analysis.structure_matcher import StructureMatcher
+        structure = Structure(Lattice.cubic(3), ['Si'], [[0,0,0]])
+        matcher = StructureMatcher()
+        self.assertEqual(novel_status(structure, ['a','b'], {'a':structure}, matcher), (False,'a'))
+        self.assertEqual(novel_status(structure, ['a'], {}, matcher), (None,None))
+        self.assertEqual(novel_status(structure, [], {}, matcher), (True,None))
     def test_incomplete_hull_cannot_certify_stability(self):
         self.assertIsNone(stable_status(.01, False))
         self.assertIsNone(stable_status(None, True))

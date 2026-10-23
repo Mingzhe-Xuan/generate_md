@@ -7,7 +7,6 @@ import json
 import multiprocessing as mp
 import os
 from pathlib import Path
-import traceback
 
 
 def digest(path):
@@ -21,6 +20,15 @@ def stable_status(hull, complete):
     if hull >= .1:
         return False
     return True if complete else None
+
+
+def novel_status(proposal, expected_ids, reference_structures, matcher, inputs_complete=True):
+    for identifier in expected_ids:
+        if identifier in reference_structures and matcher.fit(proposal, reference_structures[identifier]):
+            return False, identifier
+    if not inputs_complete or any(i not in reference_structures for i in expected_ids):
+        return None, None
+    return True, None
 
 
 def corrected_entry(path, record, identifier):
@@ -121,17 +129,20 @@ def main():
     args = parser.parse_args()
     if not os.environ.get('SLURM_JOB_ID'):
         parser.error('Submit through Slurm.')
-    from pymatgen.core import Structure
+    from pymatgen.core import Structure, Composition
     from pymatgen.analysis.structure_matcher import StructureMatcher
     proposal_root = Path('results/smoacs/postprocess-206')
     inventory = json.loads((proposal_root/'inventory-249/inventory.json').read_text())
     reference_inventory = json.loads((args.selection/'mattersim-inventory.json').read_text())
     output = args.selection/('assessment-'+os.environ['SLURM_JOB_ID'])
     output.mkdir(exist_ok=False)
-    references, reference_errors = {}, []
+    references, reference_structures, reference_errors = {}, {}, []
+    reference_formula_ids = defaultdict(list)
     for candidate in reference_inventory['candidates']:
+        reference_formula_ids[Composition(candidate['formula']).reduced_formula].append(candidate['candidate_id'])
         try:
             path, record = load_relaxed(candidate, args.selection/'mattersim-relaxation')
+            reference_structures[candidate['candidate_id']] = Structure.from_file(path)
             references[candidate['candidate_id']] = corrected_entry(path, record, candidate['candidate_id'])
         except Exception as error:
             reference_errors.append(dict(candidate_id=candidate['candidate_id'], error=repr(error)))
@@ -161,21 +172,21 @@ def main():
         row['unique'] = not any(matcher.fit(structure, earlier) for earlier in seen)
         if row['unique']:
             seen.append(structure)
-        row['novel'] = True
+        row['novel_vs_full_raw_MP'] = True
     row_by_id = {row['candidate_id']:row for row in rows}
     with gzip.open(args.selection/'novelty-structures.jsonl.gz', 'rt') as stream:
         for line in stream:
             reference = json.loads(line)
             ids = by_chemistry.get(frozenset(reference['chemsys'].split('-')), [])
-            if not ids or not any(row_by_id[i]['novel'] for i in ids):
+            if not ids or not any(row_by_id[i]['novel_vs_full_raw_MP'] for i in ids):
                 continue
             other = Structure.from_dict(reference['structure'])
             for identifier in ids:
                 row = row_by_id[identifier]
                 structure = structures[identifier]
-                if row['novel'] and structure.composition.reduced_composition == other.composition.reduced_composition:
+                if row['novel_vs_full_raw_MP'] and structure.composition.reduced_composition == other.composition.reduced_composition:
                     if matcher.fit(structure, other):
-                        row.update(novel=False, matching_mp_id=reference['material_id'])
+                        row.update(novel_vs_full_raw_MP=False, matching_raw_mp_id=reference['material_id'])
     for candidate in inventory['candidates']:
         row = row_by_id[candidate['candidate_id']]
         if candidate['candidate_id'] not in structures:
@@ -184,6 +195,11 @@ def main():
         expected = [c['candidate_id'] for c in reference_inventory['candidates'] if set(c['elements']) <= elements]
         failed_conversion = [r for r in reference_inventory['conversion_failures']
                              if set(r['chemsys'].split('-')) <= elements]
+        same_formula = reference_formula_ids.get(structures[candidate['candidate_id']].composition.reduced_formula, [])
+        novel, matching = novel_status(structures[candidate['candidate_id']], same_formula,
+                                       reference_structures, matcher, not failed_conversion)
+        row.update(novel=novel, matching_relaxed_mp_id=matching,
+                   novelty_basis='MatterSim-relaxed selected MP reference phases, published primary Stage4')
         available = [references[i] for i in expected if i in references]
         terminals = {next(iter(e.composition.elements)).symbol for e in available if len(e.composition.elements) == 1}
         complete = len(available) == len(expected) and not failed_conversion and elements <= terminals
@@ -221,6 +237,7 @@ def main():
                    sun_pass=sum(r['sun'] is True for r in rows), sun_unknown=sum(r['sun'] is None for r in rows),
                    bg_and_sun_pass=sum(r['bg_and_sun'] is True for r in rows),
                    snapshot='2026-04-13', method='MatterSim5M/MP2020 + OpenMX alternative BG',
+                   convergence_policy='strict actual optimizer convergence; publication wrapper discards its returned flag',
                    reference_failures=len(reference_errors)+len(reference_inventory['conversion_failures']))
     (output/'summary.json').write_text(json.dumps(summary, indent=2)+'\n')
     print(json.dumps(summary), flush=True)

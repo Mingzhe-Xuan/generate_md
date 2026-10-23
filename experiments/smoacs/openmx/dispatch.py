@@ -8,10 +8,15 @@ import subprocess
 from resources import digest
 
 
-def select_rows(rows, calibration, resources):
+def calibration_profile(calibration):
     if (calibration['status'] != 'completed' or not calibration.get('numerical_convergence_passed')
-            or calibration.get('basis_level') != 1 or calibration.get('mesh_increment', 0) != 0):
+            or calibration.get('basis_level') not in (1,2,3) or calibration.get('mesh_increment', 0) != 0):
         raise ValueError('Production blocked: higher-basis calibration is not certified.')
+    return dict(basis_level=calibration['basis_level'], mesh_increment=0)
+
+
+def select_rows(rows, calibration, resources):
+    calibration_profile(calibration)
     covered = set(resources['element_covered_ids'])
     eligible, statuses = [], []
     for row in rows:
@@ -42,6 +47,7 @@ def main():
     output.mkdir(exist_ok=False)
     rows = json.loads((args.assessment/'candidates.json').read_text())
     calibration = json.loads((args.calibration/'result.json').read_text())
+    profile = calibration_profile(calibration)
     resources = json.loads((args.calibration/'resources.json').read_text())
     physics = json.loads(args.physics_manifest.read_text())
     probe = json.loads((args.u_probe/'result.json').read_text())
@@ -53,7 +59,7 @@ def main():
             record['status'] = 'blocked_missing_MP_physics'
     eligible = [i for i in eligible if i in physics['records']]
     manifest = dict(denominator=128, candidate_ids=eligible, statuses=statuses,
-                    calibration_job=calibration['job_id'], basis_level=1,
+                    calibration_job=calibration['job_id'], **profile,
                     physics_manifest_sha256=digest(args.physics_manifest),
                     method='OpenMX3.9 with MP-derived Ueff/moments; PAO projectors differ from VASP PAW')
     manifest_path = (output/'manifest.json').resolve()
@@ -62,9 +68,9 @@ def main():
         print('NO_ELIGIBLE_SUN_CANDIDATES', flush=True)
         return
     export = ('ALL,SMOACS_OPENMX_SELECTION='+str(manifest_path)
-              + ',SMOACS_OPENMX_BASIS_LEVEL=1,SMOACS_OPENMX_MESH_INCREMENT=0'
+              + ',SMOACS_OPENMX_BASIS_LEVEL='+str(profile['basis_level'])+',SMOACS_OPENMX_MESH_INCREMENT=0'
               + ',SMOACS_OPENMX_PHYSICS='+str(args.physics_manifest.resolve())
-              + ',SMOACS_OPENMX_ID=,SMOACS_OPENMX_REUSE=')
+              + ',SMOACS_OPENMX_ID=,SMOACS_OPENMX_REUSE=,SMOACS_OPENMX_STARTING_ATTEMPT=')
     submitted = subprocess.check_output(['sbatch', '--parsable', '--array=0-'+str(len(eligible)-1)+'%4',
                        '--export='+export, 'experiments/smoacs/openmx/submit.sbatch'], text=True).strip()
     if not re.fullmatch(r'\d+(?:;[^\s]+)?', submitted):
