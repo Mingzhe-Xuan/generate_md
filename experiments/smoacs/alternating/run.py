@@ -154,10 +154,14 @@ def main():
         for i in range(args.workers):
             log=(output/('worker-'+str(i)+'-'+os.environ['SLURM_JOB_ID']+'.err')).open('w');handles.append(log)
             env=dict(os.environ,OMP_NUM_THREADS='1',MKL_NUM_THREADS='1',OPENBLAS_NUM_THREADS='1')
-            workers.append(subprocess.Popen([str(Path('.venv-smoacs-postprocess/bin/python').resolve()),str(worker_script),
+            workers.append(subprocess.Popen([str(Path.cwd()/'.venv-smoacs-postprocess/bin/python'),str(worker_script),
                 '--checkpoint',str(Path('results/smoacs/postprocess-206/models/mattersim-v1.0.0-5M.pth').resolve())],
                 stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=log,text=True,env=env,bufsize=1))
-        ready=[json.loads(w.stdout.readline()) for w in workers]
+        ready=[]
+        for index,w in enumerate(workers):
+            line=w.stdout.readline()
+            if not line:raise RuntimeError('B worker exited during initialization; inspect worker-'+str(index)+' stderr.')
+            ready.append(json.loads(line))
         if not all(v['ready'] for v in ready):raise RuntimeError('B worker initialization failed.')
         (output/'workers.json').write_text(json.dumps(ready,indent=2)+'\n')
         while any(s['status']=='active' for s in states):
