@@ -30,7 +30,7 @@ def read_response(stream, diagnostic):
     raise RuntimeError('B worker exited without a protocol response; inspect its stdout/stderr logs.')
 
 
-def main():
+def main(driver=None):
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output',type=Path,required=True)
     parser.add_argument('--pilot',action='store_true')
@@ -142,6 +142,8 @@ def main():
     (output/'protocol.json').write_text(json.dumps(protocol,indent=2)+'\n')
     protocol_sha=hashlib.sha256(json.dumps({k:v for k,v in protocol.items() if k not in
         ('source_commit','max_rounds','initial_control_error')},sort_keys=True).encode()).hexdigest()
+    if driver is not None:
+        return driver(locals())
     states=[dict(candidate_id=k,status='active',a_steps=0,stable_rounds=0) for k in ids]
     previous=[None]*n;last=None;iteration=0;phase='A_ready';tasks=[];info={}
     checkpoint=output/'checkpoint.pt'
