@@ -44,7 +44,9 @@ def validate_log(log, relax):
     if not achieved:
         raise ValueError('No explicit successful SCF status.')
     if relax:
-        forces = re.findall(r'\|Maximum (?:gradient|force)\|\s*\(Hartree/Bohr\)\s*=\s*([\d.Ee+\-]+)', log)
+        if 'The geometry optimization was achieved.' not in log:
+            raise ValueError('No explicit successful geometry status.')
+        forces = re.findall(r'\|Maximum (?:gradient|force|dE/da)\|\s*\(Hartree/Bohr\)\s*=\s*([\d.Ee+\-]+)', log)
         if not forces or not math.isfinite(float(forces[-1])) or float(forces[-1]) >= GRADIENT_LIMIT:
             raise ValueError('Variable-cell optimization did not converge.')
     return dict(scf_steps=len(achieved), final_md=int(achieved[-1]),

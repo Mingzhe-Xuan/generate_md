@@ -30,6 +30,9 @@ def main():
     out.mkdir(parents=True, exist_ok=False)
     result = dict(candidate_id=args.candidate_id, job_id=job, status='running',
                   method='OpenMX3.9/PBE19 alternative', stages=[], paper_equivalent=False)
+    result['source_commit'] = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
+    result['source_hashes'] = {p.name: digest(p) for p in Path(__file__).parent.glob('*.py')
+                               if not p.name.startswith('test_')}
     dump(out/'result.json', result)
     try:
         from ase.io import read, write

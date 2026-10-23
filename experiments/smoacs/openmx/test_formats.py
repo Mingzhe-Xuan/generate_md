@@ -23,8 +23,10 @@ class FormatsTests(unittest.TestCase):
                 parse_output(output(bands))
 
     def test_convergence_is_explicit(self):
-        good = 'The SCF was achieved at MD= 3\n|Maximum gradient| (Hartree/Bohr) =0.00001\n'
+        good = ('The SCF was achieved at MD= 3\nThe geometry optimization was achieved.\n'
+                '|Maximum gradient| (Hartree/Bohr) =0.00001\n')
         self.assertEqual(validate_log(good, True)['final_md'], 3)
+        self.assertEqual(validate_log(good.replace('gradient', 'dE/da'), True)['final_md'], 3)
         for bad in ('', good+'The SCF was not fully achieved at MD=2', good.replace('.00001','.001')):
             with self.assertRaises(ValueError):
                 validate_log(bad, True)
