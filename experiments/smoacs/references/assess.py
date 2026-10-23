@@ -127,6 +127,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--selection', type=Path, required=True)
     parser.add_argument('--proposal-root', type=Path, default=Path('results/smoacs/postprocess-206'))
+    parser.add_argument('--output', type=Path, help='Separate output when comparing methods against one pool.')
     args = parser.parse_args()
     if not os.environ.get('SLURM_JOB_ID'):
         parser.error('Submit through Slurm.')
@@ -135,7 +136,7 @@ def main():
     proposal_root = args.proposal_root
     inventory = json.loads((proposal_root/'inventory-249/inventory.json').read_text())
     reference_inventory = json.loads((args.selection/'mattersim-inventory.json').read_text())
-    output = args.selection/('assessment-'+os.environ['SLURM_JOB_ID'])
+    output = args.output or args.selection/('assessment-'+os.environ['SLURM_JOB_ID'])
     output.mkdir(exist_ok=False)
     references, reference_structures, reference_errors = {}, {}, []
     reference_formula_ids = defaultdict(list)

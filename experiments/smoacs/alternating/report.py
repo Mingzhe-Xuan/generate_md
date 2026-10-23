@@ -9,6 +9,7 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--run',type=Path,required=True)
     p.add_argument('--sun',type=Path,required=True)
+    p.add_argument('--matched-sun',type=Path,required=True)
     args=p.parse_args()
     state=json.loads((args.run/'results.json').read_text())
     pointers=json.loads((args.run/'evaluation.json').read_text())
@@ -37,6 +38,10 @@ def main():
         stable_pass=sum(r['stable'] is True for r in sun),sun_pass=sum(r['sun'] is True for r in sun),
         sun_unknown=sum(r['sun'] is None for r in sun))
     jointly=[r['candidate_id'] for r in state['candidates'] if r['status']=='jointly_converged']
+    matched=json.loads(Path(pointers['matched_cross_summary']).read_text())['after_full']['classification']['joint']
+    baseline.append(dict(method='original_A200_then_matched_B',denominator=denominator,
+        crystalformer_joint=matched['crystalformer_pass'],alignn_joint=matched['alignn_pass'],both_models_joint=matched['both_pass'],
+        sun_pass=json.loads((args.matched_sun/'summary.json').read_text())['sun_pass']))
     report=dict(methods=baseline+[final],alternating_statuses=dict(Counter(r['status'] for r in state['candidates'])),
         joint_converged_count=len(jointly),joint_converged_sun=sum(current[i]['sun'] is True for i in jointly),
         joint_converged_both_models_property=sum(after[i]['crystalformer_flags']['joint'] is True and after[i]['alignn_flags']['joint'] is True for i in jointly),

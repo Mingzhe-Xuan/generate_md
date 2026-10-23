@@ -11,7 +11,7 @@ scaled lengths,scaled angles,fractional coordinates,element logits and oxidation
 logits. The same three Adam parameter groups and momentum states persist across
 iterations. Decode the updated elemental distribution by argmax for MatterSim.
 Persistent subprocesses in .venv-smoacs-postprocess perform GPU BFGS using the
-pinned5M model, FixSymmetry and ExpCellFilter until fmax<=0.01. The400-step safety
+pinned5M model, FixSymmetry and ExpCellFilter until fmax<=0.01. The1600-step safety
 limit is not convergence; an unconverged/failed B stops that candidate explicitly.
 CPU A uses the unchanged .venv-smoacs-paper; all processes run in one Slurm job.
 
@@ -73,3 +73,10 @@ DFT is not part of either evaluation job despite using the existing compatibilit
 environment for MP2020 corrections.
 
 Tests: `python -m unittest discover -s experiments/smoacs/alternating`.
+
+Pilot288 exposed large-strain FixSymmetry guards under the original BFGS step.
+The production numerical profile therefore uses maxstep0.05angstrom and a1600-
+update safety cap, keeping fmax0.01 and all physical constraints unchanged.
+Compare against an additional A200+B control with this same B profile; keep the
+old maxstep/default400-step baseline visible separately. These are optimizer
+numerical changes and are not silently attributed to alternating A/B itself.

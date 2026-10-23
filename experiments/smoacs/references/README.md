@@ -30,6 +30,8 @@ For new experiments, prepare.py accepts --cache to reuse the same ETag-verified
 range cache. convert.py and assess.py accept --proposal-root, defaulting to the
 original postprocess-206 layout. Alternate roots must provide their own immutable
 inventory and relaxation records; changed compositions require a new selection.
+--all-selected on convert.py retains all phases in a union selection shared by
+multiple methods; --output on assess.py separates assessments against that pool.
 
 Optional parallel.sbatch keeps independent per-structure BFGS optimizers and
 the same5M calculator in separate processes within one GPU allocation. Switching

@@ -22,11 +22,21 @@ task_root="$task_run/postprocess"
  --weights results/smoacs/alignn-weights --output "$task_run/cross-prediction-$SLURM_JOB_ID"
 .venv-smoacs-paper/bin/python experiments/smoacs/cross_predictor/summarize.py \
  --input "$task_run/cross-prediction-$SLURM_JOB_ID" --output "$task_run/cross-analysis-$SLURM_JOB_ID"
+.venv-smoacs-postprocess/bin/python experiments/smoacs/alternating/matched_baseline.py --output "$task_run/matched-baseline"
+.venv-smoacs-paper/bin/python experiments/smoacs/postprocess/predict_relaxed.py \
+ --inventory "$task_run/matched-baseline/inventory-249/inventory.json" --assets results/smoacs/assets-199 --root "$task_run/matched-baseline"
+.venv-smoacs-blackwell/bin/python experiments/smoacs/cross_predictor/predict.py \
+ --inventory "$task_run/matched-baseline/inventory-249/inventory.json" --predictor "$task_run/matched-baseline/predictor-$SLURM_JOB_ID" \
+ --relaxation "$task_run/matched-baseline/relaxation" --author-csv "$task_run/matched-baseline/result.csv" \
+ --weights results/smoacs/alignn-weights --output "$task_run/matched-cross-prediction-$SLURM_JOB_ID"
+.venv-smoacs-paper/bin/python experiments/smoacs/cross_predictor/summarize.py \
+ --input "$task_run/matched-cross-prediction-$SLURM_JOB_ID" --output "$task_run/matched-cross-analysis-$SLURM_JOB_ID"
 python3 - "$task_run" "$SLURM_JOB_ID" <<'PY'
 import json,sys
 from pathlib import Path
 root=Path(sys.argv[1]);job=sys.argv[2]
 (root/'evaluation.json').write_text(json.dumps(dict(
  cross_summary=str(root/('cross-analysis-'+job)/'summary.json'),
- cross_predictions=str(root/('cross-prediction-'+job)/'predictions.json')),indent=2)+'\n')
+ cross_predictions=str(root/('cross-prediction-'+job)/'predictions.json'),
+ matched_cross_summary=str(root/('matched-cross-analysis-'+job)/'summary.json')),indent=2)+'\n')
 PY

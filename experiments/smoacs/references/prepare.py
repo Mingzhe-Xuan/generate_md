@@ -203,7 +203,7 @@ def main():
         for row in references:
             stream.write(json.dumps(row)+'\n')
     manifest = dict(snapshot='2026-04-13', summary_key=SUMMARY, thermo_keys=THERMO,
-                    counts=counts, thermo_ids=len(thermo_ids), denominator=128,
+                    counts=counts, thermo_ids=len(thermo_ids), denominator=inventory.get('denominator',len(inventory['candidates'])),
                     inventory_sha256=hashlib.sha256(args.inventory.read_bytes()).hexdigest(),
                     entry_id_mapping='nested entries.data.material_id, then entry_id fallback; audited',
                     reference_filter='published Zenodo20149017 fetch_mp_structures: public hull <=0.3, excludes missing hull',

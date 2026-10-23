@@ -48,24 +48,27 @@ def main():
             target=folder/'result.json';sha=digest(source)
             if target.exists():
                 row=json.loads(target.read_text())
-                if row['input_sha256']!=sha:raise ValueError('Stale B cache.')
+                if row['input_sha256']!=sha or row.get('maxstep')!=.05 or row.get('step_limit')!=1600:
+                    raise ValueError('Stale B cache or numerical-profile mismatch.')
                 results.append(row);continue
-            row=dict(candidate_id=task['candidate_id'],input_sha256=sha,checkpoint_sha256=expected,status='running')
+            row=dict(candidate_id=task['candidate_id'],input_sha256=sha,checkpoint_sha256=expected,
+                     status='running',maxstep=.05,step_limit=1600)
             started=time.perf_counter()
             try:
                 with redirect_stdout(sys.stderr):
                     atoms=read(source,format='vasp');numbers=atoms.numbers.copy();atoms.calc=calc
                     initial=float(atoms.get_potential_energy());atoms.set_constraint(FixSymmetry(atoms))
-                    filtered=ExpCellFilter(atoms);optimizer=BFGS(filtered,logfile=None)
+                    filtered=ExpCellFilter(atoms);optimizer=BFGS(filtered,logfile=None,maxstep=.05)
                     clocks=[];optimizer.attach(lambda:clocks.append(time.perf_counter()),interval=1)
-                    converged=bool(optimizer.run(fmax=.01,steps=400))
+                    converged=bool(optimizer.run(fmax=.01,steps=1600))
                     forces=filtered.get_forces();energy=float(atoms.get_potential_energy())
                     if not all(np.isfinite(x).all() for x in (forces,energy,atoms.cell.array,atoms.positions)):
                         raise ValueError('Nonfinite B result.')
                     if not np.array_equal(numbers,atoms.numbers):raise ValueError('B changed atom order/composition.')
                     atoms.set_constraint(None);write(folder/'relaxed.vasp',atoms,format='vasp',direct=True,sort=False)
                 row.update(status='converged' if converged else 'unconverged',converged=converged,
-                    optimizer_steps=optimizer.get_number_of_steps(),initial_energy_eV=initial,final_energy_eV=energy,
+                    optimizer_steps=optimizer.get_number_of_steps(),maxstep=.05,step_limit=1600,
+                    initial_energy_eV=initial,final_energy_eV=energy,
                     max_filter_force=float(np.linalg.norm(forces,axis=1).max()),
                     max_raw_atomic_force=float(np.linalg.norm(atoms.get_forces(apply_constraint=False),axis=1).max()),
                     relaxed_path=str((folder/'relaxed.vasp').resolve()),relaxed_sha256=digest(folder/'relaxed.vasp'),

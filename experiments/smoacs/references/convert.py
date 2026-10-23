@@ -42,6 +42,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--selection', type=Path, required=True)
     parser.add_argument('--proposal-root', type=Path, default=Path('results/smoacs/postprocess-206'))
+    parser.add_argument('--all-selected', action='store_true', help='Relax all selected phases for a shared comparison pool.')
     args = parser.parse_args()
     if not os.environ.get('SLURM_JOB_ID'):
         parser.error('Submit through Slurm.')
@@ -65,7 +66,7 @@ def main():
     with gzip.open(source, 'rt') as stream:
         for line in stream:
             record = json.loads(line)
-            if not needed_reference(record['chemsys'], systems):
+            if not args.all_selected and not needed_reference(record['chemsys'], systems):
                 excluded.append(record['material_id'])
                 continue
             try:

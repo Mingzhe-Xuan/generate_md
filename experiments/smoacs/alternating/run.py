@@ -134,25 +134,28 @@ def main():
     protocol=dict(pilot=args.pilot,anneal=args.anneal,max_rounds=args.max_rounds,ids=ids,
         initial_control_error=error,baseline_npz_sha256=digest(baseline_path),author_source_sha256=SOURCE_SHA256,
         a_parameters=['scaled lengths','scaled angles','fractional coordinates','element logits','oxidation logits'],
-        a_rates=[.002,.007,.005],lr_after_anneal_fraction=.1,b_fmax=.01,b_max_steps=400,
+        a_rates=[.002,.007,.005],lr_after_anneal_fraction=.1,b_fmax=.01,b_max_steps=1600,b_maxstep=.05,
         joint_gradient_max=.001,joint_update_max=.001,geometry_rms_A=.001,cell_relative=1e-4,
         property_delta=.001,patience=5,cycle_patience=10,
         boundary_policy='Expand original cell bounds only as necessary to contain actual B geometry; preserve B without clipping.',
         source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip())
     (output/'protocol.json').write_text(json.dumps(protocol,indent=2)+'\n')
+    protocol_sha=hashlib.sha256(json.dumps({k:v for k,v in protocol.items() if k not in
+        ('source_commit','max_rounds','initial_control_error')},sort_keys=True).encode()).hexdigest()
     states=[dict(candidate_id=k,status='active',a_steps=0,stable_rounds=0) for k in ids]
     previous=[None]*n;last=None;iteration=0;phase='A_ready';tasks=[];info={}
     checkpoint=output/'checkpoint.pt'
     if args.resume:
         saved=torch.load(checkpoint,map_location='cpu',weights_only=True)
-        if saved['ids']!=ids or saved['anneal']!=args.anneal:raise ValueError('Resume protocol mismatch.')
+        if saved['ids']!=ids or saved.get('protocol_sha256')!=protocol_sha:
+            raise ValueError('Resume protocol/numerical profile mismatch.')
         with torch.no_grad():
             for p,v in zip(targets,saved['targets']):p.copy_(v)
             for p,v in zip((lower,upper,angle_lower,angle_upper),saved['bounds']):p.copy_(v)
         for opt,value in zip(optimizers,saved['optimizers']):opt.load_state_dict(value)
         states,previous,last,iteration,phase,tasks,info=[saved[k] for k in ('states','previous','last','iteration','phase','tasks','info')]
     def save():
-        payload=dict(ids=ids,anneal=args.anneal,targets=[p.detach() for p in targets],
+        payload=dict(ids=ids,anneal=args.anneal,protocol_sha256=protocol_sha,targets=[p.detach() for p in targets],
             bounds=[lower,upper,angle_lower,angle_upper],optimizers=[o.state_dict() for o in optimizers],
             states=states,previous=previous,last=last,iteration=iteration,phase=phase,tasks=tasks,info=info)
         torch.save(payload,output/'checkpoint.tmp');os.replace(output/'checkpoint.tmp',checkpoint)
