@@ -6,6 +6,10 @@ Provenance and licensing are described in [../../third_party/README.md](../../th
 
 ## Interfaces and outputs
 
+MatterSim before/after stability and property comparisons are provided by
+[`comparison`](comparison/README.md), retaining fixed candidates, predictors,
+and reference phases with explicit missingness. DFT is not required.
+
 - `preflight.py`: standard-library source, provenance and asset inventory. It does not import machine-learning packages or run optimization. Exit 0 means the listed assets are present and match; exit 2 means missing or mismatched assets. This is not an environment or paper-results certificate.
 - `env_probe.py`: Torch/DGL CPU and requested CUDA checks, gradients, and upstream CLI imports. It requires a Slurm job ID and exits 1 on any failed check. It never silently switches devices.
 - `probe.sbatch`: Slurm entry point, submitted from the parent repository root. `SMOACS_PYTHON` selects the dedicated environment interpreter; `SMOACS_DEVICE` selects cpu or cuda, default cuda. The default interpreter is `.venv-smoacs-paper/bin/python`.
