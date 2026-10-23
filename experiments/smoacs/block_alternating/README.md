@@ -86,3 +86,10 @@ weight bounds. Record one-sided coordinate-wrap diagnostics separately: a
 central difference across `remainder` at an initial coordinate0 is not a smooth
 derivative test. Probe299's boundary-crossing coordinate direction failed the
 1e-3 gate (error0.00110); preserve that result. The gate threshold is unchanged.
+
+`summarize.sbatch` can depend `afterany` on the pilot using exported
+`SMOACS_BLOCK_RUN` and `SMOACS_BLOCK_GRADIENT_PROBE`. `summarize.py` produces
+`feasibility-summary.json` and `feasibility-report.md`, independently rechecking
+joint residuals and geometry hashes. Incomplete runs remain explicitly partial;
+all four original candidates stay in the denominator. No joint outcome is
+inferred from optimizer success or a completed Slurm job alone.
