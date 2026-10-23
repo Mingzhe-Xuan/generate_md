@@ -1,7 +1,7 @@
 from pathlib import Path
 import tempfile
 import unittest
-from resources import select_species
+from resources import select_species, expand_basis
 
 
 class ResourceTests(unittest.TestCase):
@@ -19,6 +19,10 @@ class ResourceTests(unittest.TestCase):
             self.assertEqual(selected['valence'], 16)
             self.assertEqual(selected['potential'], 'Fe_PBE19H')
             self.assertEqual(len(selected['vps_sha256']), 64)
+            expand_basis({'Fe': selected}, 1)
+            self.assertIn('-s4p4d3f2', selected['basis'])
+            with self.assertRaises(ValueError):
+                expand_basis({'Fe': selected}, 20)
 
 
 if __name__ == '__main__':

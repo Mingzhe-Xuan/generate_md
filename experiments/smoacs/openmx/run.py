@@ -9,7 +9,7 @@ import shutil
 import traceback
 
 from formats import input_text, parse_output, restart_atoms, validate_log
-from resources import audit, digest
+from resources import audit, digest, expand_basis
 
 
 def dump(path, data):
@@ -24,6 +24,8 @@ def main():
     parser.add_argument('--executable', type=Path, default=Path('/opt/openmx3.9/source/openmx'))
     parser.add_argument('--root', type=Path, default=Path('results/smoacs/openmx-206'))
     parser.add_argument('--reuse-attempt', type=Path)
+    parser.add_argument('--basis-level', type=int, default=0)
+    parser.add_argument('--mesh-increment', type=int, default=0)
     args = parser.parse_args()
     job = os.environ['SLURM_JOB_ID']
     out = (args.root/Path(args.candidate_id).stem/f'attempt-{job}').resolve()
@@ -40,6 +42,7 @@ def main():
         from pymatgen.io.vasp.inputs import Kpoints
         inventory = json.loads(args.inventory.read_text())
         resources = audit(inventory, args.data)
+        expand_basis(resources['species'], args.basis_level)
         dump(out/'resources.json', resources)
         candidate = next(c for c in inventory['candidates'] if c['candidate_id'] == args.candidate_id)
         if args.candidate_id not in resources['element_covered_ids']:
@@ -71,7 +74,11 @@ def main():
         atoms = read(source, format='vasp')
         write(out/'mattersim-input.vasp', atoms, format='vasp')
         grid = list(Kpoints.automatic_density(AseAtomsAdaptor.get_structure(atoms), 503).kpts[0])
-        grid = [max(3, int(n) if int(n) % 2 else int(n)+1) for n in grid]
+        if args.mesh_increment < 0 or args.mesh_increment % 2:
+            raise ValueError('Mesh increment must be a nonnegative even integer.')
+        grid = [max(3, int(n) if int(n) % 2 else int(n)+1)+args.mesh_increment for n in grid]
+        result.update(basis_level=args.basis_level, mesh_increment=args.mesh_increment,
+                      hubbard_U=False, initial_moment_muB_atom=1.0)
         result['base_grid'] = grid
         launch = ['srun', '--mpi=pmi2', '--cpu-bind=cores', '-n', os.environ['SLURM_NTASKS'], str(args.executable.resolve())]
         dump(out/'result.json', result)

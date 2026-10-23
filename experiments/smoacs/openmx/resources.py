@@ -48,8 +48,20 @@ def select_species(element, data):
             return dict(element=element, vps=str(vps), pao=str(pao),
                         vps_sha256=digest(vps), pao_sha256=digest(pao),
                         potential=vps.stem, basis=basis, larger_basis=larger,
-                        valence=valence, radius_au=radius)
+                        valence=valence, radius_au=radius, max_multiplicity=multiplicity)
     raise FileNotFoundError('No valence-matched PBE19 VPS/PAO for '+element)
+
+
+def expand_basis(species, level):
+    if level < 0:
+        raise ValueError('Negative basis expansion.')
+    for item in species.values():
+        for key in ('basis', 'larger_basis'):
+            prefix, orbitals = item[key].rsplit('-', 1)
+            counts = re.findall(r'([spdf])(\d+)', orbitals)
+            if not counts or any(int(n)+level > item['max_multiplicity'] for _,n in counts):
+                raise ValueError('Basis exceeds available radial functions.')
+            item[key] = prefix+'-'+''.join(l+str(int(n)+level) for l,n in counts)
 
 
 def audit(inventory, data):

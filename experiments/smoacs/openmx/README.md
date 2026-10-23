@@ -19,6 +19,11 @@ available lower angular channels), and minimum bulk orbital cutoff radius >=6au.
 Special H/S potential variants require matching H/S orbital files.
 
 Pilot: SMOACS_OPENMX_ID=mp-2730.vasp sbatch experiments/smoacs/openmx/submit.sbatch
+The initial basis-level0 pilot showed a0.14eV gap shift on basis expansion and
+is NOT certified for production. SMOACS_OPENMX_BASIS_LEVEL=1 increases every
+radial multiplicity, then checks the next larger basis at the original tolerances.
+SMOACS_OPENMX_MESH_INCREMENT=2 similarly refines the base/check mesh together.
+Changed physical profiles require fresh relaxations; original attempts are kept.
 Default profile: GGA-PBE, collinear spin, 300K,200Ry real-space grid,
 SCF1e-8Ha/300 iterations, RFC5 generalized gradient1e-4Ha/Bohr/200 iterations.
 The real-space grid cutoff is not equivalent to VASP ENCUT. Odd Gamma-containing
@@ -33,6 +38,12 @@ input, not ASE's OpenMX reader that may select original input coordinates.
 Sampled gaps use per-spin band occupations relative to the chemical potential;
 changing occupied-band counts across k points or near-Fermi states mark metal.
 Sparse meshes cannot exclude unsampled band crossings; convergence checks matter.
+
+This first alternative profile is collinear plain PBE, initially1muB/atom, without
+an onsite Hubbard correction. The author's MP VASP inputs use PBE+U for selected
+chemistries. PBE19 valence/projectors also differ from VASP PAW; therefore the
+alternative results must retain this method difference rather than claiming
+numerical equivalence for transition-metal oxides or magnetic materials.
 
 OpenMX total energies cannot be mixed with VASP energies for a convex hull.
 The paper's stability protocol instead uses consistently MatterSim-relaxed MP

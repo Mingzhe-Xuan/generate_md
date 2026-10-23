@@ -23,4 +23,6 @@ srun --mpi=pmi2 --cpu-bind=cores -n "$SLURM_NTASKS" "$task_probe"
 unset ALL_PROXY HTTP_PROXY HTTPS_PROXY
 task_extra=()
 if [[ -n "${SMOACS_OPENMX_REUSE:-}" ]]; then task_extra+=(--reuse-attempt "$SMOACS_OPENMX_REUSE"); fi
+if [[ -n "${SMOACS_OPENMX_BASIS_LEVEL:-}" ]]; then task_extra+=(--basis-level "$SMOACS_OPENMX_BASIS_LEVEL"); fi
+if [[ -n "${SMOACS_OPENMX_MESH_INCREMENT:-}" ]]; then task_extra+=(--mesh-increment "$SMOACS_OPENMX_MESH_INCREMENT"); fi
 .venv-smoacs-postprocess/bin/python experiments/smoacs/openmx/run.py --candidate-id "${SMOACS_OPENMX_ID:?}" "${task_extra[@]}"

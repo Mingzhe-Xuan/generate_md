@@ -25,4 +25,18 @@ Reference structures subsequently require the same MatterSim5M relaxation and
 MP2020Compatibility protocol as proposals before a hull can be evaluated.
 Raw MP hull values select references; they are not the final MatterSim hull.
 
+convert.sbatch writes hash-identified POSCARs and a separate reference inventory;
+relax.sbatch uses the validated proposal MatterSim relaxer with identical physical
+settings and reference-specific metadata. Convert/relax failures remain explicit.
+assess.sbatch uses the paper-version DFT venv for MP2020Compatibility, with run
+parameters from MPGGARelaxSetGenerator as in the author script. Per-candidate hull
+processes have a120second limit and are terminated only by their own handle.
+Missing reference competitors cannot certify stability: a low incomplete hull
+remains unknown. Stability requires E_hull<0.1eV/atom. Uniqueness and novelty use
+the author StructureMatcher settings. OpenMX BG&SUN remains unknown unless the
+electronic-structure calculation and its numerical checks have completed.
+This covers the primary MatterSim/MP benchmark screening; the paper's additional
+representative examples use MP+Alexandria and DFT-derived hulls, which require
+additional reference acquisition and consistent alternative DFT calculations.
+
 Source: https://docs.materialsproject.org/downloading-data/aws-opendata
