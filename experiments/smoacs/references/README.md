@@ -25,6 +25,15 @@ Reference structures subsequently require the same MatterSim5M relaxation and
 MP2020Compatibility protocol as proposals before a hull can be evaluated.
 Raw MP hull values select references; they are not the final MatterSim hull.
 
+Optional parallel.sbatch keeps independent per-structure BFGS optimizers and
+the same5M calculator in separate processes within one GPU allocation. Switching
+requires a16-reference serial-vs4-process benchmark with converged force thresholds,
+energy agreement<=1meV/atom, relative volume agreement<=0.1%, and at least10%
+wall-time improvement. Cached completed primary records are reused by input hash.
+Work partitions are disjoint/exhaustive, and cells>128atoms occupy only one worker
+to limit simultaneous large GPU allocations. Each worker has a separate manifest,
+log and environment record. A failed benchmark leaves the serial method in use.
+
 convert.sbatch writes hash-identified POSCARs and a separate reference inventory;
 only subsystems needed by converged hash-matched proposals undergo expensive
 reference relaxation. Raw selections remain intact, and excluded reference IDs

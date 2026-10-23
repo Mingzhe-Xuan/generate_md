@@ -64,7 +64,11 @@ def main():
                        steps=400, fmax=0.01, optimizer='BFGS', filter='ExpCellFilter',
                        constrain_symmetry=True, total_denominator=inventory.get('denominator', len(candidates)),
                        input_role=inventory.get('role', 'cpu206_proposals'))
-    (args.output/('environment-'+os.environ['SLURM_JOB_ID']+'.json')).write_text(json.dumps(environment, indent=2)+'\n')
+    worker = os.environ.get('SMOACS_RELAX_WORKER_ID')
+    if worker is not None:
+        environment['worker_id'] = worker
+    suffix = '-worker-'+worker if worker is not None else ''
+    (args.output/('environment-'+os.environ['SLURM_JOB_ID']+suffix+'.json')).write_text(json.dumps(environment, indent=2)+'\n')
     for candidate in candidates:
         name = candidate['candidate_id']
         out = args.output/Path(name).stem
