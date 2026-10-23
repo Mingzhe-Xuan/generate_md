@@ -1,5 +1,5 @@
 import unittest
-from formats import HARTREE_EV, parse_output, restart_atoms, validate_log
+from formats import HARTREE_EV, parse_output, restart_atoms, validate_log, block
 
 
 def output(bands):
@@ -8,6 +8,20 @@ def output(bands):
 
 
 class FormatsTests(unittest.TestCase):
+    def test_hubbard_and_moments_match_basis_without_double_counting(self):
+        from ase import Atoms
+        from formats import input_text
+        atoms = Atoms('FeO', positions=[[0,0,0],[1,1,1]], cell=[4,4,4], pbc=True)
+        species = {'Fe':dict(valence=16,basis='Fe6.0H-s3p3d2f1',potential='Fe_PBE19H'),
+                   'O':dict(valence=6,basis='O6.0-s3p3d2f1',potential='O_PBE19')}
+        physics = dict(initial_moments_muB={'Fe':5,'O':.6}, hubbards={
+            'Fe':dict(U_eff_eV=5.3,angular_momentum=2), 'O':dict(U_eff_eV=0,angular_momentum=-1)})
+        text = input_text(atoms, species, '/data', [3,3,3], physics=physics)
+        self.assertIn('scf.Hubbard.U on', text)
+        self.assertIn('1d 5.30000000 2d 0.00000000', text)
+        self.assertEqual(text.count('5.30000000'), 1)
+        self.assertIn('10.500000 5.500000', text)
+        self.assertEqual(len(block(text, 'Hubbard.U.values')[0]), 1+2*(3+3+2+1))
     def test_insulator_and_metal(self):
         gapped = output('kloop=0\n1 -.1 -.1\n2 .1 .1\nkloop=1\n1 -.09 -.09\n2 .12 .12\n')
         result = parse_output(gapped)

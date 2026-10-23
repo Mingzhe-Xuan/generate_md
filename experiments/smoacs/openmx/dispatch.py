@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
+from resources import digest
 
 
 def select_rows(rows, calibration, resources):
@@ -33,6 +34,8 @@ def main():
     parser.add_argument('--selection', type=Path, required=True)
     parser.add_argument('--assessment', type=Path, required=True)
     parser.add_argument('--calibration', type=Path, required=True)
+    parser.add_argument('--physics-manifest', type=Path, required=True)
+    parser.add_argument('--u-probe', type=Path, required=True)
     args = parser.parse_args()
     job = os.environ['SLURM_JOB_ID']
     output = args.selection/f'openmx-dispatch-{job}'
@@ -40,10 +43,19 @@ def main():
     rows = json.loads((args.assessment/'candidates.json').read_text())
     calibration = json.loads((args.calibration/'result.json').read_text())
     resources = json.loads((args.calibration/'resources.json').read_text())
+    physics = json.loads(args.physics_manifest.read_text())
+    probe = json.loads((args.u_probe/'result.json').read_text())
+    if probe.get('passed') is not True or probe['physics_manifest_sha256'] != digest(args.physics_manifest):
+        raise ValueError('Production blocked: MP-derived Hubbard-U probe not validated.')
     eligible, statuses = select_rows(rows, calibration, resources)
+    for record in statuses:
+        if record['status'] == 'eligible' and record['candidate_id'] not in physics['records']:
+            record['status'] = 'blocked_missing_MP_physics'
+    eligible = [i for i in eligible if i in physics['records']]
     manifest = dict(denominator=128, candidate_ids=eligible, statuses=statuses,
                     calibration_job=calibration['job_id'], basis_level=1,
-                    method='OpenMX3.9 plain PBE alternative; not MP VASP PBE+U equivalence')
+                    physics_manifest_sha256=digest(args.physics_manifest),
+                    method='OpenMX3.9 with MP-derived Ueff/moments; PAO projectors differ from VASP PAW')
     manifest_path = (output/'manifest.json').resolve()
     manifest_path.write_text(json.dumps(manifest, indent=2)+'\n')
     if not eligible:
@@ -51,6 +63,7 @@ def main():
         return
     export = ('ALL,SMOACS_OPENMX_SELECTION='+str(manifest_path)
               + ',SMOACS_OPENMX_BASIS_LEVEL=1,SMOACS_OPENMX_MESH_INCREMENT=0'
+              + ',SMOACS_OPENMX_PHYSICS='+str(args.physics_manifest.resolve())
               + ',SMOACS_OPENMX_ID=,SMOACS_OPENMX_REUSE=')
     submitted = subprocess.check_output(['sbatch', '--parsable', '--array=0-'+str(len(eligible)-1)+'%4',
                        '--export='+export, 'experiments/smoacs/openmx/submit.sbatch'], text=True).strip()

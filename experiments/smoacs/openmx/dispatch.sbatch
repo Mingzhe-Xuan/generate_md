@@ -9,4 +9,5 @@ set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:?}"
 source experiments/smoacs/job_status.sh
 python3 experiments/smoacs/openmx/dispatch.py --selection "${SMOACS_REFERENCE_SELECTION:?}" \
- --assessment "${SMOACS_REFERENCE_ASSESSMENT:?}" --calibration "${SMOACS_OPENMX_CALIBRATION:?}"
+ --assessment "${SMOACS_REFERENCE_ASSESSMENT:?}" --calibration "${SMOACS_OPENMX_CALIBRATION:?}" \
+ --physics-manifest "${SMOACS_OPENMX_PHYSICS:?}" --u-probe "${SMOACS_OPENMX_U_PROBE:?}"

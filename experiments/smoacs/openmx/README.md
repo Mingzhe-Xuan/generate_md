@@ -39,11 +39,14 @@ Sampled gaps use per-spin band occupations relative to the chemical potential;
 changing occupied-band counts across k points or near-Fermi states mark metal.
 Sparse meshes cannot exclude unsampled band crossings; convergence checks matter.
 
-This first alternative profile is collinear plain PBE, initially1muB/atom, without
-an onsite Hubbard correction. The author's MP VASP inputs use PBE+U for selected
-chemistries. PBE19 valence/projectors also differ from VASP PAW; therefore the
-alternative results must retain this method difference rather than claiming
-numerical equivalence for transition-metal oxides or magnetic materials.
+The calibration profile is collinear plain PBE, initially1muB/atom. Production
+physics.sbatch derives compound-specific Ueff=U-J, angular channels and initial
+MAGMOM from the paper MP generator; run.py requires a hash-matched manifest.
+OpenMX uses Dudarev Type1/dual and applies Ueff to the first radial orbital of
+the specified angular channel, with zero U on other radial functions, following
+the official example. The actual FeO+U SCF probe must pass and have a nonzero
+Hubbard energy before production dispatch. PBE19 PAO projectors differ from VASP
+PAW projectors; matching U values does not prove numerical equivalence.
 
 OpenMX total energies cannot be mixed with VASP energies for a convex hull.
 The paper's stability protocol instead uses consistently MatterSim-relaxed MP
@@ -51,6 +54,7 @@ reference structures; reference snapshot/version/coverage must be audited.
 
 Production dispatch.sbatch requires SMOACS_REFERENCE_SELECTION,
 SMOACS_REFERENCE_ASSESSMENT and SMOACS_OPENMX_CALIBRATION directories. Submit it
+with SMOACS_OPENMX_PHYSICS manifest and SMOACS_OPENMX_U_PROBE directory, and
 with afterok dependencies on the higher-basis calibration and reference assessment.
 It refuses uncertified calibration, keeps all128 candidate statuses, and queues
 only exactTrue SUN candidates with audited resources. Arrays run at most4 jobs

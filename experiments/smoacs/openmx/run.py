@@ -26,6 +26,7 @@ def main():
     parser.add_argument('--reuse-attempt', type=Path)
     parser.add_argument('--basis-level', type=int, default=0)
     parser.add_argument('--mesh-increment', type=int, default=0)
+    parser.add_argument('--physics-manifest', type=Path)
     args = parser.parse_args()
     job = os.environ['SLURM_JOB_ID']
     out = (args.root/Path(args.candidate_id).stem/f'attempt-{job}').resolve()
@@ -72,13 +73,22 @@ def main():
                     if previous_resources['species'][element][key] != resources['species'][element][key]:
                         raise ValueError('Reused stage resource hash mismatch.')
         atoms = read(source, format='vasp')
+        physics = None
+        if args.physics_manifest:
+            manifest = json.loads(args.physics_manifest.read_text())
+            physics = manifest['records'][args.candidate_id]
+            if (physics['original_sha256'] != candidate['sha256']
+                    or physics['mattersim_sha256'] != digest(source)):
+                raise ValueError('Compound-specific physics manifest is stale.')
+            result.update(compound_physics=physics, physics_manifest_sha256=digest(args.physics_manifest))
         write(out/'mattersim-input.vasp', atoms, format='vasp')
         grid = list(Kpoints.automatic_density(AseAtomsAdaptor.get_structure(atoms), 503).kpts[0])
         if args.mesh_increment < 0 or args.mesh_increment % 2:
             raise ValueError('Mesh increment must be a nonnegative even integer.')
         grid = [max(3, int(n) if int(n) % 2 else int(n)+1)+args.mesh_increment for n in grid]
         result.update(basis_level=args.basis_level, mesh_increment=args.mesh_increment,
-                      hubbard_U=False, initial_moment_muB_atom=1.0)
+                      hubbard_U=bool(physics and any(v['U_eff_eV'] for v in physics['hubbards'].values())),
+                      initial_moments_source='MP generator' if physics else '1muB/atom calibration')
         result['base_grid'] = grid
         launch = ['srun', '--mpi=pmi2', '--cpu-bind=cores', '-n', os.environ['SLURM_NTASKS'], str(args.executable.resolve())]
         dump(out/'result.json', result)
@@ -89,7 +99,7 @@ def main():
         for name, relax, cutoff, larger, mesh in stages:
             stage_dir = out/name
             stage_dir.mkdir()
-            text = input_text(atoms, resources['species'], str(args.data.resolve()), mesh, relax, cutoff, larger)
+            text = input_text(atoms, resources['species'], str(args.data.resolve()), mesh, relax, cutoff, larger, physics)
             (stage_dir/'input.dat').write_text(text)
             command = launch+['input.dat']
             record = dict(name=name, cutoff_Ry=cutoff, grid=mesh, larger_basis=larger,

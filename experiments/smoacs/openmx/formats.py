@@ -7,7 +7,7 @@ HARTREE_EV = 27.211386245988
 GRADIENT_LIMIT = 1e-4
 
 
-def input_text(atoms, species, data_path, grid, relax=True, cutoff=200, larger=False):
+def input_text(atoms, species, data_path, grid, relax=True, cutoff=200, larger=False, physics=None):
     elements = list(dict.fromkeys(atoms.get_chemical_symbols()))
     lines = ['System.Name calc', 'System.CurrrentDir ./', f'DATA.PATH {data_path}',
              'level.of.stdout 1', 'level.of.fileout 0', f'Species.Number {len(elements)}',
@@ -19,7 +19,9 @@ def input_text(atoms, species, data_path, grid, relax=True, cutoff=200, larger=F
               'Atoms.SpeciesAndCoordinates.Unit Ang', '<Atoms.SpeciesAndCoordinates']
     for i, (e, xyz) in enumerate(zip(atoms.get_chemical_symbols(), atoms.positions), 1):
         valence = species[e]['valence']
-        moment = min(valence, 1.0)
+        moment = physics['initial_moments_muB'][e] if physics else min(valence, 1.0)
+        if abs(moment) > valence:
+            raise ValueError('Initial moment exceeds available valence electrons.')
         lines.append(f'{i} {e} '+' '.join(f'{v:.14f}' for v in xyz)
                      + f' {(valence+moment)/2:.6f} {(valence-moment)/2:.6f}')
     lines += ['Atoms.SpeciesAndCoordinates>', 'Atoms.UnitVectors.Unit Ang', '<Atoms.UnitVectors']
@@ -34,6 +36,19 @@ def input_text(atoms, species, data_path, grid, relax=True, cutoff=200, larger=F
               'scf.restart off', 'MD.Type '+('RFC5' if relax else 'nomd'),
               'MD.maxIter '+('200' if relax else '1'), 'MD.Opt.criterion 1e-4',
               'MD.Opt.DIIS.History 7', 'MD.Opt.StartDIIS 5']
+    if physics and any(v['U_eff_eV'] != 0 for v in physics['hubbards'].values()):
+        lines += ['scf.Hubbard.U on', 'scf.DFTU.Type 1', 'scf.Hubbard.Occupation dual',
+                  '<Hubbard.U.values']
+        for e in elements:
+            choice = species[e]['larger_basis' if larger else 'basis'].rsplit('-', 1)[1]
+            values = []
+            for angular, count in re.findall(r'([spdf])(\d+)', choice):
+                for radial in range(1, int(count)+1):
+                    setting = physics['hubbards'][e]
+                    u = setting['U_eff_eV'] if radial == 1 and 'spdf'.index(angular) == setting['angular_momentum'] else 0
+                    values += [str(radial)+angular, f'{u:.8f}']
+            lines.append(e+' '+' '.join(values))
+        lines.append('Hubbard.U.values>')
     return '\n'.join(lines)+'\n'
 
 
