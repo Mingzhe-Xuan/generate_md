@@ -32,6 +32,8 @@ Interfaces:
 - `summarize.py --input <prediction-dir> --output <fresh-dir>`: local result
   analysis, CSV/JSON/Markdown, scatter and difference histograms (PNG/SVG).
   Full128 denominators and the115 converged paired cohort are both preserved.
+  Difference histograms use the same complete paired IDs and common bin edges
+  before/after; scatter panels retain their explicitly labeled full-stage counts.
   If run remotely, submit this batch analysis through Slurm too.
 
 Primary interpretation: among Crystalformer-positive generated structures, how

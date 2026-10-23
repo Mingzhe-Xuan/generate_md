@@ -99,13 +99,20 @@ def plots(output,before,after):
     for ext in ('png','svg'):fig.savefig(output/('agreement.'+ext),dpi=180,bbox_inches='tight')
     plt.close(fig)
     fig,axes=plt.subplots(1,2,figsize=(12,4),constrained_layout=True)
+    common_ids=({r['candidate_id'] for r in before if r['status']=='completed'} &
+                {r['candidate_id'] for r in after if r['status']=='completed'})
+    paired_before=[r for r in before if r['candidate_id'] in common_ids]
+    paired_after=[r for r in after if r['candidate_id'] in common_ids]
     for ax,prop in zip(axes,('gap','eform')):
-        for data,label in ((before,'MatterSim前'),(after,'MatterSim后')):
-            d=[r['alignn_'+prop]-r['crystalformer_'+prop] for r in data if r['status']=='completed']
-            if d:ax.hist(d,bins=min(25,max(5,int(np.sqrt(len(d))))),alpha=.5,label=label)
+        groups=[(data,label) for data,label in ((paired_before,'MatterSim前'),(paired_after,'MatterSim后'))]
+        deltas=[[r['alignn_'+prop]-r['crystalformer_'+prop] for r in data] for data,label in groups]
+        edges=np.histogram_bin_edges([v for d in deltas for v in d],bins=20)
+        for d,(data,label) in zip(deltas,groups):
+            if d:ax.hist(d,bins=edges,alpha=.5,label=label+' n='+str(len(d)))
         ax.axvline(0,color='black',linestyle='--')
         ax.set(xlabel='ALIGNN − Crystalformer（'+('eV' if prop=='gap' else 'eV/atom')+'）',ylabel='结构数',title='带隙差值' if prop=='gap' else '形成能差值')
         ax.legend()
+    fig.suptitle('同一批'+str(len(common_ids))+'个配对结构；前后共用分箱',fontsize=13)
     for ext in ('png','svg'):fig.savefig(output/('differences.'+ext),dpi=180,bbox_inches='tight')
     plt.close(fig)
 
