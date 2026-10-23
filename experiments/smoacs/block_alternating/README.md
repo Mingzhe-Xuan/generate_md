@@ -75,3 +75,9 @@ All prediction and relaxation runs inside Slurm. Outputs: protocol/results,
 per-round A diagnostics/B artifacts, history and complete marker in a fresh
 ignored results directory. No full128 restart, reference downloads or DFT.
 Tests: `python -m unittest discover -s experiments/smoacs/block_alternating`.
+
+`probe.sbatch` runs an independent CPU-only Slurm check at the same four original
+templates. `probe.py` compares five groups of actual predictor input derivatives
+against central finite differences before/after the adapter; it restores every
+parameter and records all three step sizes. This does not optimize or relax any
+structure and may run alongside the small GPU-allocation experiment.

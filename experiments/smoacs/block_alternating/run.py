@@ -34,6 +34,7 @@ def run_blocks(context):
     precision_error=max(float((double_gap-original_gap).abs().max()),float((double_ef-original_ef).abs().max()))
     if precision_error>1e-3:raise ValueError('Float64 forward differs from pinned float32 control: '+str(precision_error))
     from crystalformer.models import indexed_lattice_multi_head_attention as attention
+    legacy_gaussian=attention.AverageGaussiansBySoftmaxXYFunc_
     attention.AverageGaussiansBySoftmaxXYFunc_=ExactGaussianAverage
     with torch.no_grad():exact_gap,exact_ef,_,_=forward(.01)
     if ExactGaussianAverage.calls==0:raise RuntimeError('No actual predictor Gaussian adapter forward was observed.')
@@ -53,6 +54,9 @@ def run_blocks(context):
         hinge_subgradient_boundary_eV=1e-7,
         note='Fixed-T feasibility method, not original Adam/annealing. Constrained and raw stationarity reported separately.')
     (output/'protocol.json').write_text(json.dumps(protocol,indent=2)+'\n')
+    if os.environ.get('SMOACS_BLOCK_PROBE')=='1':
+        from probe import run
+        return run(context,attention,legacy_gaussian,output)
     states=[dict(candidate_id=k,status='active',a_phases=0,stable_rounds=0) for k in ids]
     previous=[None]*len(ids);temperature=.01
     with torch.no_grad():_,_,_,initial=forward(temperature)

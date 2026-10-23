@@ -6,6 +6,15 @@ from solver import solve,projected_gradient,gram_check,hinge_subgradient
 
 
 class SolverTests(unittest.TestCase):
+    def test_directional_probe_restores_parameter(self):
+        import torch
+        from probe import directional_probe
+        parameter=torch.nn.Parameter(torch.tensor([.3,.7],dtype=torch.float64))
+        before=parameter.detach().clone()
+        rows=directional_probe(lambda:(parameter**2).sum(),parameter,torch.tensor([1.,-1.]))
+        self.assertLess(rows[-1]['relative_error'],1e-7)
+        torch.testing.assert_close(before,parameter)
+
     def test_hinge_stationarity_and_nonstationary_rejection(self):
         gradient,coefficient=hinge_subgradient([.5],2.46,[2.],[1.],[0.],[1.])
         np.testing.assert_allclose(gradient,0.,atol=1e-12);self.assertAlmostEqual(coefficient,-.5)
