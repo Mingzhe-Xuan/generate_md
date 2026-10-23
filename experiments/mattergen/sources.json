@@ -1,0 +1,14 @@
+{
+  "repository": "https://github.com/microsoft/mattergen",
+  "upstream_commit": "92423660a8bd70e83679086e88f88596d484dc16",
+  "source_archive_sha256": "b2ce9ac1dd9a7c9a224181a0a024c6418229f33a7dd06bfbd12bcc96146c0eea",
+  "config_sha256": "912811dd770e9e3275ef73e8e4cbc3c7c1ee153f976d8c3efec7e6f946c7fe89",
+  "checkpoint_sha256": "864ebbfd360e0a8287287d290a552da6b6bd92d67418a6a40be419ed3acd5e7e",
+  "checkpoint_size_bytes": 511777150,
+  "checkpoint_url": "https://media.githubusercontent.com/media/microsoft/mattergen/92423660a8bd70e83679086e88f88596d484dc16/checkpoints/dft_band_gap/checkpoints/last.ckpt",
+  "model": "dft_band_gap",
+  "target_band_gap_eV": 2.5,
+  "guidance_scale": 2.0,
+  "sampling_steps": 1000,
+  "seed": 42
+}
