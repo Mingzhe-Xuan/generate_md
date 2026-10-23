@@ -9,6 +9,7 @@ GRADIENT_LIMIT = 1e-4
 
 def input_text(atoms, species, data_path, grid, relax=True, cutoff=200, larger=False, physics=None):
     elements = list(dict.fromkeys(atoms.get_chemical_symbols()))
+    hubbard_enabled = bool(physics and any(v['U_eff_eV'] != 0 for v in physics['hubbards'].values()))
     lines = ['System.Name calc', 'System.CurrrentDir ./', f'DATA.PATH {data_path}',
              'level.of.stdout 1', 'level.of.fileout 0', f'Species.Number {len(elements)}',
              '<Definition.of.Atomic.Species']
@@ -23,7 +24,9 @@ def input_text(atoms, species, data_path, grid, relax=True, cutoff=200, larger=F
         if abs(moment) > valence:
             raise ValueError('Initial moment exceeds available valence electrons.')
         lines.append(f'{i} {e} '+' '.join(f'{v:.14f}' for v in xyz)
-                     + f' {(valence+moment)/2:.6f} {(valence-moment)/2:.6f}')
+                     + f' {(valence+moment)/2:.6f} {(valence-moment)/2:.6f}'
+                     # Collinear +U requires an eighth enable token; omission exits0.
+                     + (' on' if hubbard_enabled else ''))
     lines += ['Atoms.SpeciesAndCoordinates>', 'Atoms.UnitVectors.Unit Ang', '<Atoms.UnitVectors']
     lines += [' '.join(f'{v:.14f}' for v in row) for row in atoms.cell]
     lines += ['Atoms.UnitVectors>', 'scf.XcType GGA-PBE', 'scf.SpinPolarization on',
@@ -36,7 +39,7 @@ def input_text(atoms, species, data_path, grid, relax=True, cutoff=200, larger=F
               'scf.restart off', 'MD.Type '+('RFC5' if relax else 'nomd'),
               'MD.maxIter '+('200' if relax else '1'), 'MD.Opt.criterion 1e-4',
               'MD.Opt.DIIS.History 7', 'MD.Opt.StartDIIS 5']
-    if physics and any(v['U_eff_eV'] != 0 for v in physics['hubbards'].values()):
+    if hubbard_enabled:
         lines += ['scf.Hubbard.U on', 'scf.DFTU.Type 1', 'scf.Hubbard.Occupation dual',
                   '<Hubbard.U.values']
         for e in elements:

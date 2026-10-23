@@ -21,6 +21,7 @@ class FormatsTests(unittest.TestCase):
         self.assertIn('1d 5.30000000 2d 0.00000000', text)
         self.assertEqual(text.count('5.30000000'), 1)
         self.assertIn('10.500000 5.500000', text)
+        self.assertTrue(all(len(row) == 8 and row[-1] == 'on' for row in block(text, 'Atoms.SpeciesAndCoordinates')))
         self.assertEqual(len(block(text, 'Hubbard.U.values')[0]), 1+2*(3+3+2+1))
     def test_insulator_and_metal(self):
         gapped = output('kloop=0\n1 -.1 -.1\n2 .1 .1\nkloop=1\n1 -.09 -.09\n2 .12 .12\n')
