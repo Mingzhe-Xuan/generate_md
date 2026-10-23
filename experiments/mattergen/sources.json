@@ -10,5 +10,10 @@
   "target_band_gap_eV": 2.5,
   "guidance_scale": 2.0,
   "sampling_steps": 1000,
-  "seed": 42
+  "seed": 42,
+  "wheel_sha256": {
+    "torch_scatter-2.1.2+pt27cu128-cp310-cp310-linux_x86_64.whl": "3a20acd4777bc1d996756df5bb0c2ac42440fd434315e37464715567699b4bfb",
+    "torch_sparse-0.6.18+pt27cu128-cp310-cp310-linux_x86_64.whl": "2b081081279c1ee456ba14c73a445bf11438afefcdd5867f5f1820f1ae3fbd06",
+    "torch_cluster-1.6.3+pt27cu128-cp310-cp310-linux_x86_64.whl": "587c7c40c74fbf8adef46cb2db62b36164b2cf6e5c19a427919eaeda3216a8f9"
+  }
 }

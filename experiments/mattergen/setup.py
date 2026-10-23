@@ -43,7 +43,7 @@ def main():
         for name,version in [('torch_scatter','2.1.2'),('torch_sparse','0.6.18'),('torch_cluster','1.6.3')]:
             filename=f'{name}-{version}+pt27cu128-cp310-cp310-linux_x86_64.whl'
             url='https://data.pyg.org/whl/torch-2.7.0%2Bcu128/'+filename.replace('+','%2B')
-            sha=download(session,url,wheels/filename)
+            sha=download(session,url,wheels/filename,spec['wheel_sha256'][filename])
             wheel_records.append(dict(filename=filename,url=url,sha256=sha))
     (assets/'wheel-manifest.json').write_text(json.dumps(wheel_records,indent=2)+'\n')
     subprocess.run([str(base),'-m','pip','--python',str(python),'install','-r',str(module/'requirements.txt'),

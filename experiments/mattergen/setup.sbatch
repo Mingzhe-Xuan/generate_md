@@ -13,7 +13,12 @@ if [[ "${MATTERGEN_FORCE_DIRECT:-0}" != 1 ]] && curl --fail --proxy "$ALL_PROXY"
  export MATTERGEN_NETWORK_ROUTE=verified_socks
 else
  curl --fail --noproxy '*' --head --connect-timeout 10 --max-time 30 https://pypi.org/simple/ >/dev/null
- curl --fail --noproxy '*' --head --connect-timeout 10 --max-time 30 https://data.pyg.org/whl/torch-2.7.0+cu128.html >/dev/null
+ for task_wheel in torch_scatter-2.1.2+pt27cu128 torch_sparse-0.6.18+pt27cu128 torch_cluster-1.6.3+pt27cu128; do
+  if [[ ! -f "results/mattergen/wheels/$task_wheel-cp310-cp310-linux_x86_64.whl" ]]; then
+   curl --fail --noproxy '*' --head --connect-timeout 10 --max-time 30 https://data.pyg.org/whl/torch-2.7.0+cu128.html >/dev/null
+   break
+  fi
+ done
  curl --fail --noproxy '*' --head --connect-timeout 10 --max-time 30 \
  https://media.githubusercontent.com/media/microsoft/mattergen/92423660a8bd70e83679086e88f88596d484dc16/checkpoints/dft_band_gap/checkpoints/last.ckpt >/dev/null
  unset ALL_PROXY HTTP_PROXY HTTPS_PROXY all_proxy http_proxy https_proxy
