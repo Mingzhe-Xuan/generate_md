@@ -1,0 +1,43 @@
+# OpenMX alternative validation
+
+This module validates the existing CPU206 proposals using OpenMX3.9/PBE19.
+It is an alternative electronic-structure method, not a VASP/PBE54 reproduction.
+Generation remains the original Section2.1 Crystalformer128/200-step experiment.
+All input identities, unsuccessful candidates and the128 denominator are retained.
+
+Modules: resources.py audits matching VPS/PAO valence and hashes; formats.py
+writes explicit inputs and validates SCF, variable-cell convergence and sampled
+band edges; run.py executes two RFC5 variable-cell relaxations and a static via
+native Slurm PMI2. submit.sbatch supplies the installed oneAPI runtime, validates
+rank affinity, and calls the runner. All computation and audits run in Slurm.
+
+Inputs: paper-version inventory249 and hash-matched converged MatterSim structures.
+Outputs: ignored results/smoacs/openmx-206, with unique per-job attempts. Never
+edit installed data. File existence does not certify pseudopotential accuracy.
+Use installed DFT_DATA19, matching valence counts, explicit s3p3d2f1 basis (or
+available lower angular channels), and minimum bulk orbital cutoff radius >=6au.
+Special H/S potential variants require matching H/S orbital files.
+
+Pilot: SMOACS_OPENMX_ID=mp-2730.vasp sbatch experiments/smoacs/openmx/submit.sbatch
+Default profile: GGA-PBE, collinear spin, 300K,200Ry real-space grid,
+SCF1e-8Ha/300 iterations, RFC5 generalized gradient1e-4Ha/Bohr/200 iterations.
+The real-space grid cutoff is not equivalent to VASP ENCUT. Odd Gamma-containing
+k meshes are derived from MP's503-density mesh and rounded upward to odd values;
+OpenMX's even mesh differs from VASP Gamma-centered meshes. Static validation
+checks250Ry, a larger basis, and a denser k mesh before accepting convergence.
+These are alternative-method convergence checks, not paper-specified parameters.
+
+All SCF steps must explicitly report achieved convergence. A final optimization
+gradient at/above the threshold fails. Final geometry is read from the restart
+input, not ASE's OpenMX reader that may select original input coordinates.
+Sampled gaps use per-spin band occupations relative to the chemical potential;
+changing occupied-band counts across k points or near-Fermi states mark metal.
+Sparse meshes cannot exclude unsampled band crossings; convergence checks matter.
+
+OpenMX total energies cannot be mixed with VASP energies for a convex hull.
+The paper's stability protocol instead uses consistently MatterSim-relaxed MP
+reference structures; reference snapshot/version/coverage must be audited.
+
+References:
+https://openmx-square.org/openmx_man3.9/node54.html
+https://openmx-square.org/vps_pao2019/
