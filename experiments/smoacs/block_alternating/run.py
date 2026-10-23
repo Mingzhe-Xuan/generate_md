@@ -23,7 +23,8 @@ def run_blocks(context,driver=None):
     from pymatgen.core import Structure
     from policy import geometry_change
     args=context['args'];output=context['output'];ids=context['ids'];targets=context['targets']
-    if not args.pilot or len(ids)!=4:raise ValueError('This feasibility experiment is restricted to the four-template pilot.')
+    if driver is None and (not args.pilot or len(ids)!=4):raise ValueError('Block feasibility mode requires the four-template pilot.')
+    if driver is not None and len(ids)!=(4 if args.pilot else 128):raise ValueError('Unexpected initialized cohort size.')
     forward=context['forward'];slices=context['slices'];base=context['base']
     with torch.no_grad():original_gap,original_ef,_,_=forward(.01)
     for parameter in targets:parameter.data=parameter.data.double()

@@ -46,4 +46,12 @@ optimization, properties, and shared-pool SUN. Repeating it preserves recorded j
 The shared runner also exposes a600-update/one-B mode used by `../a600/`;
 the default command and200-update/three-cycle numerical schedule remain unchanged.
 
+`../full_comparison/` uses the same runner for all128 original templates.
+Gradient microbatches preserve division by128 and one global Adam update;
+startup validates forward values and8/16-partition gradient agreement.
+B reconstruction failures stop only the affected template. Its actual converged
+B endpoint remains eligible for physical evaluation in that cycle, while later
+cycles retain explicit stopped placeholders. Matrix reconstruction tolerances
+scale with the full Gram matrix to handle float32 off-diagonal roundoff.
+
 Tests: `python -m unittest discover -s experiments/smoacs/adam_cycles`.

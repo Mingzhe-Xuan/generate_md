@@ -67,6 +67,7 @@ def gram_check(cell,reconstructed):
     cell,reconstructed=map(np.asarray,(cell,reconstructed))
     original=cell@cell.T;new=reconstructed@reconstructed.T
     difference=np.abs(new-original)
-    return dict(passed=bool(np.allclose(new,original,atol=1e-5,rtol=2e-6)),
+    tolerance=1e-5+2e-6*max(float(np.abs(original).max()),1e-12)
+    return dict(passed=bool(difference.max()<=tolerance),matrix_absolute_tolerance=tolerance,
                 absolute_error=float(difference.max()),
                 relative_error=float(difference.max()/max(np.abs(original).max(),1e-12)))
