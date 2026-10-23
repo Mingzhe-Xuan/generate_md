@@ -20,6 +20,12 @@ Each A solve allows1200 accepted iterations/3000 evaluations. A line-search or
 loss-tolerance termination alone is never called convergence; the independently
 reevaluated maximum projected gradient must be<=1e-3 for that candidate.
 Unconverged candidates retain their denominator and do not enter B prematurely.
+Pilot293 used float32 and all four A phases stalled before meeting the gradient
+criterion. Subsequent pilots promote A parameters, model weights and floating
+inputs to float64, verifying initial predictions against the unchanged float32
+models within1e-3. This precision change is recorded in the protocol; it does
+not change MatterSim precision or convergence thresholds. Record the continuous
+gap's distance to the hinge boundary to diagnose nonsmooth stopping separately.
 B reuses the pinned MatterSim worker, symmetry, fmax0.01, maxstep0.05 and1600-step
 safety cap. Numerical/B failures are recorded individually.
 

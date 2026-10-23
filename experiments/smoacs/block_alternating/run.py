@@ -23,11 +23,23 @@ def run_blocks(context):
     from policy import geometry_change
     args=context['args'];output=context['output'];ids=context['ids'];targets=context['targets']
     if not args.pilot or len(ids)!=4:raise ValueError('This feasibility experiment is restricted to the four-template pilot.')
-    forward=context['forward'];hard_predictions=context['hard_predictions'];slices=context['slices'];base=context['base']
+    forward=context['forward'];slices=context['slices'];base=context['base']
+    with torch.no_grad():original_gap,original_ef,_,_=forward(.01)
+    for parameter in targets:parameter.data=parameter.data.double()
+    for model in (context['gap_model'],context['ef_model']):model.double()
+    for key,value in context['data'].items():
+        if torch.is_tensor(value) and value.is_floating_point():context['data'][key]=value.double()
+    with torch.no_grad():double_gap,double_ef,_,_=forward(.01)
+    precision_error=max(float((double_gap-original_gap).abs().max()),float((double_ef-original_ef).abs().max()))
+    if precision_error>1e-3:raise ValueError('Float64 forward differs from pinned float32 control: '+str(precision_error))
+    def hard_predictions(out):
+        onehot=torch.nn.functional.one_hot(out['normalized_dist'].argmax(1),98).to(targets[0].dtype)
+        return context['author'].Crystalformer_prediction(context['gap_model'],context['ef_model'],onehot,
+            out['pos'],context['batch'],out['lattice_vectors'],context['size'])
     lower,upper,angle_lower,angle_upper=[context[k] for k in ('lower','upper','angle_lower','angle_upper')]
     protocol=dict(context['protocol'],method='A_LBFGSB_until_stationary_then_B',temperature=.01,
         anneal=None,a_maxiter=1200,a_maxfun=3000,a_projected_gradient_tolerance=.001,
-        joint_patience=3,gram_rtol=2e-6,gram_atol=1e-5,
+        joint_patience=3,gram_rtol=2e-6,gram_atol=1e-5,a_dtype='float64',precision_control_error=precision_error,
         note='Fixed-T feasibility method, not original Adam/annealing. Constrained and raw stationarity reported separately.')
     (output/'protocol.json').write_text(json.dumps(protocol,indent=2)+'\n')
     states=[dict(candidate_id=k,status='active',a_phases=0,stable_rounds=0) for k in ids]
@@ -66,10 +78,11 @@ def run_blocks(context):
         return evaluate
 
     def point(i):
-        with torch.no_grad():_,_,_,out=forward(temperature);gap,ef=hard_predictions(out)
+        with torch.no_grad():soft_gap,soft_ef,_,out=forward(temperature);gap,ef=hard_predictions(out)
         return dict(cell=out['lattice_vectors'][i].numpy(),frac=out['normed_batch_dir_coords'][slices[i]].numpy(),
             numbers=(out['normalized_dist'][slices[i]].argmax(1)+1).tolist(),
             gap=float(gap.reshape(-1)[i]),eform=float(ef.reshape(-1)[i]),
+            continuous_gap=float(soft_gap[i]),continuous_eform=float(soft_ef[i]),
             minimum_assignment_probability=float(out['normalized_dist'][slices[i]].max(1).values.min()))
 
     try:
@@ -98,6 +111,9 @@ def run_blocks(context):
                 state.update(a_report=report,a_phases=round_index)
                 (folder/'A-result.json').write_text(json.dumps(report,indent=2)+'\n')
                 after_a=point(i)
+                report.update(continuous_gap=after_a['continuous_gap'],continuous_eform=after_a['continuous_eform'],
+                              hinge_boundary_distance=abs(abs(after_a['continuous_gap']-2.5)-.04))
+                (folder/'A-result.json').write_text(json.dumps(report,indent=2)+'\n')
                 Structure(after_a['cell'],after_a['numbers'],after_a['frac']).to(filename=str(folder/'A.vasp'),fmt='poscar')
                 state.update(a_source=str(folder/'A.vasp'),a_gap=after_a['gap'],a_eform=after_a['eform'])
                 if not report['converged']:
@@ -119,13 +135,13 @@ def run_blocks(context):
                 structure=Structure.from_file(result['relaxed_path'])
                 if list(structure.atomic_numbers)!=after_a['numbers']:
                     state.update(status='feedback_failed',error='B changed ordered atomic numbers.');dump();continue
-                lengths=torch.tensor(structure.lattice.abc,dtype=torch.float32)
-                angles=torch.tensor(structure.lattice.angles,dtype=torch.float32)
+                lengths=torch.tensor(structure.lattice.abc,dtype=targets[0].dtype)
+                angles=torch.tensor(structure.lattice.angles,dtype=targets[0].dtype)
                 with torch.no_grad():
                     lower[i]=torch.minimum(lower[i],lengths);upper[i]=torch.maximum(upper[i],lengths)
                     angle_lower[i]=torch.minimum(angle_lower[i],angles);angle_upper[i]=torch.maximum(angle_upper[i],angles)
                     targets[0][i].copy_(lengths/base[i]);targets[1][i].copy_((angles-60)/60)
-                    targets[2][slices[i]].copy_(torch.tensor(structure.frac_coords,dtype=torch.float32))
+                    targets[2][slices[i]].copy_(torch.tensor(structure.frac_coords,dtype=targets[0].dtype))
                 after_b=point(i);check=gram_check(structure.lattice.matrix,after_b['cell']);state['feedback_check']=check
                 if not check['passed']:
                     state.update(status='feedback_failed',error='Scale-aware cell Gram check failed.');dump();continue
