@@ -47,13 +47,40 @@ def corrected_entry(path, record, identifier):
 
 def phase_worker(entries, candidate, connection):
     try:
-        from pymatgen.analysis.phase_diagram import PhaseDiagram
-        phase = PhaseDiagram(entries+[candidate])
-        connection.send(dict(hull_eV_atom=float(phase.get_e_above_hull(candidate))))
+        connection.send(hull_query(entries, candidate))
     except Exception as error:
         connection.send(dict(error=repr(error)))
     finally:
         connection.close()
+
+
+def hull_query(entries, candidate):
+    """Exact point query of the convex envelope, without enumerating all facets."""
+    import numpy as np
+    from scipy.optimize import linprog
+    elements = list(candidate.composition.elements)
+    if not entries or any(set(e.composition.elements)-set(elements) for e in entries):
+        raise ValueError('Reference entries must belong to the candidate chemical system.')
+    matrix = np.array([[entry.composition.get_atomic_fraction(element) for entry in entries]
+                       for element in elements], dtype=float)
+    target = np.array([candidate.composition.get_atomic_fraction(e) for e in elements])
+    energies = np.array([entry.energy_per_atom for entry in entries])
+    if not all(np.isfinite(x).all() for x in (matrix, target, energies, candidate.energy_per_atom)):
+        raise ValueError('Nonfinite phase-diagram inputs.')
+    solution = linprog(energies, A_eq=matrix, b_eq=target, bounds=(0, None), method='highs-ds',
+                       options=dict(time_limit=110, primal_feasibility_tolerance=1e-9,
+                                    dual_feasibility_tolerance=1e-9))
+    if not solution.success or not np.isfinite(solution.fun):
+        raise ValueError('Convex-envelope LP failed: '+solution.message)
+    if (np.max(np.abs(matrix@solution.x-target)) > 1e-7
+            or np.min(solution.x) < -1e-8 or abs(solution.x.sum()-1) > 1e-7):
+        raise ValueError('Phase decomposition does not conserve composition.')
+    # Including the candidate itself, as PhaseDiagram does, clamps negative E_hull to zero.
+    hull = max(0.0, float(candidate.energy_per_atom-solution.fun))
+    return dict(hull_eV_atom=hull, reference_hull_energy_eV_atom=float(solution.fun),
+                hull_algorithm='composition-balanced linear program, equivalent point query',
+                decomposition=[dict(entry_id=e.entry_id, atomic_fraction=float(w))
+                               for e,w in zip(entries, solution.x) if w > 1e-8])
 
 
 def hull_with_timeout(entries, candidate):

@@ -29,8 +29,13 @@ convert.sbatch writes hash-identified POSCARs and a separate reference inventory
 relax.sbatch uses the validated proposal MatterSim relaxer with identical physical
 settings and reference-specific metadata. Convert/relax failures remain explicit.
 assess.sbatch uses the paper-version DFT venv for MP2020Compatibility, with run
-parameters from MPGGARelaxSetGenerator as in the author script. Per-candidate hull
-processes have a120second limit and are terminated only by their own handle.
+parameters from MPGGARelaxSetGenerator as in the author script. A composition-
+balanced linear program queries the same convex envelope at each candidate,
+avoiding expensive enumeration of every facet for high-component systems. Binary
+and ternary tests match pymatgen PhaseDiagram, including below-hull clamping;
+a nine-element fixture verifies mass balance and the analytic hull value.
+Per-candidate hull processes have a120second limit and are terminated only by
+their own handle. Energy corrections and the stable threshold are unchanged.
 Missing reference competitors cannot certify stability: a low incomplete hull
 remains unknown. Stability requires E_hull<0.1eV/atom. Uniqueness and novelty use
 the author StructureMatcher settings. OpenMX BG&SUN remains unknown unless the
