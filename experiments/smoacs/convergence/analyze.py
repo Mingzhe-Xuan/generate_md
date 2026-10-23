@@ -48,7 +48,8 @@ def main():
     changes={}
     for start in (149,179,189):
         changes[str(start)+'_to_199']={name:window_changes(values,start,199)
-                                    for name,values in [('objective',loss),('gap',gap),('ef',ef)]}
+                                    for name,values in [('objective',loss),('gap',gap),
+                                                        ('gap_absolute_error',np.abs(gap-2.5)),('ef',ef)]}
     candidates=[]
     for i,k in enumerate(ids):
         candidates.append(dict(candidate_id=k,objective_delta_179_199=float(loss[199,i]-loss[179,i]),

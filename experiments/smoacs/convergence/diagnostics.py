@@ -19,8 +19,8 @@ def window_changes(values, start, end, tolerance=.01):
     span = np.ptp(values[start:end+1], axis=0)
     return dict(start_record_index=start, end_record_index=end, updates_between=end-start,
                 mean_delta=float(np.mean(delta)), median_delta=float(np.median(delta)),
-                improved_gt_tolerance=int(np.sum(delta < -tolerance)),
-                worsened_gt_tolerance=int(np.sum(delta > tolerance)),
+                decreased_gt_tolerance=int(np.sum(delta < -tolerance)),
+                increased_gt_tolerance=int(np.sum(delta > tolerance)),
                 endpoint_change_within_tolerance=int(np.sum(np.abs(delta) <= tolerance)),
                 full_window_span_within_tolerance=int(np.sum(span <= tolerance)),
                 maximum_span=float(np.max(span)), tolerance=tolerance)

@@ -15,7 +15,7 @@ class DiagnosticsTests(unittest.TestCase):
         decreasing=np.repeat((-np.arange(200)*.001)[:,None],3,axis=1)
         report=window_changes(decreasing,179,199)
         self.assertEqual(report['updates_between'],20)
-        self.assertEqual(report['improved_gt_tolerance'],3)
+        self.assertEqual(report['decreased_gt_tolerance'],3)
         with self.assertRaises(ValueError):window_changes(decreasing,199,199)
 
     def test_endpoint_cancellation_is_not_a_stable_window(self):
