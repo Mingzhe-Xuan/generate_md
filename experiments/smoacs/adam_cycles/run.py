@@ -60,7 +60,7 @@ def run_cycles(context,hard_predictions,prepared_protocol,steps=200,cycles=3,sch
     batch=context['batch'];base=context['base'];lower,upper,angle_lower,angle_upper=[context[k] for k in ('lower','upper','angle_lower','angle_upper')]
     protocol={k:prepared_protocol[k] for k in ('ids','initial_control_error','baseline_npz_sha256','author_source_sha256',
         'source_commit','a_parameters','a_dtype','precision_control_error','gaussian_derivative','adapter_control_error','adapter_control_calls')}
-    for key in ('optimization_predictor','predictor_metadata'):
+    for key in ('optimization_predictor','predictor_metadata','force_mixing'):
         if key in prepared_protocol:
             protocol[key]=prepared_protocol[key]
     protocol.update(method='Adam_cosine_then_MatterSim',cycles=cycles,steps_per_A=steps,
@@ -143,6 +143,8 @@ def run_cycles(context,hard_predictions,prepared_protocol,steps=200,cycles=3,sch
                     if not torch.isfinite(loss[active]).all():raise ValueError('Nonfinite active A input; retain last checkpoint.')
                     gradients=torch.autograd.grad(loss[active].sum()/context.get('gradient_denominator',n),targets)
                 else:loss,gradients=micro.gradients(.01,active)
+                if context.get('gradient_transform'):
+                    gradients=context['gradient_transform'](gradients,loss,active,cycle,step)
                 if not all(g.is_cuda for g in gradients):raise RuntimeError('Adam input gradients are not on CUDA.')
                 masks=[active[:,None],active[:,None],active[batch,None],active[batch,None],active[:,None]]
                 before=[p.detach().clone() for p in targets]
@@ -186,6 +188,8 @@ def run_cycles(context,hard_predictions,prepared_protocol,steps=200,cycles=3,sch
                         rows[-1]['A_input']=a_inputs[i]
                         rows[-1]['preceding_B_sha256']=previous[i]['sha256'] if cycle>1 and eligible[i] else None
                 rounds.append(dict(cycle=cycle,candidates=rows));save(cycle,'B_pending')
+                if context.get('after_A'):
+                    context['after_A'](cycle,a_points)
             tasks=[dict(candidate_id=ids[i],source=rows[i]['A']['source'],output=str(cycle_dir/'B'/Path(ids[i]).stem)) for i in range(n) if active[i]]
             if tasks:
                 torch.cuda.empty_cache()
