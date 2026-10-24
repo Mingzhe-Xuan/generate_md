@@ -39,5 +39,9 @@ if [[ "$task_neutral_code" != 0 || "$task_unmasked_code" != 0 ]]; then
  exit 1
 fi
 python3 experiments/mattergen/cf_templates/full_report.py --run "$MATTERGEN_CF_FULL_RUN" --source "$MATTERGEN_TEMPLATE_SOURCE"
+if [[ -f "$MATTERGEN_CF_FULL_RUN/SKIP_SUN" || "${MATTERGEN_CF_SKIP_SUN:-0}" == 1 ]]; then
+ printf '%s\n' 'SUN skipped by user request; property evaluation complete.'
+ exit 0
+fi
 sbatch --parsable --export="ALL,MATTERGEN_CF_FULL_RUN=$MATTERGEN_CF_FULL_RUN,MATTERGEN_TEMPLATE_SOURCE=$MATTERGEN_TEMPLATE_SOURCE" \
  experiments/mattergen/cf_templates/references.sbatch > "$MATTERGEN_CF_FULL_RUN/SUN-job-id.txt"

@@ -14,6 +14,10 @@ unset ALL_PROXY HTTP_PROXY HTTPS_PROXY
 export SMOACS_REFERENCE_PROXY=""
 task_run="${MATTERGEN_CF_FULL_RUN:?}"
 task_source="${MATTERGEN_TEMPLATE_SOURCE:?}"
+if [[ -f "$task_run/SKIP_SUN" || "${MATTERGEN_CF_SKIP_SUN:-0}" == 1 ]]; then
+ printf '%s\n' 'SUN skipped by user request; no reference evaluation performed.'
+ exit 0
+fi
 export MATTERGEN_CF_COHORT=reference
 task_memory="$task_run/reference-memory-$SLURM_JOB_ID"
 mkdir -p "$task_memory"
