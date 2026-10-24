@@ -29,6 +29,12 @@ connectivity at the unchanged1e-3 tolerance, then records fresh-graph topology
 and prediction changes separately. Floating-point geometry differences can
 change kNN choices near tied neighbor distances. The optimizer always uses
 fresh GPU graphs; the replay is restricted to the numerical device control.
+Native architecture equivalence uses identical atom descriptors, lengths and
+cosines at the existing1e-5 tolerance. Native graph feature rounding is checked
+separately at1e-5 and its prediction effect is recorded. Native ALIGNN consumes
+only the norm of edge vectors, so the architecture control encodes those exact
+lengths along one axis and supplies the same cosine inputs. This control does
+not change any optimization prediction or derivative.
 
 `run.py` reuses verified CF template initialization, the shared GPU Adam200
 controller and the same MatterSim workers. ALIGNN supplies every optimization
@@ -52,3 +58,11 @@ score for ALIGNN200 and CF is its independent architecture check; the roles
 reverse for CF200. These frozen predictions are not ground-truth accuracy.
 Results are under `results/mattergen/alignn-pilot-<job>` and
 `results/mattergen/alignn-full-<job>` with source provenance and evidence SHA.
+
+For a control-only continuation, set `ALIGNN_FULL_RUN` to the existing run and
+`ALIGNN_CONTINUE_JOB` to its failed terminal Slurm job. `continuation.py` requires
+the neutral65 phase to be completely evaluated, proves unchanged optimizer and
+geometry/inference code through Git/AST comparison, and protects its files by
+hash. It archives only an unmasked initialization with no A trace/checkpoint/
+results/cycle. A fresh valid gradient-probe report remains required. Scientific
+partial optimization is never silently archived and restarted.

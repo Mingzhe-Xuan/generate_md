@@ -7,9 +7,24 @@ import torch
 from geometry import edge_features,recover_images
 from report import paired,summarize
 from device_control import topology_signature
+from continuation import inference_signature,pre_A_only
 
 
 class AlignnTemplateTests(unittest.TestCase):
+    def test_continuation_allows_only_control_changes_and_no_partial_A(self):
+        import tempfile
+        original='def predict(x, native_control=False):\n y=x*2\n if native_control:\n  print(y)\n return y\n'
+        control=original.replace('print(y)','print(y, x)')
+        changed=original.replace('x*2','x*3')
+        self.assertEqual(inference_signature(original),inference_signature(control))
+        self.assertNotEqual(inference_signature(original),inference_signature(changed))
+        with tempfile.TemporaryDirectory() as tmp:
+            path=Path(tmp)
+            (path/'protocol.json').write_text('{}')
+            self.assertTrue(pre_A_only(path))
+            (path/'A-trace.jsonl').write_text('actual update')
+            self.assertFalse(pre_A_only(path))
+
     def test_graph_control_ignores_edge_order_but_detects_periodic_topology(self):
         from types import SimpleNamespace
         first=SimpleNamespace(edges=lambda **kw:(torch.tensor([0,1]),torch.tensor([1,0])))

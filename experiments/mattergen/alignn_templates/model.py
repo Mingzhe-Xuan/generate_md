@@ -112,6 +112,11 @@ class Predictor:
         if native_control:
             from third_party.alignn_minimal.models.alignn import ALIGNN
             errors=[]
+            geometry_errors=[float((r-torch.linalg.vector_norm(g.edata['r'].to(dtype),dim=1)).abs().max()),
+                float((h-lg.edata['h'].to(dtype)).abs().max())]
+            if max(geometry_errors)>1e-5:
+                raise ValueError('Native graph geometry-feature check failed: '+str(geometry_errors))
+            original_graph_errors=[]
             with torch.no_grad():
                 for model,value in zip(self.models,values):
                     native=ALIGNN(model.config).to(device=device,dtype=dtype).eval()
@@ -121,10 +126,18 @@ class Predictor:
                     ng.edata['r']=ng.edata['r'].to(dtype)
                     nlg.edata['h']=nlg.edata['h'].to(dtype)
                     reference=native((ng,nlg,cells))
+                    original_graph_errors.append(float((reference.reshape(-1)-value).abs().max()))
+                    ng,nlg=g.local_var(),lg.local_var()
+                    ng.ndata['atom_features']=x
+                    ng.edata['r']=torch.stack((r,torch.zeros_like(r),torch.zeros_like(r)),dim=1)
+                    nlg.edata['h']=h
+                    reference=native((ng,nlg,cells))
                     errors.append(float((reference.reshape(-1)-value).abs().max()))
             if max(errors)>1e-5:
                 raise ValueError('Native ALIGNN predictor equivalence failed: '+str(errors))
-            self.native_controls.append(dict(max_errors=errors,crystals=len(cells),device=str(device)))
+            self.native_controls.append(dict(max_errors=errors,geometry_feature_max_errors=geometry_errors,
+                original_graph_prediction_max_errors=original_graph_errors,crystals=len(cells),device=str(device),
+                scope='Architecture control uses identical invariant features; original graph rounding is reported separately.'))
         return values[0].clamp_min(0),values[1]
 
     def forward(self,*,optimization_targets,fixed_inputs,scalers,bandgap_model,e_form_model,

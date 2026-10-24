@@ -15,6 +15,10 @@ mkdir -p "$task_root"
 touch "$task_root/SKIP_SUN"
 export OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 OPENBLAS_NUM_THREADS=1 DGLBACKEND=pytorch
 export ATOMGPTLAB_CACHE="$PWD/results/smoacs/jarvis-cache"
+if [[ -n "${ALIGNN_CONTINUE_JOB:-}" ]]; then
+ python3 experiments/mattergen/alignn_templates/continuation.py --run "$task_root" \
+  --source "${MATTERGEN_TEMPLATE_SOURCE:-$PWD/results/mattergen/gap2p5-task128-20261024/full128}" --previous-job "$ALIGNN_CONTINUE_JOB"
+fi
 for task_cohort in neutral unmasked; do
  env ALIGNN_TEMPLATE_RUN="$task_root/alignn200/$task_cohort" ALIGNN_TEMPLATE_COHORT="$task_cohort" \
   bash experiments/mattergen/alignn_templates/pipeline.sh
