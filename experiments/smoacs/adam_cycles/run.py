@@ -99,7 +99,7 @@ def run_cycles(context,hard_predictions,prepared_protocol,steps=200,cycles=3,sch
         os.replace(output/'checkpoint.tmp',output/'checkpoint.pt')
 
     with torch.no_grad():_,_,_,out=forward(.01);initial=points(out,output/'initial')
-    previous=initial;start_cycle=1;resume_pending=False
+    previous=list(initial);start_cycle=1;resume_pending=False
     if args.resume:
         from resume import restore
         saved,active,start_cycle,resume_pending=restore(output,protocol,targets,optimizers,[lower,upper,angle_lower,angle_upper])
