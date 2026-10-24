@@ -57,7 +57,10 @@ tensor exists only to retain the controller interface. Unmasked optimization
 has four active variable blocks. Initial ordered discrete species and poses
 remain checked in both strategies, while soft initial predictions are distinct.
 
-Two independent `srun --overlap` steps share one GPU allocation. CPU, CUDA
+Two child pipelines inside one Slurm batch allocation share its GPU. Separate
+GPU-requesting steps queued behind each other on the target cluster even with
+`--overlap`, so the batch directly launches both children under its own resource
+allocation, with separate strategy labels, logs and directories. CPU, CUDA
 forward controls, hard predictions and gradients all stream microbatches of4;
 gradient partitions2/4 must agree within1e-3. Each strategy performs600 global
 Adam updates with its own mean loss, then uses two MatterSim workers. Frozen

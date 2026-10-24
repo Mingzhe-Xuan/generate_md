@@ -27,14 +27,10 @@ trap 'exit 130' INT
 python3 experiments/mattergen/cf_templates/monitor.py --output "$MATTERGEN_CF_FULL_RUN" --stop-file "$MATTERGEN_CF_FULL_RUN/memory.stop" &
 task_monitor=$!
 env MATTERGEN_CF_RUN="$MATTERGEN_CF_FULL_RUN/neutral" MATTERGEN_CF_COHORT=neutral \
- srun --overlap --exact --ntasks=1 --cpus-per-task=4 --gres=gpu:1 --mem=64G \
- --output="$MATTERGEN_CF_FULL_RUN/neutral.out" --error="$MATTERGEN_CF_FULL_RUN/neutral.err" \
- bash experiments/mattergen/cf_templates/pipeline.sh &
+ bash experiments/mattergen/cf_templates/pipeline.sh > "$MATTERGEN_CF_FULL_RUN/neutral.out" 2> "$MATTERGEN_CF_FULL_RUN/neutral.err" &
 task_neutral=$!
 env MATTERGEN_CF_RUN="$MATTERGEN_CF_FULL_RUN/unmasked" MATTERGEN_CF_COHORT=unmasked \
- srun --overlap --exact --ntasks=1 --cpus-per-task=4 --gres=gpu:1 --mem=64G \
- --output="$MATTERGEN_CF_FULL_RUN/unmasked.out" --error="$MATTERGEN_CF_FULL_RUN/unmasked.err" \
- bash experiments/mattergen/cf_templates/pipeline.sh &
+ bash experiments/mattergen/cf_templates/pipeline.sh > "$MATTERGEN_CF_FULL_RUN/unmasked.out" 2> "$MATTERGEN_CF_FULL_RUN/unmasked.err" &
 task_unmasked=$!
 task_neutral_code=0; wait "$task_neutral" || task_neutral_code=$?
 task_unmasked_code=0; wait "$task_unmasked" || task_unmasked_code=$?
