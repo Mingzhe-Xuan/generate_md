@@ -26,11 +26,19 @@ template pilot, not original-template or original-paper reproduction.
 
 Run `sbatch experiments/mattergen/cf_templates/run.sbatch`. It uses existing
 task environments/assets, writes only a fresh ignored
-`results/mattergen/cf-template-pilot-<job>` directory, and compares raw generation,
+`results/mattergen/cf-template-pilot-<job>[-step<step>]` directory, and compares raw generation,
 direct B, CF600 and CF600+B on the same four IDs with frozen CF/ALIGNN. All four
 remain in the denominator. Pilot SUN is not computed; no full128 improvement
 claim follows from this feasibility experiment. Existing production jobs
 are not cancelled or modified.
+
+`pipeline.sh` also supports a dedicated `srun --jobid=<owned-allocation>
+--overlap --exact --ntasks=1 --cpus-per-task=4 --gres=gpu:1 --mem=32G`
+step when available GPU/CPU/memory headroom has been checked. Step logs and
+output directories must be separate. Only the batch wrapper sources the
+job-level status recorder: a shared step must not overwrite its parent job's
+exit status. The step's `srun` exit and complete/report files establish its
+own outcome.
 
 Local policy tests: `python -S -m unittest discover -s
 experiments/mattergen/cf_templates -p 'test_*.py'`.
