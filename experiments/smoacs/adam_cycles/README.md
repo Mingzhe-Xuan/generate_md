@@ -6,6 +6,10 @@ The fixed-species four-template stepwise pilot additionally uses1x200 phases
 with a global200-update cosine schedule. Adam moments persist while every B
 updates the geometry; each following A input is saved and checked against B.
 See `experiments/mattergen/stepwise/README.md` for the matched control and scope.
+The paired perturbation pilot also accepts one20-update phase for fixed-species
+manifest inputs. Its independent branch gradients use normalization1 and a full
+20-update cosine schedule; other experiment defaults retain their original mean
+loss and budgets. Geometry projection/guards are optional context callbacks.
 
 Same four preselected original templates andseed42 as the block pilot. Each A
 phase performs exactly200 Adam updates on lengths/angles, coordinates and

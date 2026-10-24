@@ -82,9 +82,38 @@ def create(source_root, output, args):
     fixed_species = getattr(args, 'fixed_species', False)
     unconstrained = mode == 'unmasked' or fixed_species
     selected = select_cohort(eligibility, mode)
+    branch_manifest=None
+    parent_structures=None
+    if getattr(args,'branch_manifest',None):
+        if not fixed_species or mode!='pilot':
+            raise ValueError('Branches require fixed original elements and the original pilot parents.')
+        branch_path=Path(args.branch_manifest).resolve()
+        branch_manifest=json.loads(branch_path.read_text())
+        if branch_manifest['source_inventory_sha256']!=digest(source_root/'inventory-249/inventory.json'):
+            raise ValueError('Branch manifest uses a different original cohort.')
+        parents={r['candidate_id']:r for r in selected}
+        if branch_manifest['parent_ids']!=list(parents):
+            raise ValueError('Branch parents differ from the property-blind pilot.')
+        parent_structures=dict(structures)
+        selected=[]
+        for proposal in branch_manifest['candidates']:
+            parent=proposal['parent_id']
+            key=proposal['candidate_id']
+            path=Path(proposal['source']).resolve()
+            if parent not in parents or not path.is_relative_to(branch_path.parent) or digest(path)!=proposal['sha256']:
+                raise ValueError('Branch input provenance failed.')
+            structure=Structure.from_file(path)
+            if list(structure.atomic_numbers)!=list(parent_structures[parent].atomic_numbers):
+                raise ValueError('Branch changed ordered original species.')
+            structures[key]=structure
+            assignments[key]=assignments[parent]
+            selected.append(dict(parents[parent],candidate_id=key,parent_id=parent,
+                parent_source_sha256=parents[parent]['source_sha256'],source_sha256=proposal['sha256']))
+        if len(selected)!=len({r['candidate_id'] for r in selected}) or not 4<=len(selected)<=128:
+            raise ValueError('Invalid number or duplicate branch IDs.')
     (output/'eligibility.json').write_text(json.dumps(dict(denominator=128,
         eligible=sum(r['eligible'] for r in eligibility), candidates=eligibility,
-        selection='Size-selected pilot' if mode == 'pilot' else 'All source IDs in the '+mode+' strategy, original order; no property selection.',
+        selection='All paired perturbations and zero controls of four size/ID-selected original parents' if branch_manifest else 'Size-selected pilot' if mode == 'pilot' else 'All source IDs in the '+mode+' strategy, original order; no property selection.',
         strategy=mode,
         selected_ids=[r['candidate_id'] for r in selected]), indent=2)+'\n')
     ids = [r['candidate_id'] for r in selected]
@@ -154,6 +183,14 @@ def create(source_root, output, args):
         gap_model=gap_model, ef_model=ef_model, optimizers=optimizers, slices=slices, author=author,
         unconstrained_elements=unconstrained, fixed_species=fixed_species, microbatch_size=getattr(args, 'microbatch_size', 4),
         streamed_initialization=n>4)
+    if branch_manifest:
+        from branch_geometry import install
+        original=[parent_structures[r['parent_id']] for r in selected]
+        install(context,np.concatenate([s.frac_coords for s in original]),
+            np.asarray([s.lattice.matrix for s in original]),np.asarray([s.lattice.abc for s in original]),
+            np.asarray([s.lattice.angles for s in original]))
+        lower,upper,angle_lower,angle_upper=[context[k] for k in ('lower','upper','angle_lower','angle_upper')]
+        context.update(branch_manifest=branch_manifest,gradient_denominator=1)
 
     def forward(temperature):
         if n > 4:
@@ -196,8 +233,14 @@ def create(source_root, output, args):
             raise ValueError('Warm start changed initial ordered elements.')
         gap, ef = hard_predict(initial)
     recorded = {c['candidate_id']: c for c in inventory['candidates']}
-    control_error = max(max(abs(float(gap.reshape(-1)[i])-recorded[k]['original_gap']),
-                            abs(float(ef.reshape(-1)[i])-recorded[k]['original_eform'])) for i, k in enumerate(ids))
+    if branch_manifest:
+        parent_control=args.branch_parent_control
+        if parent_control['source_inventory_sha256']!=digest(source_root/'inventory-249/inventory.json'):
+            raise ValueError('Missing independent original-parent control.')
+        control_error=max(parent_control['hard_control_error'],float((gap-soft_gap).abs().max()),float((ef-soft_ef).abs().max()))
+    else:
+        control_error = max(max(abs(float(gap.reshape(-1)[i])-recorded[k]['original_gap']),
+                                abs(float(ef.reshape(-1)[i])-recorded[k]['original_eform'])) for i, k in enumerate(ids))
     if control_error > 1e-3:
         raise ValueError('Template hard-prediction control failed: '+str(control_error))
     from solver import gram_check
@@ -227,6 +270,11 @@ def create(source_root, output, args):
         bounds='Original ranges expanded only to contain input, no clipping.',
         mask='None: actual predictor oxidation target is None; oxidation tensor is an inactive zero-gradient interface placeholder.' if unconstrained else 'Up to10 lexicographic exact neutral SUPER_COMMON assignments in input atom order.')
     template_initialization['species_policy'] = 'fixed_per_site_onehot' if fixed_species else 'optimize_elements'
+    if branch_manifest:
+        template_initialization.update(branch_manifest_sha256=digest(Path(args.branch_manifest)),
+            branch_parent_control=args.branch_parent_control,branch_bounds=context['branch_bounds'],
+            hard_control_scope='Original parents checked against frozen native reference; branches checked exact-onehot consistency, CPU/GPU equivalence and later independent frozen pose prediction.',
+            gradient_normalization=1)
     if fixed_species:
         template_initialization['element_weights'] = 'Exact original per-site onehot, fixed in every predictor forward; no element or oxidation optimization.'
     (output/'initialization.json').write_text(json.dumps(template_initialization, indent=2)+'\n')

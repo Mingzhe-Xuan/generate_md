@@ -30,9 +30,10 @@ def run_cycles(context,hard_predictions,prepared_protocol,steps=200,cycles=3,sch
     output=context['output'];args=context['args'];ids=context['ids'];n=len(ids)
     expected=len(context['template_initialization']['selected']) if context.get('template_initialization') else (4 if args.pilot else 128)
     stepwise=(steps,cycles,schedule)==(1,200,'global')
+    branch_pilot=(steps,cycles)==(20,1) and context.get('fixed_species') and context.get('branch_manifest')
     if stepwise and (n!=4 or not context.get('fixed_species')):
         raise ValueError('Stepwise pilot requires four fixed-species original templates.')
-    if n!=expected or not 1<=expected<=128 or args.max_rounds!=cycles or ((steps,cycles) not in ((200,1),(200,3),(600,1)) and not stepwise):
+    if n!=expected or not 1<=expected<=128 or args.max_rounds!=cycles or ((steps,cycles) not in ((200,1),(200,3),(600,1)) and not stepwise and not branch_pilot):
         raise ValueError('Expected an Adam200x1, Adam200x3 or Adam600x1 experiment.')
     if schedule not in ('per_phase','restart200','global'):raise ValueError('Unknown LR schedule.')
     gpu_info=prepare_cuda(context)
@@ -52,7 +53,7 @@ def run_cycles(context,hard_predictions,prepared_protocol,steps=200,cycles=3,sch
         active_probe=torch.ones(n,dtype=torch.bool,device=targets[0].device)
         _,g16=micro.gradients(.01,active_probe);_,g8=Microbatch(context,size=max(1,micro_size//2)).gradients(.01,active_probe)
         discrepancy=max(float((a-b).abs().max())/max(1e-6,float(a.abs().max()),float(b.abs().max())) for a,b in zip(g16,g8))
-        gpu_info.update(microbatch_size=micro_size,gradient_normalization=n,microbatch_gradient_error=discrepancy)
+        gpu_info.update(microbatch_size=micro_size,gradient_normalization=context.get('gradient_denominator',n),microbatch_gradient_error=discrepancy)
         if discrepancy>1e-3:raise ValueError('Microbatch gradient partition equivalence failed.')
         del g16,g8
         forward=micro.forward
@@ -137,7 +138,7 @@ def run_cycles(context,hard_predictions,prepared_protocol,steps=200,cycles=3,sch
                 if micro is None:
                     _,_,loss,_=forward(.01)
                     if not torch.isfinite(loss[active]).all():raise ValueError('Nonfinite active A input; retain last checkpoint.')
-                    gradients=torch.autograd.grad(loss[active].sum()/n,targets)
+                    gradients=torch.autograd.grad(loss[active].sum()/context.get('gradient_denominator',n),targets)
                 else:loss,gradients=micro.gradients(.01,active)
                 if not all(g.is_cuda for g in gradients):raise RuntimeError('Adam input gradients are not on CUDA.')
                 masks=[active[:,None],active[:,None],active[batch,None],active[batch,None],active[:,None]]
@@ -145,15 +146,17 @@ def run_cycles(context,hard_predictions,prepared_protocol,steps=200,cycles=3,sch
                 for optimizer in optimizers:optimizer.zero_grad()
                 for parameter,gradient,mask in zip(targets,gradients,masks):parameter.grad=torch.where(mask,gradient,0.)
                 for optimizer in optimizers:optimizer.step()
+                if context.get('project_after_update'):context['project_after_update']()
                 for optimizer in optimizers:freeze_inactive(optimizer,targets,before,masks)
                 with torch.no_grad():_,_,after_loss,after=forward(.01)
                 for i,sl in enumerate(slices):
                     if not active[i]:continue
                     finite=valid_proposal(after_loss[i],after['lattice_vectors'][i],after['normed_batch_dir_coords'][sl])
-                    if not finite:
+                    safe=not context.get('proposal_guard') or (finite and context['proposal_guard'](i,after))
+                    if not finite or not safe:
                         with torch.no_grad():
                             for p,b,selection in zip(targets,before,(i,i,sl,sl,i)):p[selection].copy_(b[selection])
-                        active[i]=False;states[i].update(status='A_failed',error='Nonfinite or singular Adam proposal rolled back.',failed_cycle=cycle,failed_step=step+1)
+                        active[i]=False;states[i].update(status='A_failed',error='Nonfinite, singular or unsafe Adam proposal rolled back.',failed_cycle=cycle,failed_step=step+1)
                     else:updates[i]+=1
                 masks=[active[:,None],active[:,None],active[batch,None],active[batch,None],active[:,None]]
                 for optimizer in optimizers:freeze_inactive(optimizer,targets,before,masks)

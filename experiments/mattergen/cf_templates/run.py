@@ -14,9 +14,10 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--cohort', choices=('pilot', 'neutral', 'unmasked'), default='pilot')
     parser.add_argument('--microbatch-size', type=int, default=4)
-    parser.add_argument('--steps', type=int, choices=(200, 600), default=600)
+    parser.add_argument('--steps', type=int, choices=(20, 200, 600), default=600)
     parser.add_argument('--fixed-species', action='store_true')
     parser.add_argument('--relax-every-step', action='store_true')
+    parser.add_argument('--branch-manifest',type=Path)
     args = parser.parse_args()
     if not os.environ.get('SLURM_JOB_ID'):
         parser.error('Submit native optimization through Slurm.')
@@ -24,6 +25,8 @@ def main():
         parser.error('Use at least two structures per microbatch for partition checks.')
     if args.relax_every_step and (not args.fixed_species or args.cohort!='pilot' or args.steps!=200):
         parser.error('Per-step relaxation is a fixed-species four-template200-update pilot.')
+    if args.branch_manifest and (not args.fixed_species or args.cohort!='pilot' or args.steps!=20):
+        parser.error('Independent perturbation branches use fixed species and20 updates.')
     args.pilot, args.max_rounds, args.workers, args.resume = args.cohort == 'pilot', 1, 2, False
     if args.relax_every_step:
         args.max_rounds=200
@@ -35,6 +38,17 @@ def main():
     spec = importlib.util.spec_from_file_location('mattergen_shared_adam', SMOACS/'adam_cycles/run.py')
     shared = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(shared)
+    if args.branch_manifest:
+        import copy
+        import gc
+        control_args=copy.copy(args)
+        control_args.branch_manifest=None
+        control_root=output/'parent-control'
+        control_root.mkdir()
+        parent_context=create(args.source.resolve(),control_root,control_args)
+        args.branch_parent_control=parent_context['template_initialization']
+        del parent_context
+        gc.collect()
     context = create(args.source.resolve(), output, args)
     shared.block.run_blocks(context, driver=lambda c, h, p: shared.run_cycles(c, h, p,
         steps=1 if args.relax_every_step else args.steps, cycles=200 if args.relax_every_step else 1,

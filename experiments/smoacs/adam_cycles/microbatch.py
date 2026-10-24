@@ -47,7 +47,7 @@ class Microbatch:
         return gap,ef,loss,out
 
     def gradients(self,temperature,active):
-        return accumulate(self.context['targets'],self.groups,active,len(active),lambda a,b:self.evaluate(a,b,temperature)[2])
+        return accumulate(self.context['targets'],self.groups,active,self.context.get('gradient_denominator',len(active)),lambda a,b:self.evaluate(a,b,temperature)[2])
 
     def forward(self,temperature):
         if torch.is_grad_enabled():raise RuntimeError('Use streamed gradients(), not a retained full microbatch graph.')

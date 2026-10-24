@@ -156,3 +156,9 @@ schedule, each followed by converged B. Use the dedicated
 `experiments/mattergen/stepwise/pilot.sbatch` for its matched A200/oneB control,
 final independent predictors and paired report. The generic single-cycle
 report/repair pipeline is not used for the200-cycle experiment.
+
+`--branch-manifest` supports the paired Best-of-N fixed-species pilot with20
+updates. It validates immutable original parents separately, then each supplied
+perturbed input's hash/species/geometry and independent frozen pose predictions.
+Branches use per-case gradient normalization1, exact fixed elements and bounded
+coordinate/cell proposals; see `experiments/mattergen/best_of_n/README.md`.

@@ -15,13 +15,13 @@ def schedule_position(cycle, local_step, steps, cycles, schedule, phase_end=Fals
         position, period=local_step,steps
     else:
         raise ValueError('Unknown learning-rate schedule.')
-    if period not in (200,600):
-        raise ValueError('Cosine period must match the200 or600 update budget.')
+    if period not in (20,200,600):
+        raise ValueError('Cosine period must match the20,200 or600 update budget.')
     return position,period
 
 
 def cosine_fraction(step,steps=200):
-    if not 0<=step<=steps or steps not in (200,600):raise ValueError('Expected a200- or600-update A phase.')
+    if not 0<=step<=steps or steps not in (20,200,600):raise ValueError('Expected a20-,200- or600-update A phase.')
     return .5*(1+math.cos(math.pi*step/steps))
 
 

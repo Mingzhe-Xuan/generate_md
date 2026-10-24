@@ -11,6 +11,11 @@ from adam_policy import BASE_RATES,cosine_fraction,flags,freeze_inactive,paired_
 
 
 class AdamCycleTests(unittest.TestCase):
+    def test_twenty_update_schedule(self):
+        self.assertEqual(cosine_fraction(0,20),1.)
+        self.assertAlmostEqual(cosine_fraction(10,20),.5)
+        self.assertEqual(cosine_fraction(20,20),0.)
+        self.assertEqual(schedule_position(1,19,20,1,'per_phase'),(19,20))
     def test_one_update_per_cycle_uses_global_decay_and_preserves_Adam_through_B(self):
         import torch
         parameters=[torch.nn.Parameter(torch.ones(1)) for _ in range(3)]
