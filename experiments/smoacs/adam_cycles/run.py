@@ -32,6 +32,8 @@ def run_cycles(context,hard_predictions,prepared_protocol,steps=200,cycles=3,sch
         raise ValueError('Expected a four- or128-template Adam200x3 or Adam600x1 experiment.')
     if schedule not in ('per_phase','restart200'):raise ValueError('Unknown LR schedule.')
     gpu_info=prepare_cuda(context)
+    if context.get('initialization_audit'):
+        context['initialization_audit'](context)
     targets=context['targets'];optimizers=context['optimizers'];forward=context['forward'];slices=context['slices']
     micro=None
     if n>4:
@@ -56,6 +58,8 @@ def run_cycles(context,hard_predictions,prepared_protocol,steps=200,cycles=3,sch
         b_fmax=.01,b_maxstep=.05,b_max_steps=1600,denominator=n,
         comparison='Fixed-budget GPU experiment; no joint convergence claim.')
     protocol.update(gpu_info)
+    if context.get('template_initialization'):
+        protocol['template_initialization']=context['template_initialization']
     if not args.resume:(output/'protocol.json').write_text(json.dumps(protocol,indent=2)+'\n')
     active=torch.ones(n,dtype=torch.bool,device=targets[0].device);states=[dict(candidate_id=k,status='active') for k in ids]
     rounds=[];neutral_cache={};workers=[];logs=[]
