@@ -1,4 +1,6 @@
 import unittest
+import importlib.util
+from pathlib import Path
 
 import torch
 
@@ -7,6 +9,13 @@ from report import paired,summarize
 
 
 class AlignnTemplateTests(unittest.TestCase):
+    def test_entry_resolves_shared_initialization_geometry_checker(self):
+        spec=importlib.util.spec_from_file_location('alignn_entry_test',Path(__file__).with_name('run.py'))
+        entry=importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(entry)
+        from solver import gram_check
+        self.assertTrue(gram_check(torch.eye(3).numpy(),torch.eye(3).numpy())['passed'])
+
     def test_signed_reverse_images_and_reconstruction_guard(self):
         cell=torch.eye(3,dtype=torch.float64)*4
         frac=torch.tensor([[.1,.2,.3],[.8,.4,.2]],dtype=torch.float64)

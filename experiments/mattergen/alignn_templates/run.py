@@ -14,7 +14,7 @@ from probe import run as gradient_probe,source_hashes
 
 ROOT=Path(__file__).resolve().parents[1]
 SMOACS=ROOT.parent/'smoacs'
-sys.path[:0]=[str(ROOT/'cf_templates'),str(SMOACS/'adam_cycles')]
+sys.path[:0]=[str(ROOT/'cf_templates'),str(SMOACS/'adam_cycles'),str(SMOACS/'block_alternating')]
 from context import create
 from microbatch import Microbatch
 
