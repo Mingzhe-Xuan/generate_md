@@ -19,7 +19,11 @@ def main():
         parser.error('All model computation through Slurm.')
     import numpy as np
     import torch
+    import ase.constraints
     from ase import Atoms
+    from ase.filters import Filter
+    if not hasattr(ase.constraints,'Filter'):
+        ase.constraints.Filter=Filter
     from mattersim.forcefield import MatterSimCalculator,potential
     source=Path(__file__).resolve().parents[2]/'smoacs'
     sys.path[:0]=[str(source),str(source/'postprocess')]
