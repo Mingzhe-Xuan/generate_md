@@ -2,6 +2,10 @@
 
 The shared controller also accepts a single200-update phase for the MatterGen
 template budget comparison, alongside the existing200x3 and600x1 profiles.
+The fixed-species four-template stepwise pilot additionally uses1x200 phases
+with a global200-update cosine schedule. Adam moments persist while every B
+updates the geometry; each following A input is saved and checked against B.
+See `experiments/mattergen/stepwise/README.md` for the matched control and scope.
 
 Same four preselected original templates andseed42 as the block pilot. Each A
 phase performs exactly200 Adam updates on lengths/angles, coordinates and

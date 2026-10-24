@@ -149,3 +149,10 @@ allocation. GPU work stays under the original Slurm GPU grant. If the original
 allocation has already ended, the coordinator submits an independent GPU job
 instead. Allocation-level memory measurements include both experiments during
 overlap and must not be described as isolated per-experiment measurements.
+
+`run.py --cohort pilot --fixed-species --steps 200 --relax-every-step` invokes
+the four-template stepwise pilot:200 single updates under a global cosine
+schedule, each followed by converged B. Use the dedicated
+`experiments/mattergen/stepwise/pilot.sbatch` for its matched A200/oneB control,
+final independent predictors and paired report. The generic single-cycle
+report/repair pipeline is not used for the200-cycle experiment.

@@ -7,10 +7,32 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from adam_policy import BASE_RATES,cosine_fraction,flags,freeze_inactive,paired_flags,set_rates,valid_proposal
+from adam_policy import BASE_RATES,cosine_fraction,flags,freeze_inactive,paired_flags,set_rates,valid_proposal,schedule_position
 
 
 class AdamCycleTests(unittest.TestCase):
+    def test_one_update_per_cycle_uses_global_decay_and_preserves_Adam_through_B(self):
+        import torch
+        parameters=[torch.nn.Parameter(torch.ones(1)) for _ in range(3)]
+        optimizers=[torch.optim.Adam([p],lr=lr) for p,lr in zip(parameters,BASE_RATES)]
+        rates=[]
+        for cycle in range(1,201):
+            position,period=schedule_position(cycle,0,1,200,'global')
+            self.assertEqual((position,period),(cycle-1,200))
+            set_rates(optimizers,position,period)
+            rates.append(optimizers[0].param_groups[0]['lr'])
+            for p,o in zip(parameters,optimizers):
+                p.grad=torch.ones_like(p)
+                o.step()
+                momentum=o.state[p]['exp_avg'].clone()
+                with torch.no_grad():p.fill_(1.)
+                torch.testing.assert_close(momentum,o.state[p]['exp_avg'])
+                self.assertEqual(float(o.state[p]['step']),cycle)
+            self.assertEqual(schedule_position(cycle,1,1,200,'global'),(cycle,200))
+        self.assertEqual(rates[0],BASE_RATES[0])
+        self.assertTrue(all(a>b for a,b in zip(rates,rates[1:])))
+        self.assertGreater(rates[-1],0)
+        self.assertEqual(schedule_position(1,600,600,1,'restart200',phase_end=True),(200,200))
     def test_audit_rejects_CPU_forward_and_never_marks_it_passed(self):
         import torch
         from types import SimpleNamespace

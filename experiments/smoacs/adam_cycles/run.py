@@ -9,7 +9,7 @@ import subprocess
 import sys
 import time
 
-from adam_policy import BASE_RATES,flags,freeze_inactive,set_rates,valid_proposal
+from adam_policy import BASE_RATES,flags,freeze_inactive,set_rates,valid_proposal,schedule_position
 from gpu import GPUAudit,prepare_cuda
 
 BLOCK=Path(__file__).resolve().parents[1]/'block_alternating'
@@ -29,9 +29,12 @@ def run_cycles(context,hard_predictions,prepared_protocol,steps=200,cycles=3,sch
     from policy import geometry_change
     output=context['output'];args=context['args'];ids=context['ids'];n=len(ids)
     expected=len(context['template_initialization']['selected']) if context.get('template_initialization') else (4 if args.pilot else 128)
-    if n!=expected or not 1<=expected<=128 or args.max_rounds!=cycles or (steps,cycles) not in ((200,1),(200,3),(600,1)):
+    stepwise=(steps,cycles,schedule)==(1,200,'global')
+    if stepwise and (n!=4 or not context.get('fixed_species')):
+        raise ValueError('Stepwise pilot requires four fixed-species original templates.')
+    if n!=expected or not 1<=expected<=128 or args.max_rounds!=cycles or ((steps,cycles) not in ((200,1),(200,3),(600,1)) and not stepwise):
         raise ValueError('Expected an Adam200x1, Adam200x3 or Adam600x1 experiment.')
-    if schedule not in ('per_phase','restart200'):raise ValueError('Unknown LR schedule.')
+    if schedule not in ('per_phase','restart200','global'):raise ValueError('Unknown LR schedule.')
     gpu_info=prepare_cuda(context)
     if context.get('initialization_audit'):
         context['initialization_audit'](context)
@@ -57,7 +60,8 @@ def run_cycles(context,hard_predictions,prepared_protocol,steps=200,cycles=3,sch
     protocol={k:prepared_protocol[k] for k in ('ids','initial_control_error','baseline_npz_sha256','author_source_sha256',
         'source_commit','a_parameters','a_dtype','precision_control_error','gaussian_derivative','adapter_control_error','adapter_control_calls')}
     protocol.update(method='Adam_cosine_then_MatterSim',cycles=cycles,steps_per_A=steps,
-        a_base_rates=BASE_RATES,temperature=.01,lr_cycle_policy=schedule,lr_period=200 if schedule=='restart200' else steps,
+        a_base_rates=BASE_RATES,temperature=.01,lr_cycle_policy=schedule,lr_period=schedule_position(1,0,steps,cycles,schedule)[1],
+        total_A_budget=steps*cycles,
         b_fmax=.01,b_maxstep=.05,b_max_steps=1600,denominator=n,
         comparison='Fixed-budget GPU experiment; no joint convergence claim.')
     protocol.update(gpu_info)
@@ -116,10 +120,20 @@ def run_cycles(context,hard_predictions,prepared_protocol,steps=200,cycles=3,sch
             pending=resume_pending and cycle==start_cycle
             cycle_dir=output/('cycle-'+str(cycle));cycle_dir.mkdir(exist_ok=pending)
             eligible=active.clone();updates=[0]*n;step_times=[];started=time.perf_counter()
+            a_inputs=None
+            if stepwise and not pending:
+                with torch.no_grad():_,_,_,start_out=forward(.01)
+                a_inputs=points(start_out,cycle_dir/'A-input')
+                for i in range(n):
+                    if cycle>1 and active[i]:
+                        check=gram_check(a_inputs[i]['cell'],previous[i]['cell'])
+                        delta=np.asarray(a_inputs[i]['frac'])-previous[i]['frac']
+                        if not check['passed'] or np.max(np.abs(delta-np.rint(delta)))>1e-6:
+                            raise ValueError('Next A input does not reconstruct the preceding converged B.')
             for step in range(0 if pending else steps):
                 if not active.any():break
                 step_started=time.perf_counter()
-                set_rates(optimizers,step%200 if schedule=='restart200' else step,200 if schedule=='restart200' else steps)
+                set_rates(optimizers,*schedule_position(cycle,step,steps,cycles,schedule))
                 if micro is None:
                     _,_,loss,_=forward(.01)
                     if not torch.isfinite(loss[active]).all():raise ValueError('Nonfinite active A input; retain last checkpoint.')
@@ -145,11 +159,11 @@ def run_cycles(context,hard_predictions,prepared_protocol,steps=200,cycles=3,sch
                 for optimizer in optimizers:freeze_inactive(optimizer,targets,before,masks)
                 elapsed=time.perf_counter()-step_started;step_times.append(elapsed)
                 if step==0 or (step+1)%25==0:
-                    record=dict(cycle=cycle,A_step=step+1,active=int(active.sum()),loss=loss.detach().tolist(),
+                    record=dict(cycle=cycle,A_step=step+1,global_A_step=(cycle-1)*steps+step+1,active=int(active.sum()),loss=loss.detach().tolist(),
                                 rates=[o.param_groups[0]['lr'] for o in optimizers],step_seconds=elapsed)
                     with (output/'A-trace.jsonl').open('a') as stream:stream.write(json.dumps(record)+'\n')
                     print(json.dumps(record),flush=True)
-            set_rates(optimizers,200 if schedule=='restart200' else steps,200 if schedule=='restart200' else steps)
+            set_rates(optimizers,*schedule_position(cycle,steps,steps,cycles,schedule,phase_end=True))
             if pending:
                 rows=rounds[-1]['candidates']
                 if rounds[-1]['cycle']!=cycle or [r['candidate_id'] for r in rows]!=ids:raise ValueError('Saved B cohort differs.')
@@ -162,6 +176,9 @@ def run_cycles(context,hard_predictions,prepared_protocol,steps=200,cycles=3,sch
                     rows.append(dict(candidate_id=ids[i],cycle=cycle,A=a_points[i],a_updates=updates[i],eligible_at_start=bool(eligible[i]),
                         status='B_pending' if active[i] else 'not_eligible',reason=None if active[i] else dict(states[i]),
                         a_phase_seconds=time.perf_counter()-started,a_step_seconds=step_times))
+                    if a_inputs is not None:
+                        rows[-1]['A_input']=a_inputs[i]
+                        rows[-1]['preceding_B_sha256']=previous[i]['sha256'] if cycle>1 and eligible[i] else None
                 rounds.append(dict(cycle=cycle,candidates=rows));save(cycle,'B_pending')
             tasks=[dict(candidate_id=ids[i],source=rows[i]['A']['source'],output=str(cycle_dir/'B'/Path(ids[i]).stem)) for i in range(n) if active[i]]
             if tasks:

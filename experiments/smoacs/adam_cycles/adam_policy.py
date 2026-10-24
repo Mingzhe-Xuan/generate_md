@@ -4,6 +4,22 @@ import math
 BASE_RATES=(.002,.007,.005)
 
 
+def schedule_position(cycle, local_step, steps, cycles, schedule, phase_end=False):
+    if not 1<=cycle<=cycles or not 0<=local_step<=steps:
+        raise ValueError('Schedule position is outside its declared budget.')
+    if schedule=='global':
+        position, period=(cycle-1)*steps+local_step, steps*cycles
+    elif schedule=='restart200':
+        position, period=(200 if phase_end else local_step%200),200
+    elif schedule=='per_phase':
+        position, period=local_step,steps
+    else:
+        raise ValueError('Unknown learning-rate schedule.')
+    if period not in (200,600):
+        raise ValueError('Cosine period must match the200 or600 update budget.')
+    return position,period
+
+
 def cosine_fraction(step,steps=200):
     if not 0<=step<=steps or steps not in (200,600):raise ValueError('Expected a200- or600-update A phase.')
     return .5*(1+math.cos(math.pi*step/steps))
