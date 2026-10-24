@@ -5,6 +5,20 @@ import numpy as np
 AMPLITUDES=(.10,.10,.05,.10,.20,.10,.10,.05,.10,.20)
 
 
+def configuration(amplitude=None, proposal_cap=.4):
+    amplitudes=AMPLITUDES if amplitude is None else (float(amplitude),)*10
+    if any(not math.isfinite(a) or a<=0 for a in amplitudes):
+        raise ValueError('RMS amplitudes must be finite and positive.')
+    if not math.isfinite(proposal_cap) or proposal_cap<2*max(amplitudes)-1e-12:
+        raise ValueError('CF proposal cap must contain every permitted initial displacement (2 RMS).')
+    return amplitudes
+
+
+def validate_configuration(manifest, amplitudes, proposal_cap):
+    if manifest['amplitudes_A']!=list(amplitudes) or manifest.get('max_cf_displacement_A',.4)!=proposal_cap:
+        raise ValueError('Existing manifest has a different amplitude or proposal bound.')
+
+
 def displacement(n, amplitude, seed):
     if n<2 or amplitude<0:
         raise ValueError('Expected at least two atoms and a nonnegative amplitude.')

@@ -8,7 +8,7 @@ import sys
 
 import numpy as np
 from pymatgen.core import Structure
-from policy import AMPLITUDES,displacement
+from policy import configuration,displacement,validate_configuration
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'cf_templates'))
 from template_policy import select_pilot
@@ -22,7 +22,10 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--source',type=Path,required=True)
     p.add_argument('--output',type=Path,required=True)
+    p.add_argument('--amplitude',type=float)
+    p.add_argument('--proposal-cap',type=float,default=.4)
     args=p.parse_args()
+    amplitudes=configuration(args.amplitude,args.proposal_cap)
     if not os.environ.get('SLURM_JOB_ID'):
         p.error('Prepare batch inputs through Slurm.')
     source=args.source.resolve()
@@ -34,6 +37,7 @@ def main():
     manifest_path=output/'manifest.json'
     if manifest_path.exists():
         manifest=json.loads(manifest_path.read_text())
+        validate_configuration(manifest,amplitudes,args.proposal_cap)
         if manifest['source_inventory_sha256']!=digest(inventory) or any(digest(Path(r['source']))!=r['sha256'] for r in manifest['candidates']):
             raise ValueError('Existing paired inputs changed.')
         return
@@ -58,7 +62,7 @@ def main():
             raise ValueError('Original source geometry changed.')
         original=structures[key]
         parents.append(dict(parent_id=key,source_sha256=digest(raw),num_atoms=len(original)))
-        for branch,amplitude in enumerate((0.,)+AMPLITUDES):
+        for branch,amplitude in enumerate((0.,)+amplitudes):
             for attempt in range(100):
                 seed=[42,parent_index,branch,attempt]
                 delta=displacement(len(original),amplitude,seed)
@@ -74,7 +78,8 @@ def main():
                 draw_seed=seed,draw_attempts=attempt+1,source=str(path),sha256=digest(path),
                 rms_displacement_A=float(np.sqrt(np.mean(np.sum(delta*delta,axis=1)))),max_displacement_A=float(np.linalg.norm(delta,axis=1).max())))
     manifest=dict(source_inventory_sha256=digest(inventory),parent_ids=[p['parent_id'] for p in parents],parents=parents,
-        candidates=records,N=10,seed=42,amplitudes_A=list(AMPLITUDES),perturbation='Cartesian zero-mean exact per-atom RMS; per-site norm <=2RMS; same cell and ordered species.',
+        candidates=records,N=10,seed=42,amplitudes_A=list(amplitudes),max_cf_displacement_A=args.proposal_cap,
+        perturbation='Cartesian zero-mean exact per-atom RMS; per-site norm <=2RMS; same cell and ordered species.',
         minimum_periodic_distance_A=.5,selection='Nearest4/8/12/20 atoms and ID among original eligible inputs, no property or outcome selection.')
     manifest_path.write_text(json.dumps(manifest,indent=2)+'\n')
     print(json.dumps(dict(parents=manifest['parent_ids'],paired_inputs=len(records),N=10)),flush=True)

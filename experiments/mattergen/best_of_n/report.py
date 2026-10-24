@@ -117,7 +117,9 @@ def main():
         paired=paired_errors(selections['no_CF'],selections['CF20'],parents),selected=selections,
         zero_controls=zero,zero_summaries={arm:selected_summary(list(rows.values()),4) for arm,rows in zero.items()},
         curves=curves,uniqueness=uniqueness,relaxation_status=status,candidates=candidates,predictor_controls=metadata,
-        note='Same ten coordinate perturbations for each raw parent and both methods. 0.05/0.10/0.20A RMS counts2/6/2, seed42, per-site displacement capped2RMS; no initial cell perturbation. '
+        amplitudes_A=manifest['amplitudes_A'],max_cf_displacement_A=manifest.get('max_cf_displacement_A',.4),
+        note=f"Same ten coordinate perturbations for each raw parent and both methods. RMS sequence (A): {manifest['amplitudes_A']}; seed42, per-site displacement capped2RMS; no initial cell perturbation. "
+            f"CF per-site displacement cap from raw parent {manifest.get('max_cf_displacement_A',.4)}A. "
             'CF20 uses a full20-update cosine schedule, fresh per-branch Adam states, per-candidate gradient normalization1, fixed ordered elements and bounded geometry proposals. '
             'Zero controls are outside Best-of-10. Ineligible branches consume their attempt; parents with no eligible candidate remain explicitly missing. MAE is across selected parents with coverage shown. '
             'Dedup usesltol.02/stol.05/angle1deg/primitiveFalse/scaleFalse, diagnostic only. Four-parent pilot, not population evidence.')

@@ -3,7 +3,7 @@ from pathlib import Path
 import unittest
 import numpy as np
 
-from policy import AMPLITUDES,best,displacement,eligible
+from policy import AMPLITUDES,best,configuration,displacement,eligible,validate_configuration
 
 
 def module(name,path):
@@ -14,6 +14,45 @@ def module(name,path):
 
 
 class BestPolicyTests(unittest.TestCase):
+    def test_amplitude_sweep_configuration_and_scaled_seed_directions(self):
+        self.assertEqual(configuration(),AMPLITUDES)
+        validate_configuration(dict(amplitudes_A=list(AMPLITUDES)),AMPLITUDES,.4)
+        with self.assertRaises(ValueError):
+            validate_configuration(dict(amplitudes_A=[.1]*10,max_cf_displacement_A=.6),(.2,)*10,.6)
+        with self.assertRaises(ValueError):
+            validate_configuration(dict(amplitudes_A=[.1]*10,max_cf_displacement_A=.6),(.1,)*10,.4)
+        for n in (4,8,12,20):
+            base=displacement(n,.1,[42,n,5])
+            for amplitude in (.1,.2,.3):
+                self.assertEqual(configuration(amplitude,.6),(amplitude,)*10)
+                np.testing.assert_allclose(displacement(n,amplitude,[42,n,5])/amplitude,base/.1,atol=1e-14)
+        for amplitude,cap in ((.3,.4),(0,.6),(-.1,.6),(float('nan'),.6),(.1,float('inf'))):
+            with self.assertRaises(ValueError):
+                configuration(amplitude,cap)
+
+    def test_sweep_common_parent_metrics_and_protocol_mismatch(self):
+        import copy
+        sweep=module('test_sweep_report',Path(__file__).with_name('sweep_report.py'))
+        row=self.row(1)
+        row.update(alignn_gap=2.7,parent_id='x')
+        report=dict(parent_ids=['x'],N=10,amplitudes_A=[.1]*10,max_cf_displacement_A=.6,eligibility={'force':.01},
+            selected={a:{'x':copy.deepcopy(row)} for a in ('no_CF','CF20')},
+            candidates={a:{'b1':copy.deepcopy(row)} for a in ('no_CF','CF20')},
+            summaries={a:{} for a in ('no_CF','CF20')},zero_summaries={a:{} for a in ('no_CF','CF20')},
+            uniqueness={a:{'x':{'distinct_eligible_terminal_structures':1}} for a in ('no_CF','CF20')})
+        reports={a:copy.deepcopy(report) for a in (.1,.2,.3)}
+        for a,r in reports.items():
+            r['amplitudes_A']=[a]*10
+        result=sweep.summarize(reports)
+        self.assertEqual(len(result['rows']),6)
+        self.assertAlmostEqual(result['common_parent_comparisons']['no_CF']['MAE']['0.3']['crystalformer']['MAE'],.05)
+        reports[.3]['selected']['no_CF']['x']=None
+        result=sweep.summarize(reports)
+        self.assertEqual(result['common_parent_comparisons']['no_CF']['parent_ids'],[])
+        reports[.3]['max_cf_displacement_A']=.4
+        with self.assertRaises(ValueError):
+            sweep.summarize(reports)
+
     def row(self,index,gap=2.55,energy=-1,force=.005):
         return dict(branch_index=index,crystalformer_gap=gap,crystalformer_eform=energy,structure_valid=True,
             relaxation=dict(status='converged',converged=True,max_filter_force=force,max_raw_atomic_force=force,final_energy_eV=-10,num_atoms=4))
@@ -101,6 +140,13 @@ class BestPolicyTests(unittest.TestCase):
         self.assertLessEqual(float(torch.linalg.vector_norm((coords.detach()-ref)@cell,dim=1).max()),.400001)
         torch.testing.assert_close(context['lower'],torch.ones(1,3)*3.92)
         torch.testing.assert_close(context['angle_upper'],torch.ones(1,3)*92)
+        with torch.no_grad():
+            coords.copy_(ref+.08)
+        geometry.install(context,ref.numpy(),cell[None].numpy(),np.array([[4,4,4]]),np.array([[90,90,90]]),max_displacement=.6)
+        before=coords.detach().clone()
+        context['project_after_update']()
+        torch.testing.assert_close(coords.detach(),before)
+        self.assertEqual(context['branch_bounds']['max_per_site_displacement_from_parent_A'],.6)
 
 
 if __name__=='__main__':

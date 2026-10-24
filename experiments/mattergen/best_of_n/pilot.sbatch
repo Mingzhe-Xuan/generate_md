@@ -15,7 +15,12 @@ task_run="${MATTERGEN_BESTN_RUN:-$PWD/results/mattergen/bestN-$SLURM_JOB_ID}"
 task_source="${MATTERGEN_TEMPLATE_SOURCE:-$PWD/results/mattergen/gap2p5-task128-20261024/full128}"
 mkdir -p "$task_run"
 touch "$task_run/SKIP_SUN"
-.venv-smoacs-postprocess/bin/python experiments/mattergen/best_of_n/prepare.py --source "$task_source" --output "$task_run"
+task_prepare=()
+if [[ -n "${MATTERGEN_BESTN_AMPLITUDE:-}" ]]; then
+ task_prepare+=(--amplitude "$MATTERGEN_BESTN_AMPLITUDE")
+fi
+.venv-smoacs-postprocess/bin/python experiments/mattergen/best_of_n/prepare.py --source "$task_source" --output "$task_run" \
+ --proposal-cap "${MATTERGEN_BESTN_PROPOSAL_CAP:-0.4}" "${task_prepare[@]}"
 if [[ ! -f "$task_run/cf20/complete.json" ]]; then
  .venv-smoacs-blackwell/bin/python experiments/mattergen/cf_templates/run.py \
   --source "$task_source" --output "$task_run/cf20" --cohort pilot --fixed-species --steps 20 \

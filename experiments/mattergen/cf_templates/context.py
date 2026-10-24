@@ -188,7 +188,7 @@ def create(source_root, output, args):
         original=[parent_structures[r['parent_id']] for r in selected]
         install(context,np.concatenate([s.frac_coords for s in original]),
             np.asarray([s.lattice.matrix for s in original]),np.asarray([s.lattice.abc for s in original]),
-            np.asarray([s.lattice.angles for s in original]))
+            np.asarray([s.lattice.angles for s in original]),max_displacement=branch_manifest.get('max_cf_displacement_A',.4))
         lower,upper,angle_lower,angle_upper=[context[k] for k in ('lower','upper','angle_lower','angle_upper')]
         context.update(branch_manifest=branch_manifest,gradient_denominator=1)
 

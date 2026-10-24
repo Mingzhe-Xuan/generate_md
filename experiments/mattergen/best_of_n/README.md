@@ -52,3 +52,26 @@ root. Existing blackwell and postprocess environments and model caches are
 reused. `prepare.py`, `run_raw.py`, evaluations and `report.py` run through Slurm.
 Results and the final evidence archive are under `results/mattergen/bestN-<job>`.
 Completed CF/B/prediction phases can be reused for report-only continuation.
+
+## Equal-budget amplitude sweep
+
+Submit `sbatch experiments/mattergen/best_of_n/sweep.sbatch` for the same four
+parents with ten branches at each constant RMS0.10/0.20/0.30A, plus four zero
+controls per amplitude. Both noCF and CF20 use each exact starting pose. Seed
+directions are shared across amplitudes unless collision rejection requires a
+different draw; manifests and the sweep report disclose these redraws. Each
+run uses the same0.60A maximum CF displacement from the original parent, so
+legal0.30A RMS inputs (per-site cap0.60A) are not clipped by the old0.40A bound.
+All other CF/B/predictor/selection settings remain unchanged. The0.10A arm is
+a fresh equal-N control; the previous mixed-amplitude pilot is not its substitute.
+
+`prepare.py --amplitude 0.20 --proposal-cap 0.60` configures a constant-amplitude
+run. Omitting these flags preserves the original mixed-amplitude protocol and
+0.40A bound. Resume rejects an amplitude/bound configuration mismatch.
+`pilot.sbatch` accepts `MATTERGEN_BESTN_AMPLITUDE` and
+`MATTERGEN_BESTN_PROPOSAL_CAP`; the sweep sets both explicitly and runs three
+arms sequentially inside its single Slurm GPU allocation. Results are under
+`results/mattergen/amplitude-sweep-<job>/rms-<amplitude>`; `sweep_report.py`
+produces the parent-level comparison, eligibility and geometry counts, and
+cross-amplitude common-parent metrics. Failed attempts retain their budget.
+This remains a four-parent feasibility study with no SUN/DFT/MD.
