@@ -1,0 +1,78 @@
+import unittest
+
+import torch
+
+from geometry import edge_features,recover_images
+from report import paired,summarize
+
+
+class AlignnTemplateTests(unittest.TestCase):
+    def test_signed_reverse_images_and_reconstruction_guard(self):
+        cell=torch.eye(3,dtype=torch.float64)*4
+        frac=torch.tensor([[.1,.2,.3],[.8,.4,.2]],dtype=torch.float64)
+        src=torch.tensor([0,1])
+        dst=torch.tensor([1,0])
+        images=torch.tensor([[-1.,0,0],[1.,0,0]],dtype=torch.float64)
+        vectors=(frac[dst]-frac[src]+images)@cell
+        actual=recover_images(vectors,cell,frac,src,dst)
+        torch.testing.assert_close(actual,images)
+        self.assertFalse(torch.equal(actual[0],actual[1]))
+        with self.assertRaises(ValueError):
+            recover_images(vectors+.1,cell,frac,src,dst)
+
+    def test_lattice_and_fractional_geometry_gradients(self):
+        cell=torch.tensor([[4.,0,0],[.2,3.7,0],[.1,.3,4.1]],dtype=torch.float64,requires_grad=True)
+        frac=torch.tensor([[.1,.2,.3],[.8,.4,.2],[.2,.7,.4]],dtype=torch.float64,requires_grad=True)
+        src=torch.tensor([0,1,1,2])
+        dst=torch.tensor([1,0,2,1])
+        images=torch.tensor([[-1.,0,0],[1.,0,0],[0,0,0],[0,0,0]],dtype=torch.float64)
+        line_src=torch.tensor([0,1,2])
+        line_dst=torch.tensor([2,0,3])
+        def objective(c,f):
+            r,h=edge_features(c,f,src,dst,images,line_src,line_dst)
+            return r.square().sum()+.3*h.square().sum()
+        grads=torch.autograd.grad(objective(cell,frac),(cell,frac))
+        for index,parameter in enumerate((cell,frac)):
+            direction=torch.arange(1,parameter.numel()+1,dtype=torch.float64).reshape(parameter.shape)
+            direction/=direction.norm()
+            eps=1e-6
+            with torch.no_grad():
+                args=[cell,frac]
+                args[index]=parameter+eps*direction
+                upper=objective(*args)
+                args[index]=parameter-eps*direction
+                lower=objective(*args)
+            self.assertAlmostEqual(float((upper-lower)/(2*eps)),float((grads[index]*direction).sum()),places=6)
+        torch.testing.assert_close(grads[1].sum(0),torch.zeros(3,dtype=torch.float64),atol=1e-12,rtol=0)
+        torch.testing.assert_close(objective(cell,frac+.4),objective(cell,frac))
+
+    def test_degenerate_bond_is_rejected(self):
+        with self.assertRaises(ValueError):
+            edge_features(torch.eye(3),torch.zeros(2,3),torch.tensor([0]),torch.tensor([1]),
+                torch.zeros(1,3),torch.tensor([0]),torch.tensor([0]))
+
+    def row(self,key,gap):
+        flags=dict(gap=None,eform=None,joint=None) if gap is None else dict(gap=True,eform=True,joint=False)
+        return dict(candidate_id=key,crystalformer_gap=gap,alignn_gap=gap,crystalformer_flags=flags,alignn_flags=flags)
+
+    def test_unknowns_remain_in_denominator(self):
+        rows=[self.row('a',2.6),self.row('b',None)]
+        result=summarize(rows)
+        self.assertEqual(result['denominator'],2)
+        self.assertEqual(result['alignn']['unknown'],1)
+        self.assertEqual(result['alignn']['gap_pass'],1)
+        self.assertAlmostEqual(result['alignn']['MAE'],.1)
+
+    def test_same_parent_pairing_and_different_coverage(self):
+        first=[self.row('a',2.6),self.row('b',None)]
+        second=[self.row('b',2.5),self.row('a',2.7)]
+        result=paired(first,second,['a','b'])
+        self.assertEqual(result['alignn']['ids'],['a'])
+        self.assertAlmostEqual(result['alignn']['first_MAE'],.1)
+        self.assertAlmostEqual(result['alignn']['second_MAE'],.2)
+        with self.assertRaises(ValueError):
+            paired(first,second[:1],['a','b'])
+
+
+if __name__=='__main__':
+    unittest.main()

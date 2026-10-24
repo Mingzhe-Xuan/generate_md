@@ -32,7 +32,7 @@ def prepare_cuda(context):
     if error>1e-3:raise ValueError('CPU/GPU initial predictor control failed: '+str(error))
     return dict(a_device='cuda',a_dtype='float32',gpu=torch.cuda.get_device_name(),capability=list(torch.cuda.get_device_capability()),
         torch=torch.__version__,cuda=torch.version.cuda,cpu_gpu_control_error=error,
-        backend='PyTorch CUDA indexed encoder with corrected Gaussian input derivatives',tf32=False)
+        backend=context.get('backend','PyTorch CUDA indexed encoder with corrected Gaussian input derivatives'),tf32=False)
 
 
 class GPUAudit:
@@ -51,7 +51,8 @@ class GPUAudit:
                 raise RuntimeError('Crystalformer encoder forward executed on CPU.')
             self.report['forward_calls']+=1
             if output.requires_grad:output.register_hook(backward)
-        for model in (context['gap_model'],context['ef_model']):self.handles.append(model.encoder.register_forward_hook(forward))
+        for model in (context['gap_model'],context['ef_model']):
+            self.handles.append(getattr(model,'encoder',model).register_forward_hook(forward))
         if context.get('fixed_species'):
             self.report['backward_observation']='geometry target gradients; fixed elemental encoder has no input gradient'
             for parameter in context['targets'][:3]:self.handles.append(parameter.register_hook(backward))

@@ -60,6 +60,9 @@ def run_cycles(context,hard_predictions,prepared_protocol,steps=200,cycles=3,sch
     batch=context['batch'];base=context['base'];lower,upper,angle_lower,angle_upper=[context[k] for k in ('lower','upper','angle_lower','angle_upper')]
     protocol={k:prepared_protocol[k] for k in ('ids','initial_control_error','baseline_npz_sha256','author_source_sha256',
         'source_commit','a_parameters','a_dtype','precision_control_error','gaussian_derivative','adapter_control_error','adapter_control_calls')}
+    for key in ('optimization_predictor','predictor_metadata'):
+        if key in prepared_protocol:
+            protocol[key]=prepared_protocol[key]
     protocol.update(method='Adam_cosine_then_MatterSim',cycles=cycles,steps_per_A=steps,
         a_base_rates=BASE_RATES,temperature=.01,lr_cycle_policy=schedule,lr_period=schedule_position(1,0,steps,cycles,schedule)[1],
         total_A_budget=steps*cycles,
