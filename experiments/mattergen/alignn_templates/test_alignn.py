@@ -6,9 +6,20 @@ import torch
 
 from geometry import edge_features,recover_images
 from report import paired,summarize
+from device_control import topology_signature
 
 
 class AlignnTemplateTests(unittest.TestCase):
+    def test_graph_control_ignores_edge_order_but_detects_periodic_topology(self):
+        from types import SimpleNamespace
+        first=SimpleNamespace(edges=lambda **kw:(torch.tensor([0,1]),torch.tensor([1,0])))
+        second=SimpleNamespace(edges=lambda **kw:(torch.tensor([1,0]),torch.tensor([0,1])))
+        a=(first,None,torch.tensor([[-1.,0,0],[1.,0,0]]))
+        b=(second,None,torch.tensor([[1.,0,0],[-1.,0,0]]))
+        self.assertEqual(topology_signature(a),topology_signature(b))
+        c=(first,None,torch.zeros(2,3))
+        self.assertNotEqual(topology_signature(a),topology_signature(c))
+
     def test_entry_resolves_shared_initialization_geometry_checker(self):
         spec=importlib.util.spec_from_file_location('alignn_entry_test',Path(__file__).with_name('run.py'))
         entry=importlib.util.module_from_spec(spec)

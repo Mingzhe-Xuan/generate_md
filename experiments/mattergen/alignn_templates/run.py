@@ -11,6 +11,7 @@ import torch
 
 from model import Predictor,load_models
 from probe import run as gradient_probe,source_hashes
+from device_control import prepare as prepare_device
 
 ROOT=Path(__file__).resolve().parents[1]
 SMOACS=ROOT.parent/'smoacs'
@@ -47,6 +48,7 @@ def main():
     (output/'crystalformer-initialization-control.json').write_text(json.dumps(context['template_initialization'],indent=2)+'\n')
     models,metadata=load_models(output)
     predictor=Predictor(models)
+    context['prepare_cuda']=lambda c:prepare_device(c,predictor)
     context.update(gap_model=models[0],ef_model=models[1],optimization_predictor='ALIGNN',
         backend='Frozen ALIGNN; signed periodic geometry autograd; kNN rebuilt each forward')
     context['author'].forward_propagation_Crystalformer=predictor.forward

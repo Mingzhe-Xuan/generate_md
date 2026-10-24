@@ -24,6 +24,11 @@ selection is discrete: gradients differentiate geometry on the current graph,
 not through neighbor selection. `probe.py` tests lattice/coordinate directional
 finite differences on a frozen graph at interior float64 probe coordinates,
 plus native-forward equivalence on original and deformed structures.
+`device_control.py` compares CPU/GPU arithmetic on identical signed neighbor
+connectivity at the unchanged1e-3 tolerance, then records fresh-graph topology
+and prediction changes separately. Floating-point geometry differences can
+change kNN choices near tied neighbor distances. The optimizer always uses
+fresh GPU graphs; the replay is restricted to the numerical device control.
 
 `run.py` reuses verified CF template initialization, the shared GPU Adam200
 controller and the same MatterSim workers. ALIGNN supplies every optimization

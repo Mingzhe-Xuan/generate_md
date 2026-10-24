@@ -36,7 +36,7 @@ def run_cycles(context,hard_predictions,prepared_protocol,steps=200,cycles=3,sch
     if n!=expected or not 1<=expected<=128 or args.max_rounds!=cycles or ((steps,cycles) not in ((200,1),(200,3),(600,1)) and not stepwise and not branch_pilot):
         raise ValueError('Expected an Adam200x1, Adam200x3 or Adam600x1 experiment.')
     if schedule not in ('per_phase','restart200','global'):raise ValueError('Unknown LR schedule.')
-    gpu_info=prepare_cuda(context)
+    gpu_info=context.get('prepare_cuda',prepare_cuda)(context)
     if context.get('initialization_audit'):
         context['initialization_audit'](context)
     targets=context['targets'];optimizers=context['optimizers'];forward=context['forward'];slices=context['slices']
