@@ -154,6 +154,7 @@ def main():
         relaxation_status_counts=dict(statuses), SUN_complete='SUN' in summaries['all128'],
         memory=load(root/'memory-summary.json') if (root/'memory-summary.json').exists() else None,
         torch_memory={k: load(root/k/'torch-memory.json') for k in groups},
+        reference_memory=load(root/'reference-memory/memory-summary.json') if (root/'reference-memory/memory-summary.json').exists() else None,
         thresholds=dict(gap_eV=[2.3, 2.7], eform_eV_atom_less_than=-.5, stable_hull_eV_atom_less_than=.1),
         note='All128 original MatterGen raw structures participate. Neutral65 uses the pilot oxidation masks; unmasked63 uses no oxidation mask, with an inactive interface tensor. '
              'Each strategy has its own global mean Adam loss; both use600updates/cosine/base rates and the same B profile. '

@@ -14,6 +14,11 @@ unset ALL_PROXY HTTP_PROXY HTTPS_PROXY
 export SMOACS_REFERENCE_PROXY=""
 task_run="${MATTERGEN_CF_FULL_RUN:?}"
 task_source="${MATTERGEN_TEMPLATE_SOURCE:?}"
+export MATTERGEN_CF_COHORT=reference
+mkdir -p "$task_run/reference-memory"
+python3 experiments/mattergen/cf_templates/monitor.py --output "$task_run/reference-memory" \
+ --stop-file "$task_run/reference-memory/memory.stop" &
+task_monitor=$!
 curl --fail --noproxy '*' --head --connect-timeout 10 --max-time 30 \
  https://materialsproject-build.s3.amazonaws.com/collections/summary/version=2026-04-13/part-00000-d0a74fbe-68f8-4a2d-9d43-67cb6a1bc912-c000.zstd.parquet >/dev/null
 .venv-smoacs-reference/bin/python experiments/smoacs/references/prepare.py \
@@ -30,3 +35,5 @@ python3 experiments/mattergen/cf_templates/cache_references.py --selection "$tas
 printf '%s\n' "$task_selection" > "$task_run/SUN-selection.txt"
 python3 experiments/mattergen/cf_templates/full_report.py --run "$task_run" --source "$task_source"
 touch "$task_run/SUN.complete"
+touch "$task_run/reference-memory/memory.stop"
+wait "$task_monitor"
