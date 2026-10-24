@@ -24,7 +24,8 @@ def run_blocks(context,driver=None):
     from policy import geometry_change
     args=context['args'];output=context['output'];ids=context['ids'];targets=context['targets']
     if driver is None and (not args.pilot or len(ids)!=4):raise ValueError('Block feasibility mode requires the four-template pilot.')
-    if driver is not None and len(ids)!=(4 if args.pilot else 128):raise ValueError('Unexpected initialized cohort size.')
+    expected=len(context['template_initialization']['selected']) if context.get('template_initialization') else (4 if args.pilot else 128)
+    if driver is not None and (not 1<=expected<=128 or len(ids)!=expected):raise ValueError('Unexpected initialized cohort size.')
     forward=context['forward'];slices=context['slices'];base=context['base']
     with torch.no_grad():original_gap,original_ef,_,_=forward(.01)
     for parameter in targets:parameter.data=parameter.data.double()
@@ -42,6 +43,8 @@ def run_blocks(context,driver=None):
     adapter_error=max(float((exact_gap-double_gap).abs().max()),float((exact_ef-double_ef).abs().max()))
     if adapter_error>1e-8:raise ValueError('Gaussian derivative adapter changed predictor values: '+str(adapter_error))
     def hard_predictions(out):
+        if context.get('hard_predict'):
+            return context['hard_predict'](out)
         onehot=torch.nn.functional.one_hot(out['normalized_dist'].argmax(1),98).to(targets[0].dtype)
         return context['author'].Crystalformer_prediction(context['gap_model'],context['ef_model'],onehot,
             out['pos'],context['batch'],out['lattice_vectors'],context['size'])

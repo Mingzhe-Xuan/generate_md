@@ -47,5 +47,35 @@ the pipeline preserves its A/B trajectory and resumes only missing stages.
 The frozen CF evaluator names its output with `SLURM_JOB_ID`, independently
 of the step tag used for the pilot's containing directory.
 
+## Full128, two concurrent initialization strategies
+
+`sbatch experiments/mattergen/cf_templates/full.sbatch` processes all128 raw
+MatterGen structures. The65 charge-compatible cases use the validated neutral
+masks. The63 remaining cases use the author's genuinely unmasked element
+preprocessing (`oxidation_target=None`); an inactive zero-gradient oxidation
+tensor exists only to retain the controller interface. Unmasked optimization
+has four active variable blocks. Initial ordered discrete species and poses
+remain checked in both strategies, while soft initial predictions are distinct.
+
+Two independent `srun --overlap` steps share one GPU allocation. CPU, CUDA
+forward controls, hard predictions and gradients all stream microbatches of4;
+gradient partitions2/4 must agree within1e-3. Each strategy performs600 global
+Adam updates with its own mean loss, then uses two MatterSim workers. Frozen
+CF/ALIGNN evaluation follows. No full retained128-structure graph is required.
+
+`monitor.py` samples device memory and sums GPU processes by the current Slurm
+job and strategy. It records only those environment labels, never other
+environment values. Sampled NVIDIA MiB peaks and exact per-process Torch
+allocator peaks are distinguished. Batch cleanup preserves its actual exit
+code and stops only its own monitor; substeps do not overwrite job status.
+
+`full_report.py` rejects overlapping/missing IDs, merges128 endpoints and
+reports overall128 and separate65/63 strata, failures/unknowns and paired
+bandgap errors. It schedules `references.sbatch`, which uses a union of direct
+MatterGen-B and hybrid-B chemical systems, hash-validated reference caches and
+unchanged serial reference relaxation. Both SUN evaluations use that same
+pool. U is computed within each full128 method before stratification. DFT
+remains paused. Output is under `results/mattergen/cf-full-<job>`.
+
 Local policy tests: `python -S -m unittest discover -s
 experiments/mattergen/cf_templates -p 'test_*.py'`.

@@ -33,12 +33,16 @@ class Microbatch:
         targets=[p[s] for p,s in zip(c['targets'],selections)]
         scalers=dict(abc_scaler=SimpleNamespace(rescale=lambda x:x*c['base'][crystals]),
                      angle_scaler=SimpleNamespace(rescale=lambda x:x*60+60))
-        gap,ef,out=c['author'].forward_propagation_Crystalformer(optimization_targets=targets,fixed_inputs=data,
+        prediction_targets=targets[:4]+[None] if c.get('unconstrained_elements') else targets
+        gap,ef,out=c['author'].forward_propagation_Crystalformer(optimization_targets=prediction_targets,fixed_inputs=data,
             scalers=scalers,temperature=temperature,bandgap_model=c['gap_model'],e_form_model=c['ef_model'],
             adding_noise_scale=None,limit_coords_displacement=None,
             abc_range=(c['lower'][crystals],c['upper'][crystals]),angle_range=(c['angle_lower'][crystals],c['angle_upper'][crystals]))
         gap,ef=gap.reshape(-1),ef.reshape(-1)
-        return gap,ef,torch.clamp(torch.abs(gap-2.5)-.04,min=0)+ef,out
+        loss=torch.clamp(torch.abs(gap-2.5)-.04,min=0)+ef
+        if c.get('unconstrained_elements'):
+            loss=loss+targets[4].sum()*0
+        return gap,ef,loss,out
 
     def gradients(self,temperature,active):
         return accumulate(self.context['targets'],self.groups,active,len(active),lambda a,b:self.evaluate(a,b,temperature)[2])

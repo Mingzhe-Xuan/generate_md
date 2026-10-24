@@ -14,6 +14,13 @@ def summarize(rows):
                 unknown=sum(v is None for v in values), denominator=len(rows))
         errors = [abs(r[model+'_gap']-2.5) for r in rows if r[model+'_gap'] is not None]
         output[model+'_gap_MAE'] = dict(n=len(errors), value=statistics.mean(errors) if errors else None)
+    validity = [r.get('structure_valid') for r in rows]
+    output['structure_valid'] = dict(passed=sum(v is True for v in validity), unknown=sum(v is None for v in validity), denominator=len(rows))
+    both = []
+    for row in rows:
+        flags = [row[m+'_flags']['joint'] for m in ('crystalformer', 'alignn')]
+        both.append(False if False in flags else None if None in flags else True)
+    output['both_models_joint'] = dict(passed=sum(v is True for v in both), unknown=sum(v is None for v in both), denominator=len(rows))
     return output
 
 
@@ -24,9 +31,12 @@ def main():
     args = p.parse_args()
     protocol = json.loads((args.run/'protocol.json').read_text())
     ids = protocol['ids']
-    if len(ids) != 4 or len(set(ids)) != 4:
-        raise ValueError('Require the unchanged four selected IDs.')
+    n = len(ids)
+    if not n or len(set(ids)) != n:
+        raise ValueError('Require unchanged distinct selected IDs.')
     eligibility = json.loads((args.run/'eligibility.json').read_text())
+    if ids != eligibility['selected_ids']:
+        raise ValueError('Selected source IDs differ.')
     gpu = json.loads((args.run/'gpu-audit.json').read_text())
     gradient = json.loads((args.run/'initial-gradient-audit.json').read_text())
     if not (gpu['passed'] and gpu['all_cuda'] and gradient['passed']):
@@ -42,20 +52,22 @@ def main():
 
     cohorts = dict(MatterGen_raw=select(baseline, 'before'), MatterGen_B=select(baseline, 'after'),
                    MatterGen_CF600=select(optimized, 'before'), MatterGen_CF600_B=select(optimized, 'after'))
-    result = dict(denominator=4, ids=ids, eligibility=eligibility, gpu_audit=gpu,
+    strategy = eligibility.get('strategy', 'pilot')
+    result = dict(denominator=n, ids=ids, strategy=strategy, eligibility=eligibility, gpu_audit=gpu,
         gradient_audit=gradient, protocol=protocol, metrics={k: summarize(v) for k, v in cohorts.items()},
-        per_case=cohorts, note='Feasibility pilot, not full128 performance or SUN. Source cells/coordinates/initial hard species preserved; soft distributions differ explicitly. '
-        'Four eligible size-selected cases;63 nonneutral cases are not silently discarded from full128 eligibility. Direct-B and optimized-B share the same original generated IDs.')
+        per_case=cohorts, note=f'{strategy} initialization strategy, {n} original source IDs. Source cells/coordinates/initial hard species preserved; soft distributions differ explicitly. '
+        'Oxidation masking is absent for the unmasked strategy; its oxidation tensor is an inactive interface placeholder. '
+        'Direct-B and optimized-B share source IDs. This per-strategy report alone is not a full128 or SUN result.')
     (args.run/'comparison.json').write_text(json.dumps(result, indent=2, allow_nan=False)+'\n')
     lines = ['# MatterGen initial templates: CF GPU feasibility', '', result['note'], '',
              '| Metric | Raw | Direct B | CF600 | CF600+B |', '|---|---:|---:|---:|---:|']
     names = list(cohorts)
     for metric in result['metrics'][names[0]]:
         values = [result['metrics'][name][metric] for name in names]
-        cells = [(f"{v['passed']}/4 (unknown {v['unknown']})" if 'passed' in v else f"{v['value']} (n={v['n']})") for v in values]
+        cells = [(f"{v['passed']}/{n} (unknown {v['unknown']})" if 'passed' in v else f"{v['value']} (n={v['n']})") for v in values]
         lines.append('| '+metric+' | '+' | '.join(cells)+' |')
     (args.run/'comparison.md').write_text('\n'.join(lines)+'\n')
-    print(json.dumps(dict(passed=True, denominator=4, eligible=eligibility['eligible'], ids=ids)), flush=True)
+    print(json.dumps(dict(passed=True, denominator=n, strategy=strategy, eligible=eligibility['eligible'], ids=ids)), flush=True)
 
 
 if __name__ == '__main__':

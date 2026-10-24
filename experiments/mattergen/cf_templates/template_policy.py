@@ -38,3 +38,14 @@ def select_pilot(rows):
         chosen.append(row)
         remaining.remove(row)
     return chosen
+
+
+def select_cohort(rows, mode):
+    if mode == 'pilot':
+        return select_pilot(rows)
+    if mode not in ('neutral', 'unmasked'):
+        raise ValueError('Unknown initialization strategy.')
+    chosen = [r for r in rows if r['eligible'] == (mode == 'neutral')]
+    if not chosen or len({r['candidate_id'] for r in rows}) != len(rows):
+        raise ValueError('Empty cohort or duplicate source IDs.')
+    return chosen

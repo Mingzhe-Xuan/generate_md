@@ -8,7 +8,7 @@ import sys
 import tarfile
 import types
 
-from template_policy import neutral_assignments, select_pilot
+from template_policy import neutral_assignments, select_cohort
 
 SMOACS = Path(__file__).resolve().parents[2]/'smoacs'
 
@@ -78,10 +78,13 @@ def create(source_root, output, args):
                                 reason=None if eligible else 'No SUPER_COMMON neutral assignment preserving original species.'))
         structures[identifier] = structure
         assignments[identifier] = paths
-    selected = select_pilot(eligibility)
+    mode = getattr(args, 'cohort', 'pilot')
+    unconstrained = mode == 'unmasked'
+    selected = select_cohort(eligibility, mode)
     (output/'eligibility.json').write_text(json.dumps(dict(denominator=128,
         eligible=sum(r['eligible'] for r in eligibility), candidates=eligibility,
-        selection='First nearest eligible atom counts4/8/12/20, tie by ID; no property or B-outcome selection.',
+        selection='Size-selected pilot' if mode == 'pilot' else 'All source IDs in the '+mode+' strategy, original order; no property selection.',
+        strategy=mode,
         selected_ids=[r['candidate_id'] for r in selected]), indent=2)+'\n')
     ids = [r['candidate_id'] for r in selected]
     chosen = [structures[k] for k in ids]
@@ -138,21 +141,50 @@ def create(source_root, output, args):
     optimizers = [torch.optim.Adam(targets[:2], lr=.002), torch.optim.Adam(targets[3:], lr=.007),
                   torch.optim.Adam([targets[2]], lr=.005)]
 
+    context = dict(args=args, output=output, ids=ids, n=n, targets=targets, data=data, batch=batch,
+        size=size, base=base, lower=lower, upper=upper, angle_lower=angle_lower, angle_upper=angle_upper,
+        gap_model=gap_model, ef_model=ef_model, optimizers=optimizers, slices=slices, author=author,
+        unconstrained_elements=unconstrained, microbatch_size=getattr(args, 'microbatch_size', 4),
+        streamed_initialization=n>4)
+
     def forward(temperature):
-        gap, ef, out = author.forward_propagation_Crystalformer(optimization_targets=targets,
+        if n > 4:
+            if torch.is_grad_enabled():
+                raise RuntimeError('Use streamed gradients for the full external cohort.')
+            from microbatch import Microbatch
+            return Microbatch(context, size=context['microbatch_size']).forward(temperature)
+        prediction_targets = targets[:4]+[None] if unconstrained else targets
+        gap, ef, out = author.forward_propagation_Crystalformer(optimization_targets=prediction_targets,
             fixed_inputs=data, scalers=scalers, temperature=temperature, bandgap_model=gap_model,
             e_form_model=ef_model, adding_noise_scale=None, limit_coords_displacement=None,
             abc_range=(lower, upper), angle_range=(angle_lower, angle_upper))
         gap, ef = gap.reshape(-1), ef.reshape(-1)
-        return gap, ef, torch.clamp(torch.abs(gap-2.5)-.04, min=0)+ef, out
+        loss = torch.clamp(torch.abs(gap-2.5)-.04, min=0)+ef
+        if unconstrained:
+            loss = loss+targets[4].sum()*0
+        return gap, ef, loss, out
+
+    def hard_predict(out):
+        gaps, energies = [], []
+        chunk = context['microbatch_size']
+        for start in range(0, n, chunk):
+            stop = min(n, start+chunk)
+            atoms = slice(slices[start].start, slices[stop-1].stop)
+            onehot = torch.nn.functional.one_hot(out['normalized_dist'][atoms].argmax(1), 98).to(context['targets'][0].dtype)
+            g, e = author.Crystalformer_prediction(gap_model, ef_model, onehot, out['pos'][atoms],
+                context['batch'][atoms]-start, out['lattice_vectors'][start:stop], context['size'][start:stop])
+            gaps.append(g.reshape(-1))
+            energies.append(e.reshape(-1))
+        return torch.cat(gaps), torch.cat(energies)
+
+    context.update(forward=forward, hard_predict=hard_predict)
 
     with torch.no_grad():
         soft_gap, soft_ef, _, initial = forward(.01)
         hard_numbers = initial['normalized_dist'].argmax(1)+1
         if not torch.equal(hard_numbers, numbers):
             raise ValueError('Warm start changed initial ordered elements.')
-        onehot = torch.nn.functional.one_hot(numbers-1, 98).float()
-        gap, ef = author.Crystalformer_prediction(gap_model, ef_model, onehot, initial['pos'], batch, initial['lattice_vectors'], size)
+        gap, ef = hard_predict(initial)
     recorded = {c['candidate_id']: c for c in inventory['candidates']}
     control_error = max(max(abs(float(gap.reshape(-1)[i])-recorded[k]['original_gap']),
                             abs(float(ef.reshape(-1)[i])-recorded[k]['original_eform'])) for i, k in enumerate(ids))
@@ -178,28 +210,35 @@ def create(source_root, output, args):
 
     author.elec_neutral_check_SUPER_COMMON = neutral_check
     template_initialization = dict(source_inventory_sha256=digest(source_root/'inventory-249/inventory.json'),
-        source_root=str(source_root), selected=selected, hard_control_error=control_error,
+        source_root=str(source_root), selected=selected, hard_control_error=control_error, strategy=mode,
         element_weights='uniform1/98 plus0.001 at original species; hard identity checked; soft inputs are mixtures',
         initial_hard_gap=gap.reshape(-1).tolist(), initial_soft_gap=soft_gap.tolist(),
         initial_hard_eform=ef.reshape(-1).tolist(), initial_soft_eform=soft_ef.tolist(),
-        bounds='Original ranges expanded only to contain input, no clipping.', mask='Up to10 lexicographic exact neutral SUPER_COMMON assignments in input atom order.')
+        bounds='Original ranges expanded only to contain input, no clipping.',
+        mask='None: actual predictor oxidation target is None; oxidation tensor is an inactive zero-gradient interface placeholder.' if unconstrained else 'Up to10 lexicographic exact neutral SUPER_COMMON assignments in input atom order.')
     (output/'initialization.json').write_text(json.dumps(template_initialization, indent=2)+'\n')
     protocol = dict(ids=ids, initial_control_error=control_error, baseline_npz_sha256=None,
         author_source_sha256=SOURCE_SHA256, source_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
         a_parameters=['scaled lengths', 'scaled angles', 'fractional coordinates', 'element logits', 'oxidation logits'])
-    context = dict(args=args, output=output, ids=ids, n=n, targets=targets, data=data, batch=batch,
-        size=size, base=base, lower=lower, upper=upper, angle_lower=angle_lower, angle_upper=angle_upper,
-        gap_model=gap_model, ef_model=ef_model, optimizers=optimizers, forward=forward,
-        slices=slices, author=author, protocol=protocol, template_initialization=template_initialization)
+    if unconstrained:
+        protocol['a_parameters'][-1] = 'inactive oxidation placeholder (no charge mask)'
+    context.update(protocol=protocol, template_initialization=template_initialization)
 
     def initialization_audit(context):
-        _, _, loss, _ = context['forward'](.01)
-        gradients = torch.autograd.grad(loss.mean(), context['targets'])
+        if n > 4:
+            from microbatch import Microbatch
+            _, gradients = Microbatch(context, size=context['microbatch_size']).gradients(
+                .01, torch.ones(n, dtype=torch.bool, device=context['targets'][0].device))
+        else:
+            _, _, loss, _ = context['forward'](.01)
+            gradients = torch.autograd.grad(loss.mean(), context['targets'])
         checks = [dict(cuda=g.is_cuda, finite=bool(torch.isfinite(g).all()), max_abs=float(g.abs().max()),
                        nonzero=int(torch.count_nonzero(g))) for g in gradients]
         if not all(r['cuda'] and r['finite'] for r in checks) or not any(r['max_abs']>1e-8 for r in checks[:3]):
             raise ValueError('External template CUDA gradients failed.')
-        (output/'initial-gradient-audit.json').write_text(json.dumps(dict(passed=True, blocks=checks), indent=2)+'\n')
+        (output/'initial-gradient-audit.json').write_text(json.dumps(dict(passed=True, blocks=checks,
+            strategy=mode, oxidation_active=not unconstrained,
+            max_allocated_bytes=torch.cuda.max_memory_allocated(), max_reserved_bytes=torch.cuda.max_memory_reserved()), indent=2)+'\n')
 
     context['initialization_audit'] = initialization_audit
     return context

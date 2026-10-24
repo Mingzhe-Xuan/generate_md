@@ -28,7 +28,8 @@ def run_cycles(context,hard_predictions,prepared_protocol,steps=200,cycles=3,sch
     from solver import gram_check
     from policy import geometry_change
     output=context['output'];args=context['args'];ids=context['ids'];n=len(ids)
-    if n!=(4 if args.pilot else 128) or args.max_rounds!=cycles or (steps,cycles) not in ((200,3),(600,1)):
+    expected=len(context['template_initialization']['selected']) if context.get('template_initialization') else (4 if args.pilot else 128)
+    if n!=expected or not 1<=expected<=128 or args.max_rounds!=cycles or (steps,cycles) not in ((200,3),(600,1)):
         raise ValueError('Expected a four- or128-template Adam200x3 or Adam600x1 experiment.')
     if schedule not in ('per_phase','restart200'):raise ValueError('Unknown LR schedule.')
     gpu_info=prepare_cuda(context)
@@ -38,15 +39,17 @@ def run_cycles(context,hard_predictions,prepared_protocol,steps=200,cycles=3,sch
     micro=None
     if n>4:
         from microbatch import Microbatch
-        micro=Microbatch(context,size=16)
+        micro_size=context.get('microbatch_size',16)
+        micro=Microbatch(context,size=micro_size)
         with torch.no_grad():
-            a,b,_,_=forward(.01);x,y,_,_=micro.forward(.01)
+            control=Microbatch(context,size=max(1,micro_size//2)).forward if context.get('streamed_initialization') else forward
+            a,b,_,_=control(.01);x,y,_,_=micro.forward(.01)
         gpu_info['microbatch_forward_error']=max(float((a-x).abs().max()),float((b-y).abs().max()))
         if gpu_info['microbatch_forward_error']>1e-3:raise ValueError('Microbatch predictor equivalence failed.')
         active_probe=torch.ones(n,dtype=torch.bool,device=targets[0].device)
-        _,g16=micro.gradients(.01,active_probe);_,g8=Microbatch(context,size=8).gradients(.01,active_probe)
+        _,g16=micro.gradients(.01,active_probe);_,g8=Microbatch(context,size=max(1,micro_size//2)).gradients(.01,active_probe)
         discrepancy=max(float((a-b).abs().max())/max(1e-6,float(a.abs().max()),float(b.abs().max())) for a,b in zip(g16,g8))
-        gpu_info.update(microbatch_size=16,gradient_normalization=n,microbatch_gradient_error=discrepancy)
+        gpu_info.update(microbatch_size=micro_size,gradient_normalization=n,microbatch_gradient_error=discrepancy)
         if discrepancy>1e-3:raise ValueError('Microbatch gradient partition equivalence failed.')
         del g16,g8
         forward=micro.forward
