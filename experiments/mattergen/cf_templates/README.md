@@ -40,5 +40,12 @@ job-level status recorder: a shared step must not overwrite its parent job's
 exit status. The step's `srun` exit and complete/report files establish its
 own outcome.
 
+When attaching an external `srun` to an existing allocation, explicitly pass
+`SLURM_SUBMIT_DIR` as the verified repository root. To finish evaluation after
+a failed evaluator, set `MATTERGEN_CF_RUN` to the existing completed pilot:
+the pipeline preserves its A/B trajectory and resumes only missing stages.
+The frozen CF evaluator names its output with `SLURM_JOB_ID`, independently
+of the step tag used for the pilot's containing directory.
+
 Local policy tests: `python -S -m unittest discover -s
 experiments/mattergen/cf_templates -p 'test_*.py'`.

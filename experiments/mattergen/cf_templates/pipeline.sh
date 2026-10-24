@@ -9,14 +9,27 @@ task_tag="$SLURM_JOB_ID"
 if [[ -n "${SLURM_STEP_ID:-}" && "$SLURM_STEP_ID" != batch && "$SLURM_STEP_ID" != extern ]]; then
  task_tag="$task_tag-step$SLURM_STEP_ID"
 fi
-task_run="$PWD/results/mattergen/cf-template-pilot-$task_tag"
-.venv-smoacs-blackwell/bin/python experiments/mattergen/cf_templates/run.py --source "$task_source" --output "$task_run"
-python3 experiments/smoacs/adam_cycles/export.py --run "$task_run" --cycles 1
+task_run="${MATTERGEN_CF_RUN:-$PWD/results/mattergen/cf-template-pilot-$task_tag}"
+if [[ ! -f "$task_run/complete.json" ]]; then
+ .venv-smoacs-blackwell/bin/python experiments/mattergen/cf_templates/run.py --source "$task_source" --output "$task_run"
+fi
 task_eval="$task_run/evaluation-cycle1"
-.venv-smoacs-blackwell/bin/python experiments/smoacs/postprocess/predict_relaxed.py \
+if [[ ! -f "$task_eval/inventory-249/inventory.json" ]]; then
+ python3 experiments/smoacs/adam_cycles/export.py --run "$task_run" --cycles 1
+fi
+task_predictor="$task_eval/predictor-$SLURM_JOB_ID"
+if [[ ! -f "$task_predictor/summary.json" ]]; then
+ .venv-smoacs-blackwell/bin/python experiments/smoacs/postprocess/predict_relaxed.py \
  --inventory "$task_eval/inventory-249/inventory.json" --assets results/smoacs/assets-199 --root "$task_eval" --device cuda
-.venv-smoacs-blackwell/bin/python experiments/smoacs/cross_predictor/predict.py \
- --inventory "$task_eval/inventory-249/inventory.json" --predictor "$task_eval/predictor-$task_tag" \
+fi
+if [[ ! -f "$task_eval/cross-prediction.complete" ]]; then
+ if [[ -d "$task_eval/cross-prediction" ]]; then
+  mv "$task_eval/cross-prediction" "$task_eval/cross-prediction-incomplete-$task_tag"
+ fi
+ .venv-smoacs-blackwell/bin/python experiments/smoacs/cross_predictor/predict.py \
+ --inventory "$task_eval/inventory-249/inventory.json" --predictor "$task_predictor" \
  --relaxation "$task_eval/relaxation" --author-csv "$task_eval/result.csv" \
  --weights results/smoacs/alignn-weights --output "$task_eval/cross-prediction"
+ touch "$task_eval/cross-prediction.complete"
+fi
 python3 experiments/mattergen/cf_templates/report.py --run "$task_run" --source "$task_source"
