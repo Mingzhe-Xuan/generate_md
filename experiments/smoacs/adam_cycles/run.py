@@ -29,8 +29,8 @@ def run_cycles(context,hard_predictions,prepared_protocol,steps=200,cycles=3,sch
     from policy import geometry_change
     output=context['output'];args=context['args'];ids=context['ids'];n=len(ids)
     expected=len(context['template_initialization']['selected']) if context.get('template_initialization') else (4 if args.pilot else 128)
-    if n!=expected or not 1<=expected<=128 or args.max_rounds!=cycles or (steps,cycles) not in ((200,3),(600,1)):
-        raise ValueError('Expected a four- or128-template Adam200x3 or Adam600x1 experiment.')
+    if n!=expected or not 1<=expected<=128 or args.max_rounds!=cycles or (steps,cycles) not in ((200,1),(200,3),(600,1)):
+        raise ValueError('Expected an Adam200x1, Adam200x3 or Adam600x1 experiment.')
     if schedule not in ('per_phase','restart200'):raise ValueError('Unknown LR schedule.')
     gpu_info=prepare_cuda(context)
     if context.get('initialization_audit'):

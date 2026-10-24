@@ -106,3 +106,20 @@ Local policy tests: `python -S -m unittest discover -s
 experiments/mattergen/cf_templates -p test_template_policy.py`.
 All local module tests use regular `python -m unittest discover -s
 experiments/mattergen/cf_templates` with the existing Torch test environment.
+
+### Shorter single-phase budget
+
+Use `sbatch --export=ALL,MATTERGEN_CF_STEPS=200 experiments/mattergen/cf_templates/full.sbatch`
+from the repository root. The default remains600. Both
+strategies use the same selected budget, original inputs and base Adam rates;
+cosine decay spans the selected200 or600 updates, so200 is a complete shorter
+schedule rather than the prefix of a600 schedule. Variable blocks, CF98
+vocabulary, microbatch size, loss and B profile are unchanged. Reports read
+the actual saved protocol and reject mixed budgets or incorrect per-case
+update counts;200 endpoints are labelled CF200 throughout.
+
+Optionally set `MATTERGEN_CF_REFERENCE_CACHE` to a prior selection directory
+under task results. Reference reuse still requires matching input/model and
+validated converged-geometry hashes. Each run builds a fresh common reference
+pool for its direct/hybrid comparison; different runs can select different
+pools, which must be disclosed when comparing SUN across budgets.

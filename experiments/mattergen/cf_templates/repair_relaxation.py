@@ -80,8 +80,8 @@ def main():
     data = load(root/'results.json')
     if not load(root/'complete.json')['completed']:
         raise ValueError('The original optimization must be complete before endpoint repair.')
-    if data['phase'] != 'complete' or data['protocol']['cycles'] != 1 or data['protocol']['steps_per_A'] != 600:
-        raise ValueError('Posthoc repair requires a completed single-cycle A600/B run.')
+    if data['phase'] != 'complete' or data['protocol']['cycles'] != 1 or data['protocol']['steps_per_A'] not in (200, 600):
+        raise ValueError('Posthoc repair requires a completed single-cycle A200/B or A600/B run.')
     rows = data['cycles'][0]['candidates']
     affected = [r for r in rows if needs_isolated_retry(r.get('b_result', {}))]
     if not affected:

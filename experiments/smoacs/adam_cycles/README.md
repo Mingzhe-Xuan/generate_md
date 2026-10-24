@@ -1,5 +1,8 @@
 # Adam200 / MatterSim: one versus three cycles
 
+The shared controller also accepts a single200-update phase for the MatterGen
+template budget comparison, alongside the existing200x3 and600x1 profiles.
+
 Same four preselected original templates andseed42 as the block pilot. Each A
 phase performs exactly200 Adam updates on lengths/angles, coordinates and
 elemental/oxidation weights. Three parameter groups use original base rates

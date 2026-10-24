@@ -100,13 +100,14 @@ class FullTests(unittest.TestCase):
                 write(arm/'initialization.json', dict(source_inventory_sha256=source_sha,
                     selected=[dict(candidate_id=i, eligible=strategy=='neutral') for i in chosen]))
                 write(arm/'torch-memory.json', dict(max_reserved_bytes=1024))
+                write(arm/'protocol.json', dict(cycles=1, steps_per_A=600))
                 candidates, predictions = [], []
                 for key in chosen:
                     a_path = arm/'A'/key
                     a_path.parent.mkdir(parents=True, exist_ok=True)
                     a_path.write_text('immutable A '+key)
                     a_sha = hashlib.sha256(a_path.read_bytes()).hexdigest()
-                    candidates.append(dict(candidate_id=key, source=str(a_path), sha256=a_sha, elements=['H']))
+                    candidates.append(dict(candidate_id=key, source=str(a_path), sha256=a_sha, elements=['H'], a_updates=600))
                     folder = arm/'evaluation-cycle1/relaxation'/Path(key).stem
                     failed = key == ids[64]
                     record = dict(input_sha256=a_sha, status='failed' if failed else 'converged')
@@ -131,6 +132,29 @@ class FullTests(unittest.TestCase):
             self.assertEqual(report['groups']['neutral']['properties']['MatterGen_CF600_B']['crystalformer_joint']['denominator'], 65)
             self.assertEqual(report['groups']['unmasked']['properties']['MatterGen_B']['crystalformer_joint']['passed'], 0)
             self.assertFalse(report['SUN_complete'])
+            write(root/'neutral/protocol.json', dict(cycles=1, steps_per_A=200))
+            with patch('sys.argv', ['full_report', '--run', str(root), '--source', str(source)]):
+                with self.assertRaisesRegex(ValueError, 'same A budget'):
+                    make_full_report()
+            write(root/'unmasked/protocol.json', dict(cycles=1, steps_per_A=200))
+            with patch('sys.argv', ['full_report', '--run', str(root), '--source', str(source)]):
+                with self.assertRaisesRegex(ValueError, 'A updates'):
+                    make_full_report()
+            for strategy in ('neutral', 'unmasked'):
+                path = root/strategy/'evaluation-cycle1/inventory-249/inventory.json'
+                values = json.loads(path.read_text())
+                for candidate in values['candidates']:
+                    candidate['a_updates'] = 200
+                write(path, values)
+            (root/'evaluation').rename(root/'evaluation600')
+            with patch('sys.argv', ['full_report', '--run', str(root), '--source', str(source)]):
+                make_full_report()
+            report = json.loads((root/'comparison.json').read_text())
+            self.assertEqual(report['steps_per_A'], 200)
+            self.assertNotIn('MatterGen_CF600_B', report['groups']['all128']['properties'])
+            self.assertEqual(report['groups']['all128']['properties']['MatterGen_CF200_B']['crystalformer_joint'],
+                             dict(passed=127, unknown=1, denominator=128))
+            self.assertIn('CF200+B', (root/'comparison.md').read_text())
 
 
 if __name__ == '__main__':

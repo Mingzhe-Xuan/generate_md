@@ -13,6 +13,11 @@ import repair_relaxation as repair
 
 class RepairTests(unittest.TestCase):
     def test_preserves_A_and_successes_rechecks_only_supported_cuda_failures(self):
+        for steps in (200, 600):
+            with self.subTest(steps=steps):
+                self.exercise_repair(steps)
+
+    def exercise_repair(self, steps):
         with tempfile.TemporaryDirectory() as temporary:
             workspace = Path(temporary)
             root = workspace/'results/mattergen/full/neutral'
@@ -40,9 +45,9 @@ class RepairTests(unittest.TestCase):
                 rows.append(dict(candidate_id=key, A=dict(source=str(source), sha256=sha, atomic_numbers=[z],
                     num_atoms=1, formula='O1' if z==8 else 'Cf1', elements=['O'] if z==8 else ['Cf'],
                     gap=2.5, eform=-1., valid=False, neutral=False, separated=True),
-                    b_result=record, status='completed' if status=='converged' else 'B_'+status, a_updates=600))
+                    b_result=record, status='completed' if status=='converged' else 'B_'+status, a_updates=steps))
                 states.append(dict(candidate_id=key, status='B_'+status))
-            repair.write(root/'results.json', dict(phase='complete', protocol=dict(cycles=1, steps_per_A=600, ids=[r['candidate_id'] for r in rows]),
+            repair.write(root/'results.json', dict(phase='complete', protocol=dict(cycles=1, steps_per_A=steps, ids=[r['candidate_id'] for r in rows]),
                 cycles=[dict(cycle=1, candidates=rows)], states=states))
             repair.write(root/'complete.json', dict(completed=True, cycles=1, denominator=4))
             (root/'evaluation-cycle1').mkdir()

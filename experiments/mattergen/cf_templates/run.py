@@ -1,4 +1,4 @@
-"""Four MatterGen initial templates through existing GPU A600/B controller."""
+"""MatterGen initial templates through the GPU Adam200/600 then B controller."""
 import argparse
 import importlib.util
 import os
@@ -14,6 +14,7 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--cohort', choices=('pilot', 'neutral', 'unmasked'), default='pilot')
     parser.add_argument('--microbatch-size', type=int, default=4)
+    parser.add_argument('--steps', type=int, choices=(200, 600), default=600)
     args = parser.parse_args()
     if not os.environ.get('SLURM_JOB_ID'):
         parser.error('Submit native optimization through Slurm.')
@@ -29,7 +30,7 @@ def main():
     shared = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(shared)
     context = create(args.source.resolve(), output, args)
-    shared.block.run_blocks(context, driver=lambda c, h, p: shared.run_cycles(c, h, p, steps=600, cycles=1))
+    shared.block.run_blocks(context, driver=lambda c, h, p: shared.run_cycles(c, h, p, steps=args.steps, cycles=1))
     import json
     import torch
     (output/'torch-memory.json').write_text(json.dumps(dict(

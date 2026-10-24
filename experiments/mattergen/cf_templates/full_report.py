@@ -10,6 +10,7 @@ import sys
 
 from report import summarize
 from context import SMOACS
+from budget import full_steps
 
 sys.path.insert(0,str(SMOACS/'postprocess'))
 from mattersim_support import needs_isolated_retry,error_metadata
@@ -53,6 +54,7 @@ def sun_metrics(rows, properties, ids):
 
 
 def merge(root, source):
+    steps = full_steps(root)
     original = load(source/'inventory-249/inventory.json')
     ids = [c['candidate_id'] for c in original['candidates']]
     groups, candidates, predictions, metadata = {}, {}, [], {}
@@ -72,6 +74,8 @@ def merge(root, source):
         if [c['candidate_id'] for c in inventory['candidates']] != groups[strategy]:
             raise ValueError('Evaluation IDs differ.')
         for candidate in inventory['candidates']:
+            if candidate['a_updates'] != steps:
+                raise ValueError('Candidate A updates differ from the reported optimization budget.')
             if digest(candidate['source']) != candidate['sha256']:
                 raise ValueError('Optimized endpoint changed.')
             candidates[candidate['candidate_id']] = candidate
@@ -111,7 +115,7 @@ def merge(root, source):
                 shutil.copy2(prior/'relaxed.vasp', destination/'relaxed.vasp')
                 record['relaxed_path'] = str((destination/'relaxed.vasp').resolve())
             (destination/'result.json').write_text(json.dumps(record, indent=2)+'\n')
-        merged = dict(role='MatterGen_CF600_B_full128_two_initialization_strategies', denominator=128,
+        merged = dict(role=f'MatterGen_CF{steps}_B_full128_two_initialization_strategies', denominator=128,
                       candidates=[candidates[i] for i in ids], groups=groups, controls=metadata)
         (evaluation/'inventory-249/inventory.json').write_text(json.dumps(merged, indent=2)+'\n')
     else:
@@ -152,10 +156,12 @@ def main():
             if path.exists():
                 path.rename(root/(name+'-before-cuda-repair-'+os.environ['SLURM_JOB_ID']))
     ids, groups, optimized = merge(root, source)
+    steps = full_steps(root)
+    a_name, b_name = f'MatterGen_CF{steps}', f'MatterGen_CF{steps}_B'
     baseline = load(source/'cross-prediction/predictions.json')
     cohorts = {}
     for name, rows, stage in [('MatterGen_raw', baseline, 'before'), ('MatterGen_B', baseline, 'after'),
-                             ('MatterGen_CF600', optimized, 'before'), ('MatterGen_CF600_B', optimized, 'after')]:
+                             (a_name, optimized, 'before'), (b_name, optimized, 'after')]:
         indexed = {r['candidate_id']: r for r in rows if r['stage'] == stage}
         if set(indexed) != set(ids):
             raise ValueError('Full128 comparison outcome IDs differ.')
@@ -166,13 +172,13 @@ def main():
             properties={name: summarize([rows[i] for i in chosen]) for name, rows in cohorts.items()})
         summary['paired_gap_errors'] = {}
         for model in ('crystalformer', 'alignn'):
-            common = [i for i in chosen if all(cohorts[name][i][model+'_gap'] is not None for name in ('MatterGen_B', 'MatterGen_CF600_B'))]
+            common = [i for i in chosen if all(cohorts[name][i][model+'_gap'] is not None for name in ('MatterGen_B', b_name))]
             summary['paired_gap_errors'][model] = dict(n=len(common), ids=common,
                 MAE={name: sum(abs(cohorts[name][i][model+'_gap']-2.5) for i in common)/len(common) if common else None
-                     for name in ('MatterGen_B', 'MatterGen_CF600_B')})
+                     for name in ('MatterGen_B', b_name)})
         if (root/'SUN-direct/summary.json').exists() and (root/'SUN-hybrid/summary.json').exists():
             summary['SUN'] = {name: sun_metrics(load(root/f'SUN-{label}/candidates.json'),
-                list(cohorts[name].values()), chosen) for name, label in [('MatterGen_B', 'direct'), ('MatterGen_CF600_B', 'hybrid')]}
+                list(cohorts[name].values()), chosen) for name, label in [('MatterGen_B', 'direct'), (b_name, 'hybrid')]}
         summaries[group] = summary
     statuses = Counter(load(root/'evaluation/relaxation'/Path(i).stem/'result.json')['status'] for i in ids)
     failures = Counter()
@@ -198,7 +204,7 @@ def main():
         model_support['supported_only_properties'] = {name: summarize([rows[i] for i in supported_ids]) for name, rows in cohorts.items()}
     ref_pointer = root/'reference-memory-latest.txt'
     ref_memory = Path(ref_pointer.read_text().strip()) if ref_pointer.exists() else root/'reference-memory'
-    result = dict(denominator=128, strategy_counts={k: len(v) for k, v in groups.items()}, groups=summaries,
+    result = dict(denominator=128, steps_per_A=steps, strategy_counts={k: len(v) for k, v in groups.items()}, groups=summaries,
         relaxation_status_counts=dict(statuses), SUN_complete='SUN' in summaries['all128'],
         relaxation_failure_causes=dict(failures), model_support=model_support,
         memory=load(root/'memory-summary.json') if (root/'memory-summary.json').exists() else None,
@@ -207,13 +213,13 @@ def main():
         repair_memory={p.parent.name: load(p) for p in root.glob('repair-memory-*/memory-summary.json')},
         thresholds=dict(gap_eV=[2.3, 2.7], eform_eV_atom_less_than=-.5, stable_hull_eV_atom_less_than=.1),
         note='All128 original MatterGen raw structures participate. Neutral65 uses the pilot oxidation masks; unmasked63 uses no oxidation mask, with an inactive interface tensor. '
-             'Each strategy has its own global mean Adam loss; both use600updates/cosine/base rates and the same B profile. '
+             f'Each strategy has its own global mean Adam loss; both use{steps}updates/cosine/base rates and the same B profile. '
              'Primary denominator128 retains failures/unknowns;65/63 are separate strata. SUN uses one new union reference pool for direct and hybrid B; U is over each full128 method, then stratified. No DFT.')
     result['note'] += ' CF98 vocabulary is retained by user choice; unsupported MatterSim terminal species are explicit model-domain failures. Supported-only results are postoptimization diagnostics, not the original cohort.'
     (root/'comparison.json').write_text(json.dumps(result, indent=2, allow_nan=False)+'\n')
-    lines = ['# Full128 MatterGen -> CF600 -> MatterSim', '', result['note'], '']
+    lines = [f'# Full128 MatterGen -> CF{steps} -> MatterSim', '', result['note'], '']
     for group, values in summaries.items():
-        lines += [f'## {group} (n={values["denominator"]})', '', '| Metric | Raw | Direct B | CF600 | CF600+B |', '|---|---:|---:|---:|---:|']
+        lines += [f'## {group} (n={values["denominator"]})', '', f'| Metric | Raw | Direct B | CF{steps} | CF{steps}+B |', '|---|---:|---:|---:|---:|']
         for metric in next(iter(values['properties'].values())):
             cells = []
             for name in cohorts:
@@ -221,9 +227,9 @@ def main():
                 cells.append(f"{value['passed']}/{value['denominator']} (unknown {value['unknown']})" if 'passed' in value else f"{value['value']} (n={value['n']})")
             lines.append('| '+metric+' | '+' | '.join(cells)+' |')
         if 'SUN' in values:
-            lines += ['', '| SUN metric | Direct B | CF600+B |', '|---|---:|---:|']
+            lines += ['', f'| SUN metric | Direct B | CF{steps}+B |', '|---|---:|---:|']
             for metric in values['SUN']['MatterGen_B']:
-                cells = [f"{values['SUN'][name][metric]['passed']}/{values['denominator']} (unknown {values['SUN'][name][metric]['unknown']})" for name in ('MatterGen_B', 'MatterGen_CF600_B')]
+                cells = [f"{values['SUN'][name][metric]['passed']}/{values['denominator']} (unknown {values['SUN'][name][metric]['unknown']})" for name in ('MatterGen_B', b_name)]
                 lines.append('| '+metric+' | '+' | '.join(cells)+' |')
         lines.append('')
     (root/'comparison.md').write_text('\n'.join(lines)+'\n')

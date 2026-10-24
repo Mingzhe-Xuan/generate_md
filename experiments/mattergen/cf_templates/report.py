@@ -3,6 +3,7 @@ import argparse
 import json
 from pathlib import Path
 import statistics
+from budget import steps_for
 
 
 def summarize(rows):
@@ -30,6 +31,7 @@ def main():
     p.add_argument('--source', type=Path, required=True)
     args = p.parse_args()
     protocol = json.loads((args.run/'protocol.json').read_text())
+    steps = steps_for(args.run)
     ids = protocol['ids']
     n = len(ids)
     if not n or len(set(ids)) != n:
@@ -50,8 +52,8 @@ def main():
             raise ValueError('Missing paired template outcomes.')
         return [selected[i] for i in ids]
 
-    cohorts = dict(MatterGen_raw=select(baseline, 'before'), MatterGen_B=select(baseline, 'after'),
-                   MatterGen_CF600=select(optimized, 'before'), MatterGen_CF600_B=select(optimized, 'after'))
+    cohorts = dict(MatterGen_raw=select(baseline, 'before'), MatterGen_B=select(baseline, 'after'))
+    cohorts.update({f'MatterGen_CF{steps}': select(optimized, 'before'), f'MatterGen_CF{steps}_B': select(optimized, 'after')})
     strategy = eligibility.get('strategy', 'pilot')
     result = dict(denominator=n, ids=ids, strategy=strategy, eligibility=eligibility, gpu_audit=gpu,
         gradient_audit=gradient, protocol=protocol, metrics={k: summarize(v) for k, v in cohorts.items()},
@@ -60,7 +62,7 @@ def main():
         'Direct-B and optimized-B share source IDs. This per-strategy report alone is not a full128 or SUN result.')
     (args.run/'comparison.json').write_text(json.dumps(result, indent=2, allow_nan=False)+'\n')
     lines = ['# MatterGen initial templates: CF GPU feasibility', '', result['note'], '',
-             '| Metric | Raw | Direct B | CF600 | CF600+B |', '|---|---:|---:|---:|---:|']
+             f'| Metric | Raw | Direct B | CF{steps} | CF{steps}+B |', '|---|---:|---:|---:|---:|']
     names = list(cohorts)
     for metric in result['metrics'][names[0]]:
         values = [result['metrics'][name][metric] for name in names]

@@ -28,7 +28,11 @@ curl --fail --noproxy '*' --head --connect-timeout 10 --max-time 30 \
 task_selection="$task_run/references/selected-$SLURM_JOB_ID"
 .venv-smoacs-postprocess/bin/python experiments/smoacs/references/convert.py \
  --selection "$task_selection" --proposal-root "$task_run/evaluation" --all-selected
-python3 experiments/mattergen/cf_templates/cache_references.py --selection "$task_selection"
+task_cache_args=()
+if [[ -n "${MATTERGEN_CF_REFERENCE_CACHE:-}" ]]; then
+ task_cache_args+=(--extra-selection "$MATTERGEN_CF_REFERENCE_CACHE")
+fi
+python3 experiments/mattergen/cf_templates/cache_references.py --selection "$task_selection" "${task_cache_args[@]}"
 .venv-smoacs-postprocess/bin/python experiments/smoacs/postprocess/relax.py \
  --inventory "$task_selection/mattersim-inventory.json" --output "$task_selection/mattersim-relaxation" \
  --checkpoint results/smoacs/postprocess-206/models/mattersim-v1.0.0-5M.pth

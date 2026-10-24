@@ -19,6 +19,7 @@ def digest(path):
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--selection', type=Path, required=True)
+    p.add_argument('--extra-selection', type=Path, action='append', default=[])
     args = p.parse_args()
     if not os.environ.get('SLURM_JOB_ID'):
         p.error('Use Slurm for reference cache processing.')
@@ -30,6 +31,11 @@ def main():
         'results/mattergen/gap2p5-task128-20261024/full128/references/selected-322',
         'results/smoacs/mp-public-reference/selected-261')]
     roots += [p/'mattersim-relaxation' for p in sorted(args.selection.parent.glob('selected-*')) if p.resolve()!=args.selection.resolve()]
+    for prior in args.extra_selection:
+        prior = prior.resolve()
+        if not prior.is_relative_to((Path.cwd()/'results').resolve()) or not (prior/'mattersim-inventory.json').is_file():
+            raise ValueError('Extra cache must be an existing task results reference selection.')
+        roots.append(prior/'mattersim-relaxation')
     model = 'e3df9fa708725e3d453140646c7d1838324b347a3d1214cf1440522146f872b5'
     reused, statuses = [], Counter()
     for candidate in inventory['candidates']:
