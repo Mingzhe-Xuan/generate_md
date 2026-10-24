@@ -98,3 +98,8 @@ old maxstep/default400-step baseline visible separately. These are optimizer
 numerical changes and are not silently attributed to alternating A/B itself.
 
 The shared rpc.py module decodes __AB_RPC__ worker frames using only Python's standard library. Parent launchers can reuse it without importing optimization policies or NumPy; scientific dependencies remain in the worker environment.
+
+On resume, author initialization uses a fresh `capture-<job>-resume-<n>`
+directory. This preserves earlier captures and allows requeued Slurm jobs to
+reach checkpoint restoration when their job ID is unchanged. Capture naming
+does not consume the optimization random number generators or change inputs.

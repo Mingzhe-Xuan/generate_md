@@ -12,6 +12,7 @@ import types
 
 from policy import schedule,stop_status,geometry_change
 from rpc import read_response
+from initialization import capture_name
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -62,7 +63,7 @@ def main(driver=None):
             bandgap_margin=.04,target_bandgap=2.5,atom_lr=.007,lattice_lr=.002,coords_lr=.005,
             limit_coords_displacement=None,initialization='Struct-AtomicMask',method='grad',
             optimize_mode='pytorch_optimizer___steps_cm-None',seed=42,
-            exp_name='capture-'+os.environ['SLURM_JOB_ID'],output_root=str(output))
+            exp_name=capture_name(output,os.environ['SLURM_JOB_ID'],args.resume),output_root=str(output))
     except Captured:pass
     if not captured:raise RuntimeError('Original initialization was not captured.')
     data=captured['mini_batch_inputs_dict'];original_scalers=captured['scalers']
