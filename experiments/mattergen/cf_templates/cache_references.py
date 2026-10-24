@@ -6,6 +6,10 @@ import json
 import os
 from pathlib import Path
 import shutil
+import sys
+
+sys.path.insert(0,str(Path(__file__).resolve().parents[2]/'smoacs/postprocess'))
+from mattersim_support import needs_isolated_retry
 
 
 def digest(path):
@@ -25,6 +29,7 @@ def main():
         'results/smoacs/full128-three-methods-GPU-20261023/references/selected-316',
         'results/mattergen/gap2p5-task128-20261024/full128/references/selected-322',
         'results/smoacs/mp-public-reference/selected-261')]
+    roots += [p/'mattersim-relaxation' for p in sorted(args.selection.parent.glob('selected-*')) if p.resolve()!=args.selection.resolve()]
     model = 'e3df9fa708725e3d453140646c7d1838324b347a3d1214cf1440522146f872b5'
     reused, statuses = [], Counter()
     for candidate in inventory['candidates']:
@@ -34,6 +39,8 @@ def main():
             if not (folder/'result.json').exists():
                 continue
             record = json.loads((folder/'result.json').read_text())
+            if needs_isolated_retry(record):
+                continue
             if record['input_sha256'] != candidate['sha256'] or record.get('checkpoint_sha256') != model:
                 continue
             if record['status'] not in ('converged', 'unconverged', 'failed'):

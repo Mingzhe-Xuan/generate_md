@@ -5,9 +5,11 @@ import json
 import os
 from pathlib import Path
 import sys
+import time
 import traceback
 
 from inventory import sha256
+from mattersim_support import model_max_z,validate_atomic_numbers,error_metadata,needs_isolated_retry
 
 
 def main():
@@ -49,6 +51,7 @@ def main():
         potential.torch = original
     if not all(p.is_cuda for p in calculator.potential.model.parameters()):
         raise RuntimeError('MatterSim parameters are not on CUDA.')
+    maximum=model_max_z(calculator.potential.model)
     inventory = json.loads(args.inventory.read_text())
     candidates = inventory['candidates']
     if args.candidate_id:
@@ -59,6 +62,7 @@ def main():
     candidates = candidates[:args.limit]
     args.output.mkdir(parents=True, exist_ok=True)
     environment = dict(job_id=os.environ['SLURM_JOB_ID'], device=torch.cuda.get_device_name(),
+                       model_max_z=maximum,
                        torch=torch.__version__, checkpoint_sha256=sha256(args.checkpoint),
                        source_versions=sources, inventory_sha256=sha256(args.inventory),
                        steps=400, fmax=0.01, optimizer='BFGS', filter='ExpCellFilter',
@@ -77,7 +81,10 @@ def main():
             previous = json.loads(result_path.read_text())
             if previous['input_sha256'] != candidate['sha256']:
                 raise ValueError('Existing candidate record has different provenance.')
-            continue
+            if needs_isolated_retry(previous):
+                result_path.replace(out/('result-before-cuda-retry-'+str(time.time_ns())+'.json'))
+            else:
+                continue
         if sha256(candidate['source']) != candidate['sha256']:
             raise ValueError('Immutable input structure changed: '+name)
         out.mkdir(exist_ok=True)
@@ -85,6 +92,7 @@ def main():
                       status='running', converged=False, checkpoint_sha256=environment['checkpoint_sha256'])
         try:
             atoms = read(candidate['source'], format='vasp')
+            validate_atomic_numbers(atoms.numbers,maximum)
             atoms.calc = calculator
             initial_energy = float(atoms.get_potential_energy())
             initial_volume = float(atoms.get_volume())
@@ -111,10 +119,12 @@ def main():
                           relaxed_path=str((out/'relaxed.vasp').resolve()),
                           relaxed_sha256=sha256(out/'relaxed.vasp'))
         except Exception as exc:
-            record.update(status='failed', error=f'{type(exc).__name__}: {exc}')
+            record.update(status='failed', error=f'{type(exc).__name__}: {exc}',**error_metadata(exc))
             (out/'traceback.txt').write_text(traceback.format_exc())
         result_path.write_text(json.dumps(record, indent=2)+'\n')
         print(json.dumps(record), flush=True)
+        if record.get('error_type')=='cuda_context_error':
+            raise RuntimeError('Fatal CUDA context error; stop before contaminating later reference outcomes.')
     print('RELAXATION_RECORDS_COMPLETE', len(candidates), flush=True)
     if args.require_converged:
         results = [json.loads((args.output/Path(c['candidate_id']).stem/'result.json').read_text()) for c in candidates]

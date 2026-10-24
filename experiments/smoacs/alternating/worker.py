@@ -29,6 +29,8 @@ def main():
     root=Path(__file__).resolve().parents[1]
     sys.path.insert(0,str(root))
     from alignn_checkpoint import TrustedCheckpointTorch
+    sys.path.insert(0,str(root/'postprocess'))
+    from mattersim_support import model_max_z,validate_atomic_numbers,error_metadata
     expected=json.loads((root/'postprocess/sources.json').read_text())['mattersim']['checkpoint_sha256']
     if digest(args.checkpoint)!=expected:raise ValueError('MatterSim checkpoint mismatch.')
     if not torch.cuda.is_available():raise RuntimeError('CUDA required.')
@@ -38,7 +40,9 @@ def main():
             calc=MatterSimCalculator(load_path=str(args.checkpoint.resolve()),device='cuda',load_training_state=False)
     finally:potential.torch=old
     if not all(p.is_cuda for p in calc.potential.model.parameters()):raise RuntimeError('NonCUDA calculator.')
-    print('__AB_RPC__'+json.dumps(dict(ready=True,checkpoint_sha256=expected,torch=torch.__version__)),flush=True)
+    maximum=model_max_z(calc.potential.model)
+    poisoned_by=None
+    print('__AB_RPC__'+json.dumps(dict(ready=True,checkpoint_sha256=expected,torch=torch.__version__,model_max_z=maximum)),flush=True)
     for line in sys.stdin:
         request=json.loads(line)
         if request.get('stop'):break
@@ -52,11 +56,16 @@ def main():
                     raise ValueError('Stale B cache or numerical-profile mismatch.')
                 results.append(row);continue
             row=dict(candidate_id=task['candidate_id'],input_sha256=sha,checkpoint_sha256=expected,
-                     status='running',maxstep=.05,step_limit=1600)
+                     status='running',maxstep=.05,step_limit=1600,model_max_z=maximum,evaluated=False)
             started=time.perf_counter()
             try:
                 with redirect_stdout(sys.stderr):
-                    atoms=read(source,format='vasp');numbers=atoms.numbers.copy();atoms.calc=calc
+                    atoms=read(source,format='vasp');numbers=atoms.numbers.copy()
+                    validate_atomic_numbers(numbers,maximum)
+                    if poisoned_by is not None:
+                        raise RuntimeError('Poisoned CUDA context after '+poisoned_by+'; this case was not evaluated.')
+                    atoms.calc=calc
+                    row['evaluated']=True
                     initial=float(atoms.get_potential_energy());atoms.set_constraint(FixSymmetry(atoms))
                     filtered=ExpCellFilter(atoms);optimizer=BFGS(filtered,logfile=None,maxstep=.05)
                     clocks=[];optimizer.attach(lambda:clocks.append(time.perf_counter()),interval=1)
@@ -73,7 +82,11 @@ def main():
                     max_raw_atomic_force=float(np.linalg.norm(atoms.get_forces(apply_constraint=False),axis=1).max()),
                     relaxed_path=str((folder/'relaxed.vasp').resolve()),relaxed_sha256=digest(folder/'relaxed.vasp'),
                     step_seconds=np.diff(clocks).tolist(),num_atoms=len(atoms))
-            except Exception as error:row.update(status='failed',error=repr(error))
+            except Exception as error:
+                metadata=error_metadata(error)
+                row.update(status='failed',error=repr(error),**metadata)
+                # A device assertion invalidates this process, not later input structures.
+                if metadata['error_type']=='cuda_context_error' and poisoned_by is None:poisoned_by=task['candidate_id']
             row['elapsed_seconds']=time.perf_counter()-started
             target.write_text(json.dumps(row,indent=2)+'\n');results.append(row)
         print('__AB_RPC__'+json.dumps(dict(results=results)),flush=True)

@@ -117,3 +117,13 @@ alive. Resource inventory249 uses the exact paper DFT environment.
 PyTorch CUDA encoder and requires CUDA parameters, inputs and outputs. Use the
 Blackwell-capable environment on RTX5090. Default `--device cpu` preserves prior
 jobs; both devices retain the same1e-3 original-structure prediction control.
+
+Element support is checked on CPU against the loaded potential's actual
+`model.max_z` before energy evaluation. CF can output98 elements while the
+5M encoder has a smaller range. Unsupported species are explicit model-domain
+failures, not evidence of structural instability. A CUDA device assertion
+poisons that process: persistent workers mark subsequent unattempted cases as
+retryable infrastructure failures, and serial reference processing stops before
+contaminating later cases. Such cache records cannot be reused as physical
+outcomes; they require a fresh-process check. Physical convergence thresholds,
+checkpoint weights and valid-input calculations are unchanged.

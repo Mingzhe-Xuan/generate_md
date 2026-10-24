@@ -80,5 +80,29 @@ unchanged serial reference relaxation. Both SUN evaluations use that same
 pool. U is computed within each full128 method before stratification. DFT
 remains paused. Output is under `results/mattergen/cf-full-<job>`.
 
+### CUDA error isolation and retained CF98 vocabulary
+
+The full experiment keeps the user's CF98 vocabulary. The loaded MatterSim
+encoder's actual maximum atomic number is checked on CPU before evaluation;
+unsupported output elements are explicit model-domain failures, never silently
+replaced. A device assertion poisons its worker, so later records from that
+context are retryable infrastructure artifacts.
+
+`repair_relaxation.py` preserves A traces, checkpoints, protocols, successful B
+records and genuine step-limit/symmetry outcomes. Only retryable GPU records
+are archived and checked in fresh per-case worker processes; unsupported
+elements are rejected without a GPU call. Repaired physical B endpoints are
+marked `B_converged_posthoc_repair`: no further A phase or optimizer feedback
+is claimed. Old evaluator output is archived before re-export. The completed
+optimizer tensors remain unchanged and must not be treated as repaired B
+feedback for another A phase.
+
+`repair.sbatch` finishes this recovery/evaluation for both strategies, refreshes
+the merged128 outputs, archives stale SUN/scope reports, and schedules a new
+common-reference assessment. Prior phase caches remain available with strict
+input/model/pose hashes; poisoned GPU cache records are excluded.
+
 Local policy tests: `python -S -m unittest discover -s
-experiments/mattergen/cf_templates -p 'test_*.py'`.
+experiments/mattergen/cf_templates -p test_template_policy.py`.
+All local module tests use regular `python -m unittest discover -s
+experiments/mattergen/cf_templates` with the existing Torch test environment.

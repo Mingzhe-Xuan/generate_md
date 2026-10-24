@@ -15,6 +15,7 @@ if [[ ! -f "$task_run/complete.json" ]]; then
  .venv-smoacs-blackwell/bin/python experiments/mattergen/cf_templates/run.py --source "$task_source" --output "$task_run" \
   --cohort "$MATTERGEN_CF_COHORT" --microbatch-size "${MATTERGEN_CF_MICROBATCH:-4}"
 fi
+python3 experiments/mattergen/cf_templates/repair_relaxation.py --run "$task_run" --workers 2
 task_eval="$task_run/evaluation-cycle1"
 if [[ ! -f "$task_eval/inventory-249/inventory.json" ]]; then
  python3 experiments/smoacs/adam_cycles/export.py --run "$task_run" --cycles 1

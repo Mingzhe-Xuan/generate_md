@@ -3,10 +3,16 @@ import argparse
 from collections import Counter
 import hashlib
 import json
+import os
 from pathlib import Path
 import shutil
+import sys
 
 from report import summarize
+from context import SMOACS
+
+sys.path.insert(0,str(SMOACS/'postprocess'))
+from mattersim_support import needs_isolated_retry,error_metadata
 
 
 def load(path):
@@ -69,6 +75,9 @@ def merge(root, source):
             if digest(candidate['source']) != candidate['sha256']:
                 raise ValueError('Optimized endpoint changed.')
             candidates[candidate['candidate_id']] = candidate
+            record = load(evaluated/'relaxation'/Path(candidate['candidate_id']).stem/'result.json')
+            if needs_isolated_retry(record):
+                raise ValueError('Unrechecked CUDA failure cannot enter the full evaluation.')
         rows = load(evaluated/'cross-prediction/predictions.json')
         control = load(evaluated/'cross-prediction/metadata.json')
         if control['denominator'] != len(groups[strategy]) or not control['crystalformer_control']['control_passed']:
@@ -92,6 +101,8 @@ def merge(root, source):
             destination = evaluation/'relaxation'/Path(key).stem
             destination.mkdir()
             record = load(prior/'result.json')
+            if needs_isolated_retry(record):
+                raise ValueError('Unrechecked CUDA failure cannot enter the full evaluation.')
             if record['input_sha256'] != candidates[key]['sha256']:
                 raise ValueError('B input differs from optimized endpoint.')
             if record['status'] in ('converged', 'unconverged'):
@@ -107,6 +118,12 @@ def merge(root, source):
         prior = load(evaluation/'inventory-249/inventory.json')
         if [c['sha256'] for c in prior['candidates']] != [candidates[i]['sha256'] for i in ids]:
             raise ValueError('Merged endpoints changed.')
+        for key in ids:
+            strategy = 'neutral' if key in groups['neutral'] else 'unmasked'
+            a = load(root/strategy/'evaluation-cycle1/relaxation'/Path(key).stem/'result.json')
+            b = load(evaluation/'relaxation'/Path(key).stem/'result.json')
+            if any(a.get(k)!=b.get(k) for k in ('input_sha256','status','relaxed_sha256')):
+                raise ValueError('Merged B endpoints are stale; refresh after repair.')
     indexed = {(r['stage'], r['candidate_id']): r for r in predictions}
     ordered = [indexed[stage, key] for stage in ('before', 'after') for key in ids]
     (evaluation/'predictions.json').write_text(json.dumps(ordered, indent=2)+'\n')
@@ -124,8 +141,16 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--run', type=Path, required=True)
     p.add_argument('--source', type=Path, required=True)
+    p.add_argument('--refresh-merged', action='store_true')
     args = p.parse_args()
     root, source = args.run.resolve(), args.source.resolve()
+    if args.refresh_merged:
+        if not os.environ.get('SLURM_JOB_ID') or not root.is_relative_to((Path.cwd()/'results/mattergen').resolve()):
+            raise ValueError('Refresh only current task results inside Slurm.')
+        for name in ('evaluation','comparison.json','comparison.md','reference-scope.json','SUN-direct','SUN-hybrid','SUN.complete','SUN-job-id.txt'):
+            path = root/name
+            if path.exists():
+                path.rename(root/(name+'-before-cuda-repair-'+os.environ['SLURM_JOB_ID']))
     ids, groups, optimized = merge(root, source)
     baseline = load(source/'cross-prediction/predictions.json')
     cohorts = {}
@@ -150,15 +175,41 @@ def main():
                 list(cohorts[name].values()), chosen) for name, label in [('MatterGen_B', 'direct'), ('MatterGen_CF600_B', 'hybrid')]}
         summaries[group] = summary
     statuses = Counter(load(root/'evaluation/relaxation'/Path(i).stem/'result.json')['status'] for i in ids)
+    failures = Counter()
+    for i in ids:
+        record = load(root/'evaluation/relaxation'/Path(i).stem/'result.json')
+        if record['status'] != 'converged':
+            failures[record.get('error_type') or (error_metadata(record.get('error',''))['error_type'] if record['status']=='failed' else record['status'])] += 1
+    supports = [load(root/k/'repair-model-support.json') for k in groups if (root/k/'repair-model-support.json').exists()]
+    model_support = None
+    if supports:
+        maxima = {r['model_max_z'] for r in supports}
+        if len(maxima) != 1:
+            raise ValueError('Repair workers used different model encoders.')
+        maximum = maxima.pop()
+        model_support = dict(max_z=maximum, output_vocabulary_remains98=True, strategy_counts={})
+        supported_ids = []
+        for k in groups:
+            rows = load(root/k/'results.json')['cycles'][0]['candidates']
+            supported = sum(all(1<=z<=maximum for z in r['A']['atomic_numbers']) for r in rows)
+            model_support['strategy_counts'][k] = dict(supported=supported, unsupported=len(rows)-supported)
+            supported_ids += [r['candidate_id'] for r in rows if all(1<=z<=maximum for z in r['A']['atomic_numbers'])]
+        model_support['supported_ids'] = supported_ids
+        model_support['supported_only_properties'] = {name: summarize([rows[i] for i in supported_ids]) for name, rows in cohorts.items()}
+    ref_pointer = root/'reference-memory-latest.txt'
+    ref_memory = Path(ref_pointer.read_text().strip()) if ref_pointer.exists() else root/'reference-memory'
     result = dict(denominator=128, strategy_counts={k: len(v) for k, v in groups.items()}, groups=summaries,
         relaxation_status_counts=dict(statuses), SUN_complete='SUN' in summaries['all128'],
+        relaxation_failure_causes=dict(failures), model_support=model_support,
         memory=load(root/'memory-summary.json') if (root/'memory-summary.json').exists() else None,
         torch_memory={k: load(root/k/'torch-memory.json') for k in groups},
-        reference_memory=load(root/'reference-memory/memory-summary.json') if (root/'reference-memory/memory-summary.json').exists() else None,
+        reference_memory=load(ref_memory/'memory-summary.json') if (ref_memory/'memory-summary.json').exists() else None,
+        repair_memory={p.parent.name: load(p) for p in root.glob('repair-memory-*/memory-summary.json')},
         thresholds=dict(gap_eV=[2.3, 2.7], eform_eV_atom_less_than=-.5, stable_hull_eV_atom_less_than=.1),
         note='All128 original MatterGen raw structures participate. Neutral65 uses the pilot oxidation masks; unmasked63 uses no oxidation mask, with an inactive interface tensor. '
              'Each strategy has its own global mean Adam loss; both use600updates/cosine/base rates and the same B profile. '
              'Primary denominator128 retains failures/unknowns;65/63 are separate strata. SUN uses one new union reference pool for direct and hybrid B; U is over each full128 method, then stratified. No DFT.')
+    result['note'] += ' CF98 vocabulary is retained by user choice; unsupported MatterSim terminal species are explicit model-domain failures. Supported-only results are postoptimization diagnostics, not the original cohort.'
     (root/'comparison.json').write_text(json.dumps(result, indent=2, allow_nan=False)+'\n')
     lines = ['# Full128 MatterGen -> CF600 -> MatterSim', '', result['note'], '']
     for group, values in summaries.items():

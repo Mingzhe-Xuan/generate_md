@@ -34,7 +34,7 @@ def main():
                 'is_neutral_cmn':str(a['neutral']),'minbond_less_than_0.5':str(a['separated']),'valid_structure':str(a['valid'])})
             record=dict(row.get('b_result',dict(candidate_id=identifier,input_sha256=a['sha256'],status='not_eligible')))
             if record['input_sha256']!=a['sha256']:raise ValueError('B is not paired to this cycle A.')
-            if row['status'] not in ('completed','B_converged_feedback_failed') and record['status']=='converged':raise ValueError('Invalid completed B status.')
+            if row['status'] not in ('completed','B_converged_feedback_failed','B_converged_posthoc_repair') and record['status']=='converged':raise ValueError('Invalid completed B status.')
             destination=root/'relaxation'/Path(identifier).stem;destination.mkdir()
             if record['status'] in ('converged','unconverged'):
                 if digest(record['relaxed_path'])!=record['relaxed_sha256']:raise ValueError('B endpoint changed.')
@@ -47,6 +47,7 @@ def main():
             writer=csv.DictWriter(stream,fieldnames=list(csv_rows[0]));writer.writeheader();writer.writerows(csv_rows)
         inventory=dict(role='Adam_AB_cycle_endpoint',cycle=cycle,denominator=len(ids),candidates=candidates,
             source_csv_sha256=digest(csv_path),protocol=data['protocol'],
+            posthoc_B_repair=data.get('posthoc_B_repair'),
             note='Inactive later-cycle A inputs are provenance placeholders only; B is explicitly not eligible and never counted as a later success.')
         (root/'inventory-249/inventory.json').write_text(json.dumps(inventory,indent=2)+'\n')
     (args.run/'reference-scope.json').write_text(json.dumps(dict(denominator=len(scope),candidates=scope))+'\n')
