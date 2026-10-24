@@ -28,8 +28,8 @@ def summarize(rows):
         result[model+'_gap_MAE']=sum(abs(x) for x in errors)/len(errors) if errors else None
         result[model+'_gap_RMSE']=math.sqrt(sum(x*x for x in errors)/len(errors)) if errors else None
         result[model+'_known']=len(errors)
-    result['structure_valid']=dict(passed=sum(r['structure_valid'] is True for r in rows),
-        unknown=sum(r['structure_valid'] is None for r in rows),denominator=len(rows))
+    result['structure_valid']=dict(passed=sum(r.get('structure_valid') is True for r in rows),
+        unknown=sum(r.get('structure_valid') is None for r in rows),denominator=len(rows))
     return result
 
 

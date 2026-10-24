@@ -28,10 +28,12 @@ class StepwiseReportTests(unittest.TestCase):
                         eform=None if energy is None else energy<-.5,
                         joint=None if gap is None else 2.3<=gap<=2.7 and energy<-.5 and valid)})
             rows.append(row)
+        rows[-1].pop('structure_valid')
         result=report.summarize(rows)
         self.assertEqual(result['crystalformer_joint'],dict(passed=1,unknown=1,denominator=3))
         self.assertEqual(result['crystalformer_gap_MAE'],1.25)
         self.assertAlmostEqual(result['alignn_gap_RMSE'],math.sqrt(3.125))
+        self.assertEqual(result['structure_valid'],dict(passed=2,unknown=1,denominator=3))
 
     def test_global_budget_force_and_feedback_guards(self):
         with tempfile.TemporaryDirectory() as tmp:
