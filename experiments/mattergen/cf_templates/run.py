@@ -15,6 +15,7 @@ def main():
     parser.add_argument('--cohort', choices=('pilot', 'neutral', 'unmasked'), default='pilot')
     parser.add_argument('--microbatch-size', type=int, default=4)
     parser.add_argument('--steps', type=int, choices=(200, 600), default=600)
+    parser.add_argument('--fixed-species', action='store_true')
     args = parser.parse_args()
     if not os.environ.get('SLURM_JOB_ID'):
         parser.error('Submit native optimization through Slurm.')
@@ -33,6 +34,20 @@ def main():
     shared.block.run_blocks(context, driver=lambda c, h, p: shared.run_cycles(c, h, p, steps=args.steps, cycles=1))
     import json
     import torch
+    if args.fixed_species:
+        original = context['data']['fixed_atomic_distribution'].argmax(1)+1
+        if not torch.equal(context['targets'][3], context['data']['fixed_atomic_distribution']):
+            raise ValueError('Fixed elemental interface tensor changed during optimization.')
+        rows = json.loads((output/'results.json').read_text())['cycles'][0]['candidates']
+        cases = []
+        for row, atoms in zip(rows, context['slices']):
+            expected = original[atoms].tolist()
+            if row['A']['atomic_numbers'] != expected:
+                raise ValueError('Optimized endpoint changed original per-site elements.')
+            cases.append(dict(candidate_id=row['candidate_id'], original_atomic_numbers=expected,
+                              final_atomic_numbers=row['A']['atomic_numbers'], A_sha256=row['A']['sha256']))
+        (output/'fixed-species-audit.json').write_text(json.dumps(dict(passed=True, cases=cases,
+            note='Exact onehot is passed to every model forward; elemental and oxidation gradients are zero.'), indent=2)+'\n')
     (output/'torch-memory.json').write_text(json.dumps(dict(
         max_allocated_bytes=torch.cuda.max_memory_allocated(), max_reserved_bytes=torch.cuda.max_memory_reserved(),
         allocated_bytes=torch.cuda.memory_allocated(), reserved_bytes=torch.cuda.memory_reserved(),

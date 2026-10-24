@@ -8,17 +8,21 @@
 #SBATCH --error=results/smoacs/logs/mattergen-CF-full-%j.err
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:?}"
-export MATTERGEN_CF_FULL_RUN="$PWD/results/mattergen/cf-full-$SLURM_JOB_ID"
+export MATTERGEN_CF_FULL_RUN="${MATTERGEN_CF_FULL_RUN:-$PWD/results/mattergen/cf-full-$SLURM_JOB_ID}"
 export MATTERGEN_TEMPLATE_SOURCE="${MATTERGEN_TEMPLATE_SOURCE:-$PWD/results/mattergen/gap2p5-task128-20261024/full128}"
 mkdir -p "$MATTERGEN_CF_FULL_RUN" results/smoacs/status
 task_monitor=""
+task_status_tag="$SLURM_JOB_ID"
+if [[ -n "${SLURM_STEP_ID:-}" && "$SLURM_STEP_ID" != batch && "$SLURM_STEP_ID" != extern ]]; then
+ task_status_tag="$SLURM_JOB_ID-step$SLURM_STEP_ID"
+fi
 full_cleanup() {
  local task_code=$?
  trap - EXIT
  touch "$MATTERGEN_CF_FULL_RUN/memory.stop"
  if [[ -n "$task_monitor" ]]; then wait "$task_monitor" || true; fi
  printf '{"job_id":"%s","exit_code":%d,"ended_at":"%s"}\n' "$SLURM_JOB_ID" "$task_code" "$(date -u +%FT%TZ)" \
-  > "results/smoacs/status/job-$SLURM_JOB_ID.json"
+  > "results/smoacs/status/job-$task_status_tag.json"
  exit "$task_code"
 }
 trap full_cleanup EXIT

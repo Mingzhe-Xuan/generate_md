@@ -157,6 +157,17 @@ def main():
                 path.rename(root/(name+'-before-cuda-repair-'+os.environ['SLURM_JOB_ID']))
     ids, groups, optimized = merge(root, source)
     steps = full_steps(root)
+    policies = {load(root/k/'initialization.json').get('species_policy', 'optimize_elements') for k in groups}
+    if len(policies) != 1:
+        raise ValueError('Initialization strategies use different species policies.')
+    species_policy = policies.pop()
+    if species_policy == 'fixed_per_site_onehot':
+        for k in groups:
+            audit = load(root/k/'fixed-species-audit.json')
+            if not audit['passed'] or [r['candidate_id'] for r in audit['cases']] != groups[k]:
+                raise ValueError('Missing fixed-species endpoint audit.')
+            if any(r['original_atomic_numbers'] != r['final_atomic_numbers'] for r in audit['cases']):
+                raise ValueError('Fixed per-site composition changed.')
     a_name, b_name = f'MatterGen_CF{steps}', f'MatterGen_CF{steps}_B'
     baseline = load(source/'cross-prediction/predictions.json')
     cohorts = {}
@@ -204,7 +215,7 @@ def main():
         model_support['supported_only_properties'] = {name: summarize([rows[i] for i in supported_ids]) for name, rows in cohorts.items()}
     ref_pointer = root/'reference-memory-latest.txt'
     ref_memory = Path(ref_pointer.read_text().strip()) if ref_pointer.exists() else root/'reference-memory'
-    result = dict(denominator=128, steps_per_A=steps, strategy_counts={k: len(v) for k, v in groups.items()}, groups=summaries,
+    result = dict(denominator=128, steps_per_A=steps, species_policy=species_policy, strategy_counts={k: len(v) for k, v in groups.items()}, groups=summaries,
         relaxation_status_counts=dict(statuses), SUN_complete='SUN' in summaries['all128'],
         relaxation_failure_causes=dict(failures), model_support=model_support,
         memory=load(root/'memory-summary.json') if (root/'memory-summary.json').exists() else None,
@@ -216,6 +227,12 @@ def main():
              f'Each strategy has its own global mean Adam loss; both use{steps}updates/cosine/base rates and the same B profile. '
              'Primary denominator128 retains failures/unknowns;65/63 are separate strata. SUN uses one new union reference pool for direct and hybrid B; U is over each full128 method, then stratified. No DFT.')
     result['note'] += ' CF98 vocabulary is retained by user choice; unsupported MatterSim terminal species are explicit model-domain failures. Supported-only results are postoptimization diagnostics, not the original cohort.'
+    if species_policy == 'fixed_per_site_onehot':
+        result['note'] = (f'All128 original MatterGen raw structures participate in CF{steps}/cosine then B. '
+            'Original ordered per-site elements are exact immutable onehot inputs in every predictor call; only lengths, angles and coordinates are optimized. '
+            'The original65/63 eligibility strata retain separate mean losses, but neither uses oxidation masks or element updates. '
+            'All failures/unknowns remain in the original denominator; frozen CF/ALIGNN thresholds and B profile are unchanged. '
+            'SUN is only present if separately requested and computed. No DFT.')
     (root/'comparison.json').write_text(json.dumps(result, indent=2, allow_nan=False)+'\n')
     lines = [f'# Full128 MatterGen -> CF{steps} -> MatterSim', '', result['note'], '']
     for group, values in summaries.items():
@@ -234,6 +251,9 @@ def main():
         lines.append('')
     (root/'comparison.md').write_text('\n'.join(lines)+'\n')
     print(json.dumps(dict(denominator=128, strategy_counts=result['strategy_counts'], B=statuses, SUN_complete=result['SUN_complete'])), flush=True)
+    if os.environ.get('SLURM_JOB_ID') and os.environ.get('SLURM_STEP_ID', 'batch') == 'batch':
+        from shared_allocation import wait_for_children
+        wait_for_children(root)
 
 
 if __name__ == '__main__':

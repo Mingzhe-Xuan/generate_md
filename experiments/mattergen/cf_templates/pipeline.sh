@@ -11,9 +11,13 @@ if [[ -n "${SLURM_STEP_ID:-}" && "$SLURM_STEP_ID" != batch && "$SLURM_STEP_ID" !
 fi
 task_run="${MATTERGEN_CF_RUN:-$PWD/results/mattergen/cf-template-pilot-$task_tag}"
 export MATTERGEN_CF_COHORT="${MATTERGEN_CF_COHORT:-pilot}"
+task_species_args=()
+if [[ "${MATTERGEN_CF_FIXED_SPECIES:-0}" == 1 ]]; then
+ task_species_args+=(--fixed-species)
+fi
 if [[ ! -f "$task_run/complete.json" ]]; then
  .venv-smoacs-blackwell/bin/python experiments/mattergen/cf_templates/run.py --source "$task_source" --output "$task_run" \
-  --cohort "$MATTERGEN_CF_COHORT" --microbatch-size "${MATTERGEN_CF_MICROBATCH:-4}" --steps "${MATTERGEN_CF_STEPS:-600}"
+  --cohort "$MATTERGEN_CF_COHORT" --microbatch-size "${MATTERGEN_CF_MICROBATCH:-4}" --steps "${MATTERGEN_CF_STEPS:-600}" "${task_species_args[@]}"
 fi
 python3 experiments/mattergen/cf_templates/repair_relaxation.py --run "$task_run" --workers 2
 task_eval="$task_run/evaluation-cycle1"

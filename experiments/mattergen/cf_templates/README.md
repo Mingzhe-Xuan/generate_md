@@ -123,3 +123,29 @@ under task results. Reference reuse still requires matching input/model and
 validated converged-geometry hashes. Each run builds a fresh common reference
 pool for its direct/hybrid comparison; different runs can select different
 pools, which must be disclosed when comparing SUN across budgets.
+
+### Fixed original elements and property-only evaluation
+
+Set `MATTERGEN_CF_FIXED_SPECIES=1` to retain each original atom's exact element
+as a onehot input in every forward pass, including optimization gradients.
+Only lengths, angles and fractional coordinates are active. Elemental and
+oxidation interface tensors have zero gradients and remain unchanged; both
+original65/63 eligibility strata bypass oxidation masks and retain their
+separate mean losses. `fixed-species-audit.json` checks every final ordered
+atomic-number list against the original input. It does not restrict a
+softmax to an allowed element set or permit redistribution between sites.
+
+Set `MATTERGEN_CF_SKIP_SUN=1` to finish after frozen CF/ALIGNN property and
+joint-pass evaluation. A generated `SKIP_SUN` file in an existing task root
+also disables the reference entry point before network or model work. This
+supports already-spooled batch scripts; skipped SUN never creates a
+`SUN.complete` marker. Defaults preserve the earlier workflows.
+
+`shared.sbatch` is a small CPU coordinator for an explicitly owned existing
+GPU allocation (`MATTERGEN_CF_OWNER`). It launches the additional fixed-species
+pipeline through `srun --jobid --overlap`, with separate output and step status.
+The parent report waits for registered child completion before releasing its
+allocation. GPU work stays under the original Slurm GPU grant. If the original
+allocation has already ended, the coordinator submits an independent GPU job
+instead. Allocation-level memory measurements include both experiments during
+overlap and must not be described as isolated per-experiment measurements.

@@ -79,7 +79,8 @@ def create(source_root, output, args):
         structures[identifier] = structure
         assignments[identifier] = paths
     mode = getattr(args, 'cohort', 'pilot')
-    unconstrained = mode == 'unmasked'
+    fixed_species = getattr(args, 'fixed_species', False)
+    unconstrained = mode == 'unmasked' or fixed_species
     selected = select_cohort(eligibility, mode)
     (output/'eligibility.json').write_text(json.dumps(dict(denominator=128,
         eligible=sum(r['eligible'] for r in eligibility), candidates=eligibility,
@@ -114,9 +115,16 @@ def create(source_root, output, args):
         offset += count
     atomic = torch.full((total, 98), 1/98)
     atomic[torch.arange(total), numbers-1] += .001
+    if fixed_species:
+        atomic = torch.nn.functional.one_hot(numbers-1, 98).to(coords.dtype)
+        ox_weights.zero_()
     data = dict(size=size, batch=batch, atomic_mask=atomic_mask, ox_states_used_mask=ox_used,
                 init_coords=coords.clone(), batch_dir_coords=coords, atomic_distribution=atomic,
                 ox_mask_learnable_tensor_per_crystal=ox_weights)
+    if fixed_species:
+        data['fixed_atomic_distribution'] = atomic.clone()
+        from fixed_species import forward as fixed_forward
+        author.forward_propagation_Crystalformer = lambda **kw: fixed_forward(author, **kw)
     base = abc.clone()
     lower = torch.minimum(torch.full_like(abc, 2), abc)
     upper = torch.maximum(torch.full_like(abc, 10), abc)
@@ -144,7 +152,7 @@ def create(source_root, output, args):
     context = dict(args=args, output=output, ids=ids, n=n, targets=targets, data=data, batch=batch,
         size=size, base=base, lower=lower, upper=upper, angle_lower=angle_lower, angle_upper=angle_upper,
         gap_model=gap_model, ef_model=ef_model, optimizers=optimizers, slices=slices, author=author,
-        unconstrained_elements=unconstrained, microbatch_size=getattr(args, 'microbatch_size', 4),
+        unconstrained_elements=unconstrained, fixed_species=fixed_species, microbatch_size=getattr(args, 'microbatch_size', 4),
         streamed_initialization=n>4)
 
     def forward(temperature):
@@ -162,6 +170,8 @@ def create(source_root, output, args):
         loss = torch.clamp(torch.abs(gap-2.5)-.04, min=0)+ef
         if unconstrained:
             loss = loss+targets[4].sum()*0
+        if fixed_species:
+            loss = loss+targets[3].sum()*0
         return gap, ef, loss, out
 
     def hard_predict(out):
@@ -216,12 +226,17 @@ def create(source_root, output, args):
         initial_hard_eform=ef.reshape(-1).tolist(), initial_soft_eform=soft_ef.tolist(),
         bounds='Original ranges expanded only to contain input, no clipping.',
         mask='None: actual predictor oxidation target is None; oxidation tensor is an inactive zero-gradient interface placeholder.' if unconstrained else 'Up to10 lexicographic exact neutral SUPER_COMMON assignments in input atom order.')
+    template_initialization['species_policy'] = 'fixed_per_site_onehot' if fixed_species else 'optimize_elements'
+    if fixed_species:
+        template_initialization['element_weights'] = 'Exact original per-site onehot, fixed in every predictor forward; no element or oxidation optimization.'
     (output/'initialization.json').write_text(json.dumps(template_initialization, indent=2)+'\n')
     protocol = dict(ids=ids, initial_control_error=control_error, baseline_npz_sha256=None,
         author_source_sha256=SOURCE_SHA256, source_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
         a_parameters=['scaled lengths', 'scaled angles', 'fractional coordinates', 'element logits', 'oxidation logits'])
     if unconstrained:
         protocol['a_parameters'][-1] = 'inactive oxidation placeholder (no charge mask)'
+    if fixed_species:
+        protocol['a_parameters'][-2:] = ['fixed original per-site elements', 'inactive oxidation placeholder (no charge mask)']
     context.update(protocol=protocol, template_initialization=template_initialization)
 
     def initialization_audit(context):
@@ -236,8 +251,10 @@ def create(source_root, output, args):
                        nonzero=int(torch.count_nonzero(g))) for g in gradients]
         if not all(r['cuda'] and r['finite'] for r in checks) or not any(r['max_abs']>1e-8 for r in checks[:3]):
             raise ValueError('External template CUDA gradients failed.')
+        if fixed_species and any(r['nonzero'] for r in checks[3:]):
+            raise ValueError('Fixed element or oxidation tensor has a nonzero gradient.')
         (output/'initial-gradient-audit.json').write_text(json.dumps(dict(passed=True, blocks=checks,
-            strategy=mode, oxidation_active=not unconstrained,
+            strategy=mode, oxidation_active=not unconstrained, elements_active=not fixed_species,
             max_allocated_bytes=torch.cuda.max_memory_allocated(), max_reserved_bytes=torch.cuda.max_memory_reserved()), indent=2)+'\n')
 
     context['initialization_audit'] = initialization_audit

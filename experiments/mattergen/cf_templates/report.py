@@ -60,6 +60,11 @@ def main():
         per_case=cohorts, note=f'{strategy} initialization strategy, {n} original source IDs. Source cells/coordinates/initial hard species preserved; soft distributions differ explicitly. '
         'Oxidation masking is absent for the unmasked strategy; its oxidation tensor is an inactive interface placeholder. '
         'Direct-B and optimized-B share source IDs. This per-strategy report alone is not a full128 or SUN result.')
+    result['species_policy'] = protocol.get('template_initialization', {}).get('species_policy', 'optimize_elements')
+    if result['species_policy'] == 'fixed_per_site_onehot':
+        result['note'] = ('Original ordered per-site elements are fixed exactly throughout optimization. '
+                          'Only lengths, angles and coordinates are optimized; both original eligibility strata bypass charge masks. '
+                          'All source IDs are retained; this property report alone does not establish SUN.')
     (args.run/'comparison.json').write_text(json.dumps(result, indent=2, allow_nan=False)+'\n')
     lines = ['# MatterGen initial templates: CF GPU feasibility', '', result['note'], '',
              f'| Metric | Raw | Direct B | CF{steps} | CF{steps}+B |', '|---|---:|---:|---:|---:|']

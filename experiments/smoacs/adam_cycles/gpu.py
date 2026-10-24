@@ -52,6 +52,9 @@ class GPUAudit:
             self.report['forward_calls']+=1
             if output.requires_grad:output.register_hook(backward)
         for model in (context['gap_model'],context['ef_model']):self.handles.append(model.encoder.register_forward_hook(forward))
+        if context.get('fixed_species'):
+            self.report['backward_observation']='geometry target gradients; fixed elemental encoder has no input gradient'
+            for parameter in context['targets'][:3]:self.handles.append(parameter.register_hook(backward))
 
     def close(self):
         if self.closed:return

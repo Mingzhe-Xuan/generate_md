@@ -42,6 +42,8 @@ class Microbatch:
         loss=torch.clamp(torch.abs(gap-2.5)-.04,min=0)+ef
         if c.get('unconstrained_elements'):
             loss=loss+targets[4].sum()*0
+        if c.get('fixed_species'):
+            loss=loss+targets[3].sum()*0
         return gap,ef,loss,out
 
     def gradients(self,temperature,active):
