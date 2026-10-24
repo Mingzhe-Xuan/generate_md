@@ -39,6 +39,9 @@ old matched four-case fixed CF200 control. `full.sbatch` requires
 `FORCE_MIX_PROBE` and evaluates each lambda on all original128, keeping the
 65/63 strata and failed attempts. It reuses the completed fixed CF200 control
 under `results/mattergen/alignn-full-361/cf200`, without rerunning its A/B.
+The three weights run concurrently inside one Slurm GPU allocation with24 CPUs
+and128 GiB host RAM; each weight processes the65/63 strata sequentially.
+The existing GPU monitor records aggregate and per-process memory throughout.
 Every model/force evaluation and batch export runs through Slurm. Existing
 blackwell/postprocess environments and caches are reused. No SUN/DFT/MD.
 
