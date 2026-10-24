@@ -28,8 +28,8 @@ coordinator_cleanup() {
 trap coordinator_cleanup EXIT
 trap 'exit 143' TERM
 trap 'exit 130' INT
-task_owner_user="$(squeue -h -j "$task_owner" -o %u)"
-task_owner_state="$(squeue -h -j "$task_owner" -o %T)"
+task_owner_user="$(squeue -h -j "$task_owner" -o %u 2>/dev/null || true)"
+task_owner_state="$(squeue -h -j "$task_owner" -o %T 2>/dev/null || true)"
 if [[ "$task_owner_state" != RUNNING ]]; then
  sbatch --parsable --job-name=MatterGen-CF600-fixed --mem=64G --export=ALL \
   experiments/mattergen/cf_templates/full.sbatch > "$MATTERGEN_CF_FULL_RUN/fallback-job-id.txt"
