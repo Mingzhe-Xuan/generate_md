@@ -47,6 +47,13 @@ IID or symmetry-release control success alone does not trigger confirmation.
 Skipped confirmation is not goal completion. Both seeds need independent final
 evaluation and materiality auditing before a successful method is claimed.
 
+`interim.sbatch` can inspect completed methods while later ones are running.
+It reads an immutable snapshot of search-results.json, validates saved pose
+hashes, and measures all16 same-parent structural changes without model calls.
+It writes a separate interim-JOB.json with provisional=true and no final proof
+flag. Confirmation reads only report.json from the complete independent
+evaluation, so interim scores never trigger confirmation or certify success.
+
 All native mechanics, inference, batch geometry and evaluation must run in Slurm.
 No source edits occur on the server. Existing weights/environments are reused.
 Generated poses, trajectories and reports are ignored task results.
