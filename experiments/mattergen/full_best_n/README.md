@@ -32,3 +32,21 @@ The canonical failed relaxation remains geometry-unknown, not silently novel.
 
 Checks: `python -m pytest experiments/mattergen/full_best_n/test_bestn_full.py`;
 native first-shard gate is required before the remaining15 shards can run.
+
+## Structural effects of the frozen final choices
+
+`effects.py` compares all force/Ef-gated final Best10 choices to their same-parent
+canonical direct-B terminal. `effect_geometry.py` measures fixed-atom periodic
+internal displacements after removing a common translation, explicitly excluding
+cell deformation. A sorted species-pair distance signature provides a separate
+permutation-invariant magnitude; it is not a unique structural fingerprint.
+Cell/energy changes and paired CF/ALIGNN MAE/joint gains/losses are retained.
+Old strict/looser labels must replay exactly. Additional scale-enabled matching
+and the author SUN matcher test whether old mismatches are tolerance-sensitive;
+no mismatch is presented as proof of a new physical minimum or phase.
+
+Submit `effects.sbatch` with BESTN_EFFECT_SOURCE pointing to the immutable full
+run. CPU-only Slurm loads existing poses and frozen scores; no A/B or SUN rerun.
+Outputs: summary.json/md, pairs.json, examples and selected/unknown coverage.
+Method-specific unmatched subgroups are not a common-parent causal comparison.
+Tests: `python -m pytest experiments/mattergen/full_best_n/test_effect_geometry.py`.
