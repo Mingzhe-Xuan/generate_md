@@ -25,6 +25,7 @@ def main():
     parser.add_argument('--weight',type=float,choices=(.1,.2,.3),required=True)
     parser.add_argument('--cohort',choices=('pilot','neutral','unmasked'),default='pilot')
     parser.add_argument('--physics-probe',type=Path)
+    parser.add_argument('--composition',choices=('linear','pcgrad'),default='linear')
     args=parser.parse_args()
     if not os.environ.get('SLURM_JOB_ID'):
         parser.error('Submit through Slurm.')
@@ -53,7 +54,13 @@ def main():
             (output/'physics-gradient-probe.json').write_text(json.dumps(dict(proof,source_report=str(args.physics_probe.resolve())),indent=2)+'\n')
         else:
             native_probe(context,client)
-        provider=MixedGradient(context,client,args.weight)
+        composer=None
+        if args.composition=='pcgrad':
+            spec=importlib.util.spec_from_file_location('force_pcgrad',MATTERGEN/'pcgrad/compose.py')
+            module=importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            composer=module.PCGrad(context,args.weight)
+        provider=MixedGradient(context,client,args.weight,composer=composer)
         context.update(gradient_transform=provider,after_A=provider.finish)
         context['protocol']['force_mixing']=dict(weight=args.weight,
             objective='MatterSim total energy + lambda*(relu(abs(CFgap-2.5)-0.04)+CF_Ef)',
@@ -65,7 +72,14 @@ def main():
             force_checkpoint_sha256=client.ready[0]['checkpoint_sha256'],
             property_gradient='Full original bandgap+formation-energy objective, not bandgap alone.',
             A_trace_loss='CF property loss; force-trace separately records total energy and mixed loss.')
+        if composer is not None:
+            context['protocol']['force_mixing'].update(composition=composer.protocol(),
+                objective='Two tasks: MatterSim total energy and lambda*original CF property loss; PCGrad is not the gradient of a fixed scalar.',
+                descent_direction='Negative sum of symmetric PCGrad task gradients, per structure, before Adam.',
+                combined_loss_note='force-trace combined_loss is the original reference scalar only, not a PCGrad objective.')
         shared.block.run_blocks(context,driver=lambda c,h,p:shared.run_cycles(c,h,p,steps=200,cycles=1))
+        if composer is not None:
+            composer.finish()
         original=context['data']['fixed_atomic_distribution']
         if not torch.equal(context['targets'][3],original):
             raise ValueError('Fixed species changed.')

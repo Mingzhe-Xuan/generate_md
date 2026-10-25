@@ -6,10 +6,11 @@ from geometry import combine,energy_surrogate,geometry,property_cartesian_force
 
 
 class MixedGradient:
-    def __init__(self,context,client,weight):
+    def __init__(self,context,client,weight,composer=None):
         self.context=context
         self.client=client
         self.weight=weight
+        self.composer=composer
         self.calls=0
         self.output=context['output']
         (self.output/'force-snapshots').mkdir()
@@ -40,7 +41,8 @@ class MixedGradient:
         surrogate=energy_surrogate(cells,frac,c['batch'],energy,force,stress)
         value=surrogate[active].sum()/denominator+c['targets'][3].sum()*0+c['targets'][4].sum()*0
         physical=torch.autograd.grad(value,c['targets'])
-        mixed=combine(physical,property_gradients,self.weight)
+        mixed=(self.composer(physical,property_gradients,active) if self.composer is not None
+               else combine(physical,property_gradients,self.weight))
         if not all(g.is_cuda and torch.isfinite(g).all() for g in mixed):
             raise ValueError('Mixed gradients must be finite CUDA values.')
         self.calls+=1

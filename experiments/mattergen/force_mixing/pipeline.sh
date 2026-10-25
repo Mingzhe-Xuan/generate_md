@@ -13,7 +13,7 @@ fi
 if [[ ! -f "$task_run/complete.json" ]]; then
  .venv-smoacs-blackwell/bin/python experiments/mattergen/force_mixing/run.py \
   --source "$task_source" --output "$task_run" --weight "${FORCE_MIX_WEIGHT:?}" \
-  --cohort "${FORCE_MIX_COHORT:-pilot}" "${task_args[@]}"
+  --cohort "${FORCE_MIX_COHORT:-pilot}" --composition "${FORCE_MIX_COMPOSITION:-linear}" "${task_args[@]}"
 fi
 if [[ ! -f "$task_run/evaluation-cycle1/inventory-249/inventory.json" ]]; then
  python3 experiments/smoacs/adam_cycles/export.py --run "$task_run" --cycles 1
