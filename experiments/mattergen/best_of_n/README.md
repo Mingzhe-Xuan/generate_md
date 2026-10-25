@@ -75,3 +75,9 @@ arms sequentially inside its single Slurm GPU allocation. Results are under
 produces the parent-level comparison, eligibility and geometry counts, and
 cross-amplitude common-parent metrics. Failed attempts retain their budget.
 This remains a four-parent feasibility study with no SUN/DFT/MD.
+
+`prepare.py --parents parents.json` extends this interface to declared original
+parent subsets, including nonneutral parents; random seeds use global inventory
+indices so repartitioning never changes a parent's perturbations. `report.py`
+uses the declared parent count. Legacy four-parent defaults are preserved.
+See `experiments/mattergen/full_best_n/README.md` for full128 orchestration.

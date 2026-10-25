@@ -25,6 +25,7 @@ def main():
     if init['branch_manifest_sha256']!=hashlib.sha256((root/'manifest.json').read_bytes()).hexdigest():
         raise ValueError('Paired CF inputs differ.')
     ids=[r['candidate_id'] for r in manifest['candidates']]
+    neutral={r['candidate_id']:bool(r['eligible']) for r in init['selected']}
     if [r['candidate_id'] for r in init['selected']]!=ids:
         raise ValueError('Paired initial candidate order differs.')
     out=root/'raw-evaluation'
@@ -79,9 +80,9 @@ def main():
         gap=init['initial_hard_gap'][index]
         ef=init['initial_hard_eform'][index]
         candidates.append(dict(candidate_id=r['candidate_id'],source=r['source'],sha256=r['sha256'],num_atoms=len(s),
-            formula=s.composition.formula,elements=sorted({site.specie.symbol for site in s}),original_gap=gap,original_eform=ef,original_valid='True'))
+            formula=s.composition.formula,elements=sorted({site.specie.symbol for site in s}),original_gap=gap,original_eform=ef,original_valid=str(neutral[r['candidate_id']])))
         csv_rows.append(dict(original_fnames=r['candidate_id'],bandgap_onehot=gap,ef_onehot=ef,
-            is_neutral_cmn='True',minbond_less_than_0p5='True',valid_structure='True'))
+            is_neutral_cmn=str(neutral[r['candidate_id']]),minbond_less_than_0p5='True',valid_structure=str(neutral[r['candidate_id']])) )
     with (out/'result.csv').open('w',newline='') as stream:
         fields=list(csv_rows[0])
         fields[4]='minbond_less_than_0.5'

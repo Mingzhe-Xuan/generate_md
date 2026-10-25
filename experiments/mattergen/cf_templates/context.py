@@ -8,7 +8,7 @@ import sys
 import tarfile
 import types
 
-from template_policy import neutral_assignments, select_cohort
+from template_policy import neutral_assignments, select_cohort,select_explicit
 
 SMOACS = Path(__file__).resolve().parents[2]/'smoacs'
 
@@ -82,18 +82,26 @@ def create(source_root, output, args):
     fixed_species = getattr(args, 'fixed_species', False)
     unconstrained = mode == 'unmasked' or fixed_species
     selected = select_cohort(eligibility, mode)
+    parent_ids_path=getattr(args,'parent_ids',None)
+    if parent_ids_path:
+        if not fixed_species or mode!='pilot':
+            raise ValueError('Explicit parent subsets require fixed species and the branch interface.')
+        parent_document=json.loads(Path(parent_ids_path).read_text())
+        if parent_document['source_inventory_sha256']!=digest(source_root/'inventory-249/inventory.json'):
+            raise ValueError('Explicit parent inventory changed.')
+        selected=select_explicit(eligibility,parent_document['parent_ids'])
     branch_manifest=None
     parent_structures=None
     if getattr(args,'branch_manifest',None):
         if not fixed_species or mode!='pilot':
-            raise ValueError('Branches require fixed original elements and the original pilot parents.')
+            raise ValueError('Branches require fixed original elements.')
         branch_path=Path(args.branch_manifest).resolve()
         branch_manifest=json.loads(branch_path.read_text())
         if branch_manifest['source_inventory_sha256']!=digest(source_root/'inventory-249/inventory.json'):
             raise ValueError('Branch manifest uses a different original cohort.')
         parents={r['candidate_id']:r for r in selected}
         if branch_manifest['parent_ids']!=list(parents):
-            raise ValueError('Branch parents differ from the property-blind pilot.')
+            raise ValueError('Branch parents differ from the declared original-parent subset.')
         parent_structures=dict(structures)
         selected=[]
         for proposal in branch_manifest['candidates']:
@@ -113,7 +121,7 @@ def create(source_root, output, args):
             raise ValueError('Invalid number or duplicate branch IDs.')
     (output/'eligibility.json').write_text(json.dumps(dict(denominator=128,
         eligible=sum(r['eligible'] for r in eligibility), candidates=eligibility,
-        selection='All paired perturbations and zero controls of four size/ID-selected original parents' if branch_manifest else 'Size-selected pilot' if mode == 'pilot' else 'All source IDs in the '+mode+' strategy, original order; no property selection.',
+        selection='All paired perturbations and zero controls of declared original parents' if branch_manifest else 'Explicit original parent subset' if parent_ids_path else 'Size-selected pilot' if mode == 'pilot' else 'All source IDs in the '+mode+' strategy, original order; no property selection.',
         strategy=mode,
         selected_ids=[r['candidate_id'] for r in selected]), indent=2)+'\n')
     ids = [r['candidate_id'] for r in selected]

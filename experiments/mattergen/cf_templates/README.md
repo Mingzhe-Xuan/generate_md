@@ -162,3 +162,8 @@ updates. It validates immutable original parents separately, then each supplied
 perturbed input's hash/species/geometry and independent frozen pose predictions.
 Branches use per-case gradient normalization1, exact fixed elements and bounded
 coordinate/cell proposals; see `experiments/mattergen/best_of_n/README.md`.
+
+`--parent-ids` accepts an original-order subset JSON with parent_ids and
+source_inventory_sha256 for fixed-species pilot/branch interfaces. It includes
+nonneutral parents without altering their recorded eligibility. Full128 sharding
+and evaluation are in `experiments/mattergen/full_best_n/README.md`.

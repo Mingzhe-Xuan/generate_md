@@ -45,8 +45,9 @@ def main():
     root=args.run.resolve()
     manifest=load(root/'manifest.json')
     parents=manifest['parent_ids']
-    if len(parents)!=4 or manifest['N']!=10 or len(manifest['candidates'])!=44:
-        raise ValueError('Expected four raw parents and ten paired perturbations plus four zero controls.')
+    n=len(parents)
+    if not 1<=n<=128 or len(set(parents))!=n or manifest['N']!=10 or len(manifest['candidates'])!=11*n:
+        raise ValueError('Expected declared raw parents, ten paired perturbations and one zero control each.')
     init=load(root/'cf20/initialization.json')
     if init['branch_manifest_sha256']!=hashlib.sha256((root/'manifest.json').read_bytes()).hexdigest():
         raise ValueError('Paired manifest changed after optimization.')
@@ -67,7 +68,7 @@ def main():
             raise ValueError('Frozen predictor controls failed.')
         metadata[arm]=meta
         rows=[r for r in load(path/'cross-prediction/predictions.json') if r['stage']=='after']
-        if {r['candidate_id'] for r in rows}!=set(expected) or len(rows)!=44:
+        if {r['candidate_id'] for r in rows}!=set(expected) or len(rows)!=11*n:
             raise ValueError('Both methods must retain all paired branch IDs.')
         candidates[arm]={}
         uniqueness[arm]={}
@@ -93,7 +94,7 @@ def main():
     curves={}
     for prefix in (1,3,5,10):
         chosen={arm:{parent:best([r for r in candidates[arm].values() if r['parent_id']==parent],prefix) for parent in parents} for arm in paths}
-        curves[str(prefix)]=dict(summary={arm:selected_summary(list(chosen[arm].values()),4) for arm in paths},
+        curves[str(prefix)]=dict(summary={arm:selected_summary(list(chosen[arm].values()),n) for arm in paths},
             paired=paired_errors(chosen['no_CF'],chosen['CF20'],parents))
         if prefix==10:
             selections=chosen
@@ -109,20 +110,20 @@ def main():
                 selected['MatterSim_energy_delta_to_unperturbed_B_eV_atom']=(selected['relaxation']['final_energy_eV']/selected['relaxation']['num_atoms']-
                     baseline['final_energy_eV']/baseline['num_atoms'])
     status={arm:dict(Counter(r['relaxation']['status'] for r in rows.values())) for arm,rows in candidates.items()}
-    result=dict(parent_count=4,N=10,parent_ids=parents,primary_selector='CF only: minimize |gap-2.5| after force+CF_Ef eligibility; ALIGNN never used for selection.',
+    result=dict(parent_count=n,N=10,parent_ids=parents,primary_selector='CF only: minimize |gap-2.5| after force+CF_Ef eligibility; ALIGNN never used for selection.',
         eligibility=dict(require_optimizer_converged=True,max_filter_force=.01,max_raw_atomic_force=.01,
             CF_eform_less_than_eV_atom=-.5,require_structure_valid=True),
         stability_scope='Local force convergence plus predicted formation-energy requirement only; no hull/SUN,phonons,MD orDFT.',
-        summaries={arm:selected_summary(list(rows.values()),4) for arm,rows in selections.items()},
+        summaries={arm:selected_summary(list(rows.values()),n) for arm,rows in selections.items()},
         paired=paired_errors(selections['no_CF'],selections['CF20'],parents),selected=selections,
-        zero_controls=zero,zero_summaries={arm:selected_summary(list(rows.values()),4) for arm,rows in zero.items()},
+        zero_controls=zero,zero_summaries={arm:selected_summary(list(rows.values()),n) for arm,rows in zero.items()},
         curves=curves,uniqueness=uniqueness,relaxation_status=status,candidates=candidates,predictor_controls=metadata,
         amplitudes_A=manifest['amplitudes_A'],max_cf_displacement_A=manifest.get('max_cf_displacement_A',.4),
         note=f"Same ten coordinate perturbations for each raw parent and both methods. RMS sequence (A): {manifest['amplitudes_A']}; seed42, per-site displacement capped2RMS; no initial cell perturbation. "
             f"CF per-site displacement cap from raw parent {manifest.get('max_cf_displacement_A',.4)}A. "
             'CF20 uses a full20-update cosine schedule, fresh per-branch Adam states, per-candidate gradient normalization1, fixed ordered elements and bounded geometry proposals. '
             'Zero controls are outside Best-of-10. Ineligible branches consume their attempt; parents with no eligible candidate remain explicitly missing. MAE is across selected parents with coverage shown. '
-            'Dedup usesltol.02/stol.05/angle1deg/primitiveFalse/scaleFalse, diagnostic only. Four-parent pilot, not population evidence.')
+            'Dedup usesltol.02/stol.05/angle1deg/primitiveFalse/scaleFalse, diagnostic only. Parent coverage is explicit; branches are correlated.')
     (root/'comparison.json').write_text(json.dumps(result,indent=2,allow_nan=False)+'\n')
     lines=['# Paired random-start Best-of-10 pilot','',result['primary_selector'],result['stability_scope'],'',
         '| Method | Eligible parents | CF selected MAE | CF gap pass | AL selected MAE | AL gap pass | AL joint pass |',
@@ -131,7 +132,7 @@ def main():
                           ('Random -> B, Best10',result['summaries']['no_CF']),('Random -> CF20 -> B, Best10',result['summaries']['CF20'])]:
         def value(x):
             return f'{x:.6f}' if x is not None else 'unknown'
-        lines.append(f"| {label} | {summary['selected']}/4 | {value(summary['crystalformer']['MAE'])} | {summary['crystalformer']['gap_pass']}/4 | {value(summary['alignn']['MAE'])} | {summary['alignn']['gap_pass']}/4 | {summary['alignn']['joint_pass']}/4 |")
+        lines.append(f"| {label} | {summary['selected']}/{n} | {value(summary['crystalformer']['MAE'])} | {summary['crystalformer']['gap_pass']}/{n} | {value(summary['alignn']['MAE'])} | {summary['alignn']['gap_pass']}/{n} | {summary['alignn']['joint_pass']}/{n} |")
     lines+=['',result['note'],'', 'Paired same-parent MAE: '+json.dumps(result['paired'])]
     (root/'comparison.md').write_text('\n'.join(lines)+'\n')
     print(json.dumps(dict(summaries=result['summaries'],paired=result['paired'],relaxation_status=status)),flush=True)

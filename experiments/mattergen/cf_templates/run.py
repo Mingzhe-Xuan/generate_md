@@ -18,6 +18,7 @@ def main():
     parser.add_argument('--fixed-species', action='store_true')
     parser.add_argument('--relax-every-step', action='store_true')
     parser.add_argument('--branch-manifest',type=Path)
+    parser.add_argument('--parent-ids',type=Path)
     args = parser.parse_args()
     if not os.environ.get('SLURM_JOB_ID'):
         parser.error('Submit native optimization through Slurm.')

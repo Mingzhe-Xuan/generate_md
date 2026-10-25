@@ -49,3 +49,13 @@ def select_cohort(rows, mode):
     if not chosen or len({r['candidate_id'] for r in rows}) != len(rows):
         raise ValueError('Empty cohort or duplicate source IDs.')
     return chosen
+
+
+def select_explicit(rows,ids):
+    """Original-order subsets may include nonneutral parents in fixed-species runs."""
+    if not ids or len(ids)!=len(set(ids)):
+        raise ValueError('Explicit parent IDs must be nonempty and unique.')
+    selected=[r for r in rows if r['candidate_id'] in set(ids)]
+    if [r['candidate_id'] for r in selected]!=ids:
+        raise ValueError('Explicit parents must exist in original inventory order.')
+    return selected

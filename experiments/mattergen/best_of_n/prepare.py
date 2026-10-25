@@ -1,4 +1,4 @@
-"""Generate immutable paired branch inputs from the original four raw parents."""
+"""Generate immutable paired inputs from pilot or explicit original raw parents."""
 import argparse
 import hashlib
 import json
@@ -11,7 +11,7 @@ from pymatgen.core import Structure
 from policy import configuration,displacement,validate_configuration
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'cf_templates'))
-from template_policy import select_pilot
+from template_policy import select_pilot,select_explicit
 
 
 def digest(path):
@@ -24,6 +24,7 @@ def main():
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--amplitude',type=float)
     p.add_argument('--proposal-cap',type=float,default=.4)
+    p.add_argument('--parents',type=Path)
     args=p.parse_args()
     amplitudes=configuration(args.amplitude,args.proposal_cap)
     if not os.environ.get('SLURM_JOB_ID'):
@@ -40,21 +41,28 @@ def main():
         validate_configuration(manifest,amplitudes,args.proposal_cap)
         if manifest['source_inventory_sha256']!=digest(inventory) or any(digest(Path(r['source']))!=r['sha256'] for r in manifest['candidates']):
             raise ValueError('Existing paired inputs changed.')
+        if args.parents and manifest['parent_ids']!=json.loads(args.parents.read_text())['parent_ids']:
+            raise ValueError('Existing explicit parent subset changed.')
         return
     candidates=json.loads(inventory.read_text())['candidates']
     structures={}
     rows=[]
     for c in candidates:
-        if c['original_valid']!='True':
+        if c['original_valid']!='True' and not args.parents:
             continue
         s=Structure.from_file(source/'structures'/c['candidate_id'])
-        rows.append(dict(candidate_id=c['candidate_id'],eligible=True,num_atoms=len(s)))
+        rows.append(dict(candidate_id=c['candidate_id'],eligible=c['original_valid']=='True',num_atoms=len(s)))
         structures[c['candidate_id']]=s
-    chosen=select_pilot(rows)
+    if args.parents:
+        parent_document=json.loads(args.parents.read_text())
+        if parent_document['source_inventory_sha256']!=digest(inventory):raise ValueError('Parent inventory mismatch.')
+        chosen=select_explicit(rows,parent_document['parent_ids'])
+    else:chosen=select_pilot(rows)
     proposals.mkdir(parents=True,exist_ok=False)
     records=[]
     parents=[]
     source_by_id={c['candidate_id']:c for c in candidates}
+    original_indices={c['candidate_id']:i for i,c in enumerate(candidates)}
     for parent_index,parent in enumerate(chosen):
         key=parent['candidate_id']
         raw=source/'structures'/key
@@ -64,7 +72,7 @@ def main():
         parents.append(dict(parent_id=key,source_sha256=digest(raw),num_atoms=len(original)))
         for branch,amplitude in enumerate((0.,)+amplitudes):
             for attempt in range(100):
-                seed=[42,parent_index,branch,attempt]
+                seed=[42,original_indices[key] if args.parents else parent_index,branch,attempt]
                 delta=displacement(len(original),amplitude,seed)
                 trial=Structure(original.lattice,original.species,original.cart_coords+delta,coords_are_cartesian=True,to_unit_cell=True)
                 if not any(trial.get_all_neighbors(.5)):
@@ -80,7 +88,7 @@ def main():
     manifest=dict(source_inventory_sha256=digest(inventory),parent_ids=[p['parent_id'] for p in parents],parents=parents,
         candidates=records,N=10,seed=42,amplitudes_A=list(amplitudes),max_cf_displacement_A=args.proposal_cap,
         perturbation='Cartesian zero-mean exact per-atom RMS; per-site norm <=2RMS; same cell and ordered species.',
-        minimum_periodic_distance_A=.5,selection='Nearest4/8/12/20 atoms and ID among original eligible inputs, no property or outcome selection.')
+        minimum_periodic_distance_A=.5,selection='Explicit original-order subset of all128 parents, global inventory seed index; no neutrality/property exclusion.' if args.parents else 'Nearest4/8/12/20 atoms and ID among original eligible inputs, no property or outcome selection.')
     manifest_path.write_text(json.dumps(manifest,indent=2)+'\n')
     print(json.dumps(dict(parents=manifest['parent_ids'],paired_inputs=len(records),N=10)),flush=True)
 
