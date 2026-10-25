@@ -123,7 +123,9 @@ def main():
         lines+=['',f'## {key}','','| Method | Selected /128 | Novel /128 | CF MAE baseline -> selected | ALIGNN MAE baseline -> selected | CF gap/Ef/joint | ALIGNN gap/Ef/joint |','|---|---:|---:|---|---|---|---|']
         for row in rows:
             s=row['novel_summary'];cf=s['crystalformer'];al=s['alignn']
-            flags=lambda m:'/'.join(str(m['pass_counts'][f]) for f in ('gap','eform','joint'))
+            def flags(model):
+                n=s['selected']
+                return '; '.join(f"{model['pass_counts'][f]}/{n} ({100*model['pass_counts'][f]/n:.1f}%)" if n else '0/0 (undefined)' for f in ('gap','eform','joint'))
             lines.append(f"| {row['method']} | {row['selected_summary']['selected']} | {s['selected']} | {val(cf['baseline_MAE'])} -> {val(cf['paired_MAE'])} | {val(al['baseline_MAE'])} -> {val(al['paired_MAE'])} | {flags(cf)} | {flags(al)} |")
         lines+=['','Pass counts and paired MAE refer to selected novel terminals only; MAE uses known paired predictions. All parent denominators remain128; see JSON for missing coverage.']
     (root/'comparison.md').write_text('\n'.join(lines)+'\n')

@@ -4,6 +4,7 @@ import importlib.util
 from pathlib import Path
 import pytest
 from unittest.mock import patch
+import hashlib
 
 
 def module(name,file):
@@ -77,3 +78,21 @@ def test_report_missing_and_orderings():
     assert row['selected_novel_count']==1 and row['novel_summary']['denominator']==128
     assert row['novel_summary']['crystalformer']['paired_count']==0
     assert tables['legacy/looser/best_among_novel'][1]['selected_novel_count']==1
+
+
+def test_saved_geometry_hash_species_and_periodic_separation(tmp_path):
+    from pymatgen.core import Structure,Lattice
+    with patch.dict('sys.modules',{'selection':policy}):report=module('full_geometry_report','report.py')
+    path=tmp_path/'pose.vasp';s=Structure(Lattice.cubic(3),['Si'],[[0,0,0]])
+    s.to(filename=str(path),fmt='poscar');digest=hashlib.sha256(path.read_bytes()).hexdigest()
+    c=case(1);c['original_path']=str(path);c['prediction']['geometry_sha256']=digest
+    c['prediction']['relaxation'].update(relaxed_path=str(path),relaxed_sha256=digest)
+    checked=report.geometry((copy.deepcopy(c),str(path)))
+    assert checked['separated'] and checked['matches']==dict(strict=True,looser=True)
+    checked=report.geometry((copy.deepcopy(c),None));assert checked['matches']=={}
+    bad=copy.deepcopy(c);bad['prediction']['geometry_sha256']='wrong'
+    with pytest.raises(ValueError):report.geometry((bad,str(path)))
+    collision=Structure(Lattice.cubic(3),['Si','Si'],[[0,0,0],[.01,0,0]])
+    collision.to(filename=str(path),fmt='poscar');digest=hashlib.sha256(path.read_bytes()).hexdigest()
+    c['prediction']['geometry_sha256']=digest;c['prediction']['relaxation']['relaxed_sha256']=digest
+    assert not report.geometry((c,None))['separated']
