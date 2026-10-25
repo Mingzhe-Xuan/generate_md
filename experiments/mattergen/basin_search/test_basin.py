@@ -126,3 +126,16 @@ def test_endpoint_archive_actual_ase_roundtrip(tmp_path):
     np.testing.assert_allclose(frames[1].cell.array,b.cell.array,atol=1e-12)
     assert [f.info['stage'] for f in frames]==['direct','selected']
     with pytest.raises(ValueError):endpoints.pair_files(first,'tampered',second,endpoints.sha(second),tmp_path/'invalid',labels)
+
+
+def test_display_alignment_preserves_skewcell_distances():
+    with patch.dict('sys.modules',{'policy':policy}):endpoints=module('endpoints')
+    a=Atoms('NaClSiO',scaled_positions=[[.1,.2,.3],[.6,.2,.5],[.3,.8,.1],[.9,.7,.9]],cell=[[5,0,0],[1.1,4,0],[-.6,2.2,6]],pbc=True)
+    b=a.copy();b.set_cell([[4.7,0,0],[1.8,4.5,0],[-1.5,1.2,5.5]],scale_atoms=True);b.positions[1]+=[.2,-.1,.3]
+    b.rotate(27,'z',rotate_cell=True)
+    original=[x.copy() for x in (a,b)]
+    display=endpoints.display_pair((a,b))
+    for x,y,z in zip((a,b),display,original):
+        np.testing.assert_allclose(x.positions,z.positions,atol=1e-12)
+        np.testing.assert_allclose(x.get_all_distances(mic=True),y.get_all_distances(mic=True),atol=1e-8)
+        np.testing.assert_allclose(x.cell.array@x.cell.array.T,y.cell.array@y.cell.array.T,atol=1e-8)

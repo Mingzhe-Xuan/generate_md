@@ -31,6 +31,25 @@ def pair_files(first_path,first_sha,second_path,second_sha,folder,labels):
     return poses
 
 
+def display_pair(poses):
+    from pymatgen.io.ase import AseAtomsAdaptor
+    from pymatgen.core import Lattice
+    sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'full_best_n'))
+    from effect_geometry import internal_vectors
+    first,second=[a.copy() for a in poses]
+    for a in (first,second):
+        original=a.copy();cell,_=a.cell.standard_form();a.set_cell(cell,scale_atoms=True)
+        np.testing.assert_allclose(original.get_all_distances(mic=True),a.get_all_distances(mic=True),atol=1e-8)
+    first_structure=AseAtomsAdaptor.get_structure(first);second_structure=AseAtomsAdaptor.get_structure(second)
+    vectors=internal_vectors(first_structure,second_structure)
+    # internal_vectors uses pymatgen's canonical lattice orientation, not ASE's.
+    canonical=Lattice.from_parameters(*first_structure.lattice.abc,*first_structure.lattice.angles).matrix
+    x=first.get_scaled_positions(wrap=False);anchor=int(np.argmax(first.numbers));display=np.remainder(x+.5-x[anchor],1.)
+    first.set_scaled_positions(display);second.set_scaled_positions(display+vectors@np.linalg.inv(canonical))
+    for a,original in zip((first,second),poses):np.testing.assert_allclose(a.get_all_distances(mic=True),original.get_all_distances(mic=True),atol=1e-8)
+    return first,second
+
+
 def plot_pairs(pairs,output):
     if not pairs:return
     import matplotlib
@@ -40,21 +59,10 @@ def plot_pairs(pairs,output):
     from ase.data import covalent_radii
     from ase.utils import rotate
     from itertools import product
-    from pymatgen.io.ase import AseAtomsAdaptor
-    sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'full_best_n'))
-    from effect_geometry import internal_vectors
     fig,axes=plt.subplots(len(pairs),2,figsize=(11,4.3*len(pairs)),squeeze=False,layout='constrained')
     rotation='20x,-25y,10z';q=rotate(rotation)
     for index,(poses,row) in enumerate(pairs):
-        first,second=[a.copy() for a in poses]
-        for a in (first,second):
-            original=a.copy();cell,_=a.cell.standard_form();a.set_cell(cell,scale_atoms=True)
-            np.testing.assert_allclose(original.get_all_distances(mic=True),a.get_all_distances(mic=True),atol=1e-8)
-        first_structure=AseAtomsAdaptor.get_structure(first);second_structure=AseAtomsAdaptor.get_structure(second)
-        vectors=internal_vectors(first_structure,second_structure)
-        x=first.get_scaled_positions(wrap=False);anchor=int(np.argmax(first.numbers));display=np.remainder(x+.5-x[anchor],1.)
-        first.set_scaled_positions(display);second.set_scaled_positions(display+vectors@np.linalg.inv(first.cell.array))
-        for a,original in zip((first,second),poses):np.testing.assert_allclose(a.get_all_distances(mic=True),original.get_all_distances(mic=True),atol=1e-8)
+        first,second=display_pair(poses)
         radii=covalent_radii[first.numbers]*.55;corners=np.array(list(product((0,1),repeat=3)))
         vertices=np.vstack([np.vstack((a.positions,corners@a.cell.array))@q for a in (first,second)])
         lower=vertices[:,:2].min(0)-radii.max()-.5;upper=vertices[:,:2].max(0)+radii.max()+.5
