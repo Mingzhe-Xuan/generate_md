@@ -54,10 +54,13 @@ def main():
                 row=json.loads(target.read_text())
                 if row['input_sha256']!=sha or row.get('maxstep')!=.05 or row.get('step_limit')!=1600:
                     raise ValueError('Stale B cache or numerical-profile mismatch.')
+                if task.get('save_trajectory') and not row.get('trajectory_frames'):
+                    raise ValueError('Cached B has no requested trajectory.')
                 results.append(row);continue
             row=dict(candidate_id=task['candidate_id'],input_sha256=sha,checkpoint_sha256=expected,
                      status='running',maxstep=.05,step_limit=1600,model_max_z=maximum,evaluated=False)
             started=time.perf_counter()
+            recorder=None
             try:
                 with redirect_stdout(sys.stderr):
                     atoms=read(source,format='vasp');numbers=atoms.numbers.copy()
@@ -66,9 +69,16 @@ def main():
                         raise RuntimeError('Poisoned CUDA context after '+poisoned_by+'; this case was not evaluated.')
                     atoms.calc=calc
                     row['evaluated']=True
-                    initial=float(atoms.get_potential_energy());atoms.set_constraint(FixSymmetry(atoms))
+                    initial=float(atoms.get_potential_energy())
+                    if task.get('save_trajectory'):
+                        from trajectory_capture import TrajectoryCapture
+                        recorder=TrajectoryCapture(folder/'trajectory')
+                        recorder.record(atoms,'input',None)
+                    atoms.set_constraint(FixSymmetry(atoms))
                     filtered=ExpCellFilter(atoms);optimizer=BFGS(filtered,logfile=None,maxstep=.05)
                     clocks=[];optimizer.attach(lambda:clocks.append(time.perf_counter()),interval=1)
+                    if recorder is not None:
+                        optimizer.attach(lambda:recorder.record(atoms,'optimizer',optimizer.get_number_of_steps()),interval=1)
                     converged=bool(optimizer.run(fmax=.01,steps=1600))
                     forces=filtered.get_forces();energy=float(atoms.get_potential_energy())
                     if not all(np.isfinite(x).all() for x in (forces,energy,atoms.cell.array,atoms.positions)):
@@ -88,6 +98,8 @@ def main():
                 # A device assertion invalidates this process, not later input structures.
                 if metadata['error_type']=='cuda_context_error' and poisoned_by is None:poisoned_by=task['candidate_id']
             row['elapsed_seconds']=time.perf_counter()-started
+            if recorder is not None:
+                row.update(trajectory_frames=recorder.count,trajectory_manifest=str(recorder.path.resolve()))
             target.write_text(json.dumps(row,indent=2)+'\n');results.append(row)
         print('__AB_RPC__'+json.dumps(dict(results=results)),flush=True)
 

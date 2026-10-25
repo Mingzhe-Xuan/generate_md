@@ -1,5 +1,12 @@
 # Alternating Crystalformer / MatterSim optimization
 
+The worker optionally accepts `save_trajectory: true` in a task. The observer
+records the original input BEFORE FixSymmetry initialization, then optimizer
+step0 after symmetry refinement and every BFGS step. It writes independent
+constraint-free POSCAR copies, E/raw-force metadata and SHA256 to the task's own
+`trajectory/` directory. It does not mutate optimizer atoms or solver settings.
+Default tasks retain the previous behavior and do not record frames.
+
 Start from exactly the original128 templates, masks and seed42, not the archived
 200-update outputs. `run.py` intercepts the pinned author source immediately
 before optimization to obtain its original inputs/models, then requires initial
