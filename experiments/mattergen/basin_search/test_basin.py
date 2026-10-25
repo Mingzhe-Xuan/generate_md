@@ -110,3 +110,19 @@ def test_attempt_prefix_counts_rejected_proposals():
     assert scaling.attempt_number('mattergen-0001-beam-g03-c3',base['id'],'beam')==16
     with pytest.raises(ValueError):scaling.prefix_pool([base,dict(id='mattergen-0002-beam-g00-c0')],base['id'],'beam',16)
     with pytest.raises(ValueError):scaling.attempt_number('mattergen-0001-beam-g04-c0',base['id'],'beam')
+
+
+def test_endpoint_archive_actual_ase_roundtrip(tmp_path):
+    from ase.io import write,read
+    with patch.dict('sys.modules',{'policy':policy}):endpoints=module('endpoints')
+    a=Atoms('Si2',scaled_positions=[[0,0,0],[.3,.4,.5]],cell=[[4,0,0],[.1,4,0],[.2,.1,5]],pbc=True)
+    b=a.copy();b.positions[1,0]+=.1
+    first=tmp_path/'first.vasp';second=tmp_path/'second.vasp'
+    write(first,a,format='vasp');write(second,b,format='vasp')
+    labels=[dict(stage='direct'),dict(stage='selected')]
+    endpoints.pair_files(first,endpoints.sha(first),second,endpoints.sha(second),tmp_path/'out',labels)
+    frames=read(tmp_path/'out/comparison.traj',index=':')
+    np.testing.assert_allclose(frames[0].positions,a.positions,atol=1e-12)
+    np.testing.assert_allclose(frames[1].cell.array,b.cell.array,atol=1e-12)
+    assert [f.info['stage'] for f in frames]==['direct','selected']
+    with pytest.raises(ValueError):endpoints.pair_files(first,'tampered',second,endpoints.sha(second),tmp_path/'invalid',labels)

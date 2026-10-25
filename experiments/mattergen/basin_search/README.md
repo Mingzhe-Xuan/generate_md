@@ -63,6 +63,13 @@ The output compares CF MAE, substantial improvements and actual MatterSim force
 evaluations. Prefix curves are descriptive and do not replace endpoint criteria
 or establish a causal advantage of beam selection over different move sizes.
 
+`endpoints.sbatch` packages all16 direct/selected pairs for each completed method
+from BASIN_RUN_ROOT. It verifies independently scored geometry hashes and ordered
+species, copies original POSCAR bytes, checks exact two-frame ASE trajectory
+round trips, and renders every materially improved beam pair. The archive and
+manifest retain mechanics records, neutral-mask provenance and both predictors.
+These are saved endpoint visualizations, not new relaxations or phase proofs.
+
 All native mechanics, inference, batch geometry and evaluation must run in Slurm.
 No source edits occur on the server. Existing weights/environments are reused.
 Generated poses, trajectories and reports are ignored task results.
