@@ -1,5 +1,6 @@
 """Cohort, physical guards and new proposal geometry without model inference."""
 import importlib.util
+import copy
 from pathlib import Path
 import numpy as np
 import pytest
@@ -79,3 +80,19 @@ def test_ase_md_velocity_cleanup():
     before=atoms.positions.copy();atoms.set_momenta(None)
     np.testing.assert_allclose(atoms.positions,before)
     assert not atoms.has('momenta')
+
+
+def test_confirmation_trigger_and_frozen_cohort():
+    with patch.dict('sys.modules',{'policy':policy}):confirmation=module('confirmation')
+    ids=[str(i) for i in range(128)];parents=policy.choose_parents(ids,set(ids)-{'5'})
+    plan=dict(parent_count=16,parent_ids=parents,source_inventory_sha256='fixed',acceptance=copy.deepcopy(policy.ACCEPTANCE))
+    report=dict(plan=plan,methods=dict(iid=dict(summary=dict(discovery_gate_passed=True))))
+    assert confirmation.qualifying(report)==[]
+    report['methods']['beam']=dict(summary=dict(discovery_gate_passed=True))
+    assert confirmation.qualifying(report)==['beam']
+    assert confirmation.frozen_parents(plan,ids,'fixed')==parents
+    with pytest.raises(ValueError):confirmation.frozen_parents(plan,ids,'changed')
+    bad=copy.deepcopy(plan);bad['acceptance']['min_changed_improved_parents']=1
+    with pytest.raises(ValueError):confirmation.frozen_parents(bad,ids,'fixed')
+    bad=copy.deepcopy(plan);bad['parent_ids']=parents[::-1]
+    with pytest.raises(ValueError):confirmation.frozen_parents(bad,ids,'fixed')

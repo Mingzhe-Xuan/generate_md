@@ -39,6 +39,14 @@ are reused; infrastructure failures are restarted in fresh processes while
 scientific rejections consume the attempt. The quench success of probe escapes
 is reported separately from MD numerical correctness.
 
+`confirm.sbatch` may depend on the discovery job. It reads the complete frozen
+report and proceeds only if beam or soft_md passes discovery, then repeats all
+three methods with seed20261027. `--frozen-plan` copies and validates the exact
+original16 IDs and baseline hashes; it never resamples from a changed pool.
+IID or symmetry-release control success alone does not trigger confirmation.
+Skipped confirmation is not goal completion. Both seeds need independent final
+evaluation and materiality auditing before a successful method is claimed.
+
 All native mechanics, inference, batch geometry and evaluation must run in Slurm.
 No source edits occur on the server. Existing weights/environments are reused.
 Generated poses, trajectories and reports are ignored task results.

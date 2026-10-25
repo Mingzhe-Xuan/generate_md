@@ -12,7 +12,11 @@ source experiments/smoacs/job_status.sh
 export OMP_NUM_THREADS=2 MKL_NUM_THREADS=2 OPENBLAS_NUM_THREADS=1 DGLBACKEND=pytorch
 export ATOMGPTLAB_CACHE="$PWD/results/smoacs/jarvis-cache"
 task_run="${BASIN_RUN_ROOT:-$PWD/results/mattergen/basin-search-$SLURM_JOB_ID}"
-if [[ ! -f "$task_run/plan.json" ]]; then python3 experiments/mattergen/basin_search/plan.py --output "$task_run"; fi
+if [[ ! -f "$task_run/plan.json" ]]; then
+ task_cohort_args=()
+ if [[ -n "${BASIN_FROZEN_PLAN:-}" ]]; then task_cohort_args+=(--frozen-plan "$BASIN_FROZEN_PLAN"); fi
+ python3 experiments/mattergen/basin_search/plan.py --output "$task_run" --search-seed "${BASIN_SEARCH_SEED:-20261026}" "${task_cohort_args[@]}"
+fi
 .venv-smoacs-blackwell/bin/python experiments/mattergen/basin_search/search.py --run "$task_run" --seed "${BASIN_SEARCH_SEED:-20261026}"
 for task_method in iid beam soft_md symmetry_release; do
  env BESTN_EVALUATION="$task_run/evaluation-$task_method" bash experiments/mattergen/best_of_n/evaluate.sh
