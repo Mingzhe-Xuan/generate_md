@@ -147,3 +147,22 @@ def test_cpu_attractor_control_requires_same_potential_and_forces():
     assert attractors.validate_control(-40.00001,.009001,record,'fixed')['passed']
     for energy,force,digest in [(-40,.009,'other'),(-39,.009,'fixed'),(-40,.02,'fixed'),(float('nan'),.009,'fixed')]:
         with pytest.raises(ValueError):attractors.validate_control(energy,force,record,digest)
+
+
+def test_pooled_selection_uses_cf_physics_and_native_score():
+    with patch.dict('sys.modules',{'policy':policy}):report=module('report')
+    with patch.dict('sys.modules',{'policy':policy,'report':report}):pooled=module('pooled')
+    b=dict(status='converged',converged=True,max_filter_force=.001,max_raw_atomic_force=.002,separated=True,final_energy_eV=-20,num_atoms=10,volume_ratio=1.,relaxed_sha256='fixed')
+    branches=[]
+    for i,(gap,al) in enumerate(((2.49,7.),(2.4,2.5))):
+        point=dict(id=str(i),gap=gap,eform=-1.,B=dict(b))
+        evaluation=dict(point_id=str(i),prediction=dict(geometry_sha256='fixed',crystalformer_gap=gap,crystalformer_eform=-1.,alignn_gap=al))
+        branches.append(dict(point=point,evaluation=evaluation))
+    assert pooled.choose_branch(branches,-2) is branches[0]
+    branches[0]['point']['B']['max_raw_atomic_force']=.011
+    assert pooled.choose_branch(branches,-2) is branches[1]
+    branches[0]['evaluation']['prediction']['geometry_sha256']='wrong'
+    with pytest.raises(ValueError):pooled.choose_branch(branches,-2)
+    branches[0]['evaluation']['prediction']['geometry_sha256']='fixed'
+    branches[0]['evaluation']['prediction']['crystalformer_gap']=3.
+    with pytest.raises(ValueError):pooled.choose_branch(branches,-2)

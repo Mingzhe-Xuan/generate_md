@@ -79,6 +79,14 @@ versus other matches are recorded, without CF ranking or changed acceptance.
 This tests sensitivity to small perturbations; it does not prove global basin
 membership, DFT stability or positive phonon frequencies.
 
+`pooled.sbatch` is an additional exploratory Best-of-32 analysis of both complete
+N16 seeds, using BASIN_DISCOVERY_ROOT and BASIN_CONFIRM_ROOT. The same CF/physical
+rule chooses between each seed's best; ALIGNN never ranks. All32 attempts per
+parent and costs are counted, while the paired denominator remains16. Saved
+scores/hashes and geometry are rechecked and the16 pooled beam poses exported
+as exact ASE pairs. This pooling is not a third independent confirmation and
+cannot replace the two separately evaluated original endpoints.
+
 All native mechanics, inference, batch geometry and evaluation must run in Slurm.
 No source edits occur on the server. Existing weights/environments are reused.
 Generated poses, trajectories and reports are ignored task results.
