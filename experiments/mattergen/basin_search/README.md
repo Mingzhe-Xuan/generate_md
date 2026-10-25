@@ -70,6 +70,15 @@ round trips, and renders every materially improved beam pair. The archive and
 manifest retain mechanics records, neutral-mask provenance and both predictors.
 These are saved endpoint visualizations, not new relaxations or phase proofs.
 
+`attractors.sbatch` runs an optional CPU MatterSim diagnostic alongside GPU search.
+For every material-improved beam endpoint and its directB comparator it first
+checks saved GPU energy and maximum raw force against CPU (1e-4 tolerances).
+Only then does it run three predetermined .02A/.003strain perturbations per
+endpoint and unconstrained same-fmax re-quenches. All outcomes and return-to-own
+versus other matches are recorded, without CF ranking or changed acceptance.
+This tests sensitivity to small perturbations; it does not prove global basin
+membership, DFT stability or positive phonon frequencies.
+
 All native mechanics, inference, batch geometry and evaluation must run in Slurm.
 No source edits occur on the server. Existing weights/environments are reused.
 Generated poses, trajectories and reports are ignored task results.

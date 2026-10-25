@@ -139,3 +139,11 @@ def test_display_alignment_preserves_skewcell_distances():
         np.testing.assert_allclose(x.positions,z.positions,atol=1e-12)
         np.testing.assert_allclose(x.get_all_distances(mic=True),y.get_all_distances(mic=True),atol=1e-8)
         np.testing.assert_allclose(x.cell.array@x.cell.array.T,y.cell.array@y.cell.array.T,atol=1e-8)
+
+
+def test_cpu_attractor_control_requires_same_potential_and_forces():
+    with patch.dict('sys.modules',{'policy':policy}):attractors=module('attractors')
+    record=dict(checkpoint_sha256='fixed',final_energy_eV=-40,num_atoms=10,max_raw_atomic_force=.009)
+    assert attractors.validate_control(-40.00001,.009001,record,'fixed')['passed']
+    for energy,force,digest in [(-40,.009,'other'),(-39,.009,'fixed'),(-40,.02,'fixed'),(float('nan'),.009,'fixed')]:
+        with pytest.raises(ValueError):attractors.validate_control(energy,force,record,digest)
