@@ -96,3 +96,17 @@ def test_confirmation_trigger_and_frozen_cohort():
     with pytest.raises(ValueError):confirmation.frozen_parents(bad,ids,'fixed')
     bad=copy.deepcopy(plan);bad['parent_ids']=parents[::-1]
     with pytest.raises(ValueError):confirmation.frozen_parents(bad,ids,'fixed')
+
+
+def test_attempt_prefix_counts_rejected_proposals():
+    with patch.dict('sys.modules',{'policy':policy}):report=module('report')
+    with patch.dict('sys.modules',{'policy':policy,'report':report}):scaling=module('scaling')
+    base=dict(id='mattergen-0001.vasp')
+    # First attempt failed, so the first saved successful point has attempt index2.
+    candidate=dict(id='mattergen-0001-beam-g00-c1')
+    points=[base,candidate]
+    assert scaling.prefix_pool(points,base['id'],'beam',1)==[base]
+    assert scaling.prefix_pool(points,base['id'],'beam',2)==points
+    assert scaling.attempt_number('mattergen-0001-beam-g03-c3',base['id'],'beam')==16
+    with pytest.raises(ValueError):scaling.prefix_pool([base,dict(id='mattergen-0002-beam-g00-c0')],base['id'],'beam',16)
+    with pytest.raises(ValueError):scaling.attempt_number('mattergen-0001-beam-g04-c0',base['id'],'beam')

@@ -54,6 +54,15 @@ It writes a separate interim-JOB.json with provisional=true and no final proof
 flag. Confirmation reads only report.json from the complete independent
 evaluation, so interim scores never trigger confirmation or certify success.
 
+`scaling.sbatch` audits completed reports and reconstructs N=0,1,4,8,12,16
+prefixes by attempted ID, so rejected proposals still consume budget. It checks
+pose hashes, the frozen16-parent cohort and controls, recomputes structural
+changes, and requires prefix16 to reproduce the independent final report.
+Optional BASIN_CONFIRM_ROOT adds the second search seed on the same cohort.
+The output compares CF MAE, substantial improvements and actual MatterSim force
+evaluations. Prefix curves are descriptive and do not replace endpoint criteria
+or establish a causal advantage of beam selection over different move sizes.
+
 All native mechanics, inference, batch geometry and evaluation must run in Slurm.
 No source edits occur on the server. Existing weights/environments are reused.
 Generated poses, trajectories and reports are ignored task results.
