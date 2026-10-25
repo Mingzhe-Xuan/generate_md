@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import sys
 import time
+import traceback
 
 
 def sha(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()
@@ -94,7 +95,7 @@ def main():
                             if not np.isfinite(total) or abs(total-total0)/len(atoms)>.05 or matrix.min()<.7:raise ValueError('MD drift/collision guard rejected escape.')
                             trace.append(dict(step=step,potential_eV=energy,total_eV=total,kinetic_eV=float(atoms.get_kinetic_energy())))
                             if step<60:dynamics.run(1)
-                        atoms.set_velocities(None);output=folder/'escape.vasp';write(output,atoms,format='vasp',direct=True,sort=False)
+                        atoms.set_momenta(None);output=folder/'escape.vasp';write(output,atoms,format='vasp',direct=True,sort=False)
                         (folder/'md-trace.json').write_text(json.dumps(trace,indent=2)+'\n')
                         row.update(status='escaped',source=str(output.resolve()),sha256=sha(output),MD_steps=60,timestep_fs=.5,temperature_K=task['temperature'],
                             eigenvalues=values.tolist(),coordinate_RMS_A=float(np.sqrt(np.mean(np.sum((atoms.positions-initial_positions)**2,axis=1)))),
@@ -102,7 +103,7 @@ def main():
                     else:raise ValueError('Unknown mechanics action.')
                     if not np.array_equal(atoms.numbers,numbers):raise ValueError('Mechanics changed species/order.')
             except Exception as error:
-                metadata=error_metadata(error);row.update(status='failed',error=repr(error),**metadata)
+                metadata=error_metadata(error);row.update(status='failed',error=repr(error),traceback=traceback.format_exc(),**metadata)
                 if metadata['infrastructure_failure']:poisoned=True
             row.update(NFE=calls[0]-nfe,elapsed_seconds=time.perf_counter()-start)
             (folder/'result.json').write_text(json.dumps(row,indent=2,allow_nan=False)+'\n');results.append(row)

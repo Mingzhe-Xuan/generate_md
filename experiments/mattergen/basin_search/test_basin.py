@@ -67,3 +67,15 @@ def test_physical_nan_and_cell_guard():
     b=dict(status='converged',converged=True,max_filter_force=.001,max_raw_atomic_force=.002,separated=True,final_energy_eV=-20,num_atoms=10,volume_ratio=1.)
     for value in (float('nan'),.6,1.5):
         b['volume_ratio']=value;assert not policy.physical(b,-2)
+
+
+def test_ase_md_velocity_cleanup():
+    from ase.calculators.lj import LennardJones
+    from ase.md.verlet import VelocityVerlet
+    from ase import units
+    atoms=Atoms('Ar2',positions=[[0,0,0],[3.8,0,0]],cell=[12,12,12],pbc=True)
+    atoms.calc=LennardJones();atoms.set_velocities(np.ones((2,3))*.01)
+    VelocityVerlet(atoms,.5*units.fs,logfile=None).run(2)
+    before=atoms.positions.copy();atoms.set_momenta(None)
+    np.testing.assert_allclose(atoms.positions,before)
+    assert not atoms.has('momenta')
