@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 import numpy as np
 from settings import FAMILIES,ARMS,POLICY,assess_gradient
+from direction_stats import summarize_directions
 
 
 def load(p):return json.loads(Path(p).read_text())
@@ -51,6 +52,7 @@ def main():
     result=dict(plan=plan,arms=reports,families=families,interpretation='Stage-one one-gradient/four-step-size benchmark. All16neutral parents, matched reverse/random, shared symmetry seed and zero-step control; every scored endpoint fullcanonicalB. Best4 controls equalbudget; sharedseedbenefit is not gradient contribution. Nativefinite8-step derivative is not fullR derivative. Success requires actualadvantage overmatchedcontrols andretainedgain, followedbyindependentconfirmation/perturbationchecks beforegoalcompletion.')
     result['cost']=dict(probe_and_curvature_NFE=load(root/'native-probe.json')['NFE'],scientific_seed_and_proposal_NFE=data['NFE'],
         note='Probe includes all baseline replays/FD verification/Hessian/lookahead construction. Per-arm B_NFE excludes these common preparation costs. Equal proposal budget is not equal totalFLOPs.')
+    result['unselected_direction_diagnostics']=summarize_directions(data['attempts'],parents,arrays['seed'])
     (root/'report.json').write_text(json.dumps(result,indent=2,allow_nan=False)+'\n');print(json.dumps(families),flush=True)
 
 

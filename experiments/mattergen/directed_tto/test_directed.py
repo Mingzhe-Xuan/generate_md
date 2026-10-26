@@ -130,3 +130,50 @@ def test_native_derivative_gate_requires_all_primary_checks_and_local_resolution
     assert not settings.derivative_checks_pass(records[1:])
     assert not settings.derivative_checks_pass(records+[records[0]])
     records[0]['passed']=False;assert not settings.derivative_checks_pass(records)
+
+
+def test_unselected_direction_diagnostics_keep_parent_weights_and_failures():
+    import copy
+    from direction_stats import summarize_directions
+    parents=[str(i) for i in range(16)];rows=[]
+    for p in parents:
+        for family in settings.FAMILIES:
+            for arm in settings.ARMS:
+                for scale in settings.SCALES:
+                    error=.2 if arm=='descent' else .5 if arm=='random' else .7
+                    rows.append(dict(parent_id=p,family=family,arm=arm,scale=scale,eligible=True,point=dict(gap=2.5+error)))
+    for r in rows:
+        if r['parent_id']=='0' and r['family']=='plain' and r['arm']=='descent':r['eligible']=False;r.pop('point')
+        if r['parent_id']=='1' and r['family']=='plain' and r['arm']=='random' and r['scale']!=settings.SCALES[0]:r['eligible']=False;r.pop('point')
+    result=summarize_directions(rows,parents,[1.]*16)['families']['plain']
+    primary=result['all_attempts_shared_fallback']
+    assert primary['descent']['fallback_attempts']==4
+    assert np.isclose(primary['descent']['MAE'],(.2*15+1)/16)
+    assert primary['descent_vs_controls']['random']['parents']==16
+    sensitivity=result['eligible_pairs_only']['random']
+    assert sensitivity['paired_attempts']==57 and sensitivity['parents']==15
+    assert np.isclose(sensitivity['parent_mean_contrast']['mean_delta'],-.3)
+    import pytest
+    with pytest.raises(ValueError,match='Missing/duplicated'):summarize_directions(rows[:-1],parents,[1.]*16)
+    with pytest.raises(ValueError,match='Missing/duplicated'):summarize_directions(rows+[rows[-1]],parents,[1.]*16)
+    bad=copy.deepcopy(rows);bad[-1]['point']['gap']=float('nan')
+    with pytest.raises(ValueError,match='Nonfinite'):summarize_directions(bad,parents,[1.]*16)
+
+
+def test_precision_diagnostic_preserves_geometry_chainrule_and_dtype():
+    import torch
+    from contextlib import nullcontext
+    from numerics import score
+    class Model(torch.nn.Module):
+        def __init__(self,dtype):super().__init__();self.weight=torch.nn.Parameter(torch.tensor(1.,dtype=dtype),requires_grad=False)
+    def prediction(first,second,atomic,cart,batch,cell,size):
+        assert atomic.dtype==cart.dtype==cell.dtype==first.weight.dtype
+        return (cart.square().sum()*.001+cell.square().sum()*.002).reshape(1),torch.tensor([-1.],dtype=cart.dtype)
+    ref=reference()
+    for dtype in (torch.float32,torch.float64):
+        scorer=types.SimpleNamespace(torch=torch,models=[Model(dtype),Model(dtype)],operators=lambda enabled:nullcontext(),author=types.SimpleNamespace(Crystalformer_prediction=prediction))
+        q=np.linspace(-.01,.01,ref.size);ad=score(scorer,ref,q,dtype,True);native=score(scorer,ref,q,dtype)
+        assert ad['gap']==native['gap'] and np.isfinite(ad['gradient']).all()
+        direction=np.linspace(-1,1,ref.size);direction/=np.linalg.norm(direction);eps=.01 if dtype==torch.float32 else 1e-6
+        fd=(score(scorer,ref,q+eps*direction,dtype)['loss']-score(scorer,ref,q-eps*direction,dtype)['loss'])/(2*eps)
+        assert np.isclose(fd,ad['gradient']@direction,atol=1e-3 if dtype==torch.float32 else 1e-8,rtol=1e-3)

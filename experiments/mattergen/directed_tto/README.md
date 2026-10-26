@@ -28,6 +28,11 @@ uses both0.001/0.0005A steps with the unchanged absolute0.001/relative0.02 error
 criterion, retaining coarse0.004/0.002A differences as diagnostics. Physical and
 unrolled derivative checks retain their original0.004/0.002A steps/tolerances.
 All14 required primary checks must exist and pass; omitted/duplicate checks fail.
+The next gate409 passed0000 but found fine-step inconsistencies on0010.
+`numerics.py`/`numerics.sbatch` diagnose the same first4 parents using identical
+frozen weights in float32/float64 arithmetic, both one-sided and centered
+differences over eight resolutions. This diagnostic never authorizes scientific
+trials, changes tolerances or overwrites a failed proof.
 
 `directions.py` compares three actual derivatives: ordinary CF gradient, a positive
 soft-Hessian preconditioner, and the gradient through eight physical gradient
@@ -55,6 +60,11 @@ gate without a fresh matching proof. `experiment.py` saves every attempted ray,
 then exports equal-budget Best4 selections with the original baseline/seed as
 shared fallbacks. `report.py` requires independent frozenCF/ALIGNN controls and
 all16 final endpoints, and separately compares gradient against random/reverse.
+`direction_stats.py` also compares all unselected proposals afterB, averaging
+four scales within each parent before parent bootstrap. Failed/ineligible
+attempts retain the common seed/baseline fallback; a complete eligible-pair-only
+sensitivity reports its coverage. Per-scale means and failure counts accompany
+these descriptive diagnostics. They do not change the Best4 primary criterion.
 
 Initial operational discovery evidence requires at least4 retained error gains
 of0.1eV beyond both directB and seed-onlyB, and pairedBest4 CFMAE advantages of
