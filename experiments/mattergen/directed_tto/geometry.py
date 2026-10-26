@@ -11,7 +11,7 @@ def strain_basis():
 
 class Geometry:
     def __init__(self,numbers,cell,frac):
-        self.numbers=np.asarray(numbers,dtype=int);self.cell=np.asarray(cell,dtype=float);self.frac=np.asarray(frac,dtype=float)
+        self.numbers=np.array(numbers,dtype=int,copy=True);self.cell=np.array(cell,dtype=float,copy=True);self.frac=np.array(frac,dtype=float,copy=True)
         self.n=len(self.numbers);self.size=3*self.n+6;self.scale=float(np.linalg.det(self.cell)**(1/3));self.basis=strain_basis()
         if self.n<2 or self.frac.shape!=(self.n,3) or not np.isfinite(self.scale) or self.scale<=0:raise ValueError('Invalid reference pose.')
 

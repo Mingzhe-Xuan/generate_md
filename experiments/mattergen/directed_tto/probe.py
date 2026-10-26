@@ -18,7 +18,9 @@ def save(p,obj):Path(p).write_text(json.dumps(obj,indent=2,allow_nan=False)+'\n'
 
 
 def code_hashes():
-    return {p:sha(Path(__file__).with_name(p)) for p in ('geometry.py','directions.py','cf_gradient.py','mechanics.py','runtime.py','settings.py','probe.py')}
+    result={p:sha(Path(__file__).with_name(p)) for p in ('geometry.py','directions.py','cf_gradient.py','mechanics.py','runtime.py','settings.py','probe.py')}
+    result['exact_gaussian_adapter']=sha(Path(__file__).resolve().parents[2]/'smoacs/block_alternating/gaussian.py')
+    return result
 
 
 def common_seed(geom,index,seed=SEED):
@@ -43,6 +45,11 @@ def controls(geom,q,g,H,eta,client,scorer,index):
         if block=='atomic':v[-6:]=0
         if block=='strain':v[:-6]=0
         v=normalize(v)
+        # Fine-step diagnostics distinguish nonlinear coarse differences from
+        # a wrong input backward. They do not relax the original gate below.
+        for eps in (.001,.0005):
+            plus=scorer.evaluate(geom,q+eps*v);minus=scorer.evaluate(geom,q-eps*v);fd=(plus['loss']-minus['loss'])/(2*eps);pred=float(g@v)
+            records.append(dict(kind='CF_gradient_fine_diagnostic',block=block,epsilon=eps,FD=fd,predicted=pred,passed=close(fd,pred,.001,.02)))
         for eps in (.004,.002):
             plus=scorer.evaluate(geom,q+eps*v);minus=scorer.evaluate(geom,q-eps*v);fd=(plus['loss']-minus['loss'])/(2*eps);pred=float(g@v)
             records.append(dict(kind='CF_gradient',block=block,epsilon=eps,FD=fd,predicted=pred,passed=close(fd,pred,.001,.02)))
@@ -77,7 +84,10 @@ def main():
             baseline_pass=bool(cf_error<=1e-5 and energy_error is not None and energy_error<=1e-4 and fit)
             if not baseline_pass:raise ValueError('Native baseline control failed: '+str((parent,cf_error,energy_error,fit)))
             global_index=int(Path(parent).stem.split('-')[1]);q,seed_attempt=common_seed(geom,global_index,plan['search_seed'])
-            score=scorer.evaluate(geom,q,True);g=geom.project(score['gradient']);H,asymmetry=hessian(lambda Q:client.gradients(geom,Q),q)
+            score=scorer.evaluate(geom,q,True);frozen_seed=scorer.evaluate(geom,q)
+            adapter_error=max(abs(score['gap']-frozen_seed['gap']),abs(score['eform']-frozen_seed['eform']))
+            if adapter_error>1e-5:raise ValueError('Input-gradient adapter changed CF forward values: '+str(adapter_error))
+            g=geom.project(score['gradient']);H,asymmetry=hessian(lambda Q:client.gradients(geom,Q),q)
             if asymmetry>POLICY['Hessian_asymmetry_relative_max']:raise ValueError(f'Hessian asymmetry {parent}: {asymmetry}')
             eigenvalues=np.linalg.eigvalsh(H);eta=.3/max(np.max(np.abs(eigenvalues)),.1)
             native_checks=[]
@@ -89,8 +99,8 @@ def main():
             look=np.zeros_like(g) if np.linalg.norm(glook)<1e-10 else normalize(-geom.project(glook))
             matrix=np.array([plain,soft,look]);randoms=np.array([matched_random(d,np.random.default_rng([plan['search_seed'],global_index,f,555]),geom.project) for f,d in enumerate(matrix)])
             path=operator_dir/(Path(parent).stem+'.npz');np.savez_compressed(path,qseed=q,descent=matrix,random=randoms,Hessian=H,gradient=g,unrolled_gradient=glook,eta=eta,lookahead_states=np.array(states))
-            entry=dict(parent_id=parent,baseline_CF_error=cf_error,baseline_energy_error_eV_atom=energy_error,baseline_match=fit,
-                Hessian_asymmetry=asymmetry,native_checks=native_checks,passed=all(r['passed'] for r in native_checks),seed_draw_attempt=seed_attempt,
+            entry=dict(parent_id=parent,baseline_CF_error=cf_error,adapter_forward_error=adapter_error,baseline_energy_error_eV_atom=energy_error,baseline_match=fit,
+                Hessian_asymmetry=asymmetry,native_checks=native_checks,passed=all(r['passed'] for r in native_checks if r['kind']!='CF_gradient_fine_diagnostic'),seed_draw_attempt=seed_attempt,
                 initial_gap=score['gap'],initial_eform=score['eform'],gradient_norm=float(np.linalg.norm(g)),unrolled_gradient_norm=float(np.linalg.norm(glook)),
                 eta=eta,soft_metadata=soft_meta,operator_path=str(path),operator_sha256=sha(path),source_sha256=sha(case['B']['relaxed_path']))
             checks.append(entry);operators.append(entry)

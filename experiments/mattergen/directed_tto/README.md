@@ -15,6 +15,13 @@ strain variables in Angstrom-scaled coordinates. The potential gradient includes
 the correction between affine stress and offsets held Cartesian. `cf_gradient.py`
 uses the pinned original CF models on CUDA, with pure squared gap error to2.5eV;
 formation energy is a final hard guard, not a competing gradient objective.
+The original Torch Gaussian custom backward omits distance-basis derivatives.
+Input-gradient calls reuse the already validated ExactGaussianAverage adapter
+from block_alternating/gaussian.py. Ordinary predictions and finite differences
+retain the native forward; all16 forward controls must agree at1e-5. The adapter
+hash and actual calls are recorded. Earlier Adam experiments already used this
+adapter; initial directed gate405 omitted its integration and stopped before any
+direction trials. Its failed operators must not be reused.
 
 `directions.py` compares three actual derivatives: ordinary CF gradient, a positive
 soft-Hessian preconditioner, and the gradient through eight physical gradient

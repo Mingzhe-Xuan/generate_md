@@ -3,6 +3,9 @@ import importlib.util
 from pathlib import Path
 import numpy as np
 import pytest
+import sys
+import types
+from unittest.mock import patch
 
 
 def module(name):
@@ -79,3 +82,30 @@ def test_gradient_importance_requires_sign_controls_and_valid_retention():
     assert not settings.assess_gradient(g,r,np.full(16,1.1),b,b,valid)['discovery_gradient_advantage']
     assert not settings.assess_gradient(g,r,reverse,b,np.full(16,1.21),valid)['discovery_gradient_advantage']
     assert not settings.assess_gradient(g,r,reverse,b,b,~valid)['discovery_gradient_advantage']
+
+
+def test_real_attention_adapter_is_scoped_to_backward_entry():
+    alias='directed_test.indexed_lattice_multi_head_attention';attention=types.ModuleType(alias);legacy=object();attention.AverageGaussiansBySoftmaxXYFunc_=legacy
+    layer=type('TestAttention',(),{'__module__':alias})()
+    class FakeScorer:
+        def __init__(self):self.models=[types.SimpleNamespace(modules=lambda:[layer])];self.metadata={}
+        def predict(self,path):
+            assert attention.AverageGaussiansBySoftmaxXYFunc_ is legacy
+            return (2.5,-1.)
+    with patch.dict(sys.modules,{'scorer':types.SimpleNamespace(Scorer=FakeScorer),alias:attention}):adapter=module('cf_gradient');scorer=adapter.GradientScorer()
+    assert scorer.predict(None)==(2.5,-1.)
+    with scorer.operators(True):assert attention.AverageGaussiansBySoftmaxXYFunc_ is scorer.gaussian
+    assert attention.AverageGaussiansBySoftmaxXYFunc_ is legacy
+    with pytest.raises(RuntimeError):
+        with scorer.operators(True):raise RuntimeError('test cleanup')
+    assert attention.AverageGaussiansBySoftmaxXYFunc_ is legacy
+
+
+def test_existing_gaussian_input_derivative_matches_finite_difference():
+    import torch
+    path=Path(__file__).resolve().parents[2]/'smoacs/block_alternating/gaussian.py'
+    spec=importlib.util.spec_from_file_location('directed_gaussian_test',path);m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
+    x=torch.tensor([[[[.4],[1.2],[2.1]]]],dtype=torch.float64,requires_grad=True)
+    y=torch.tensor([[[[-.3]],[[-.7]]]],dtype=torch.float64,requires_grad=True)
+    function=lambda a,b:m.ExactGaussianAverage.apply(3.,4,a,b,-2)
+    assert torch.autograd.gradcheck(function,(x,y),eps=1e-6,atol=1e-6,rtol=1e-4)
