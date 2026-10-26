@@ -28,6 +28,13 @@ tested in same-weight float64 arithmetic, with float32 forward/gradient controls
 Each failure is saved and prevents scientific proposal trials. No search or
 post-MatterSim efficacy is inferred from a successful native test.
 
+`precision.py` supplies scoped dtype-only clones for the official OCP graph
+helpers during float64 diagnostics: periodic integer offsets and the distance
+sorting buffer use the input dtype. Exact source-expression counts are checked,
+original/adapted hashes recorded, and every imported alias restored on exit.
+Official files and the float32 path remain unchanged. This addresses a native
+Float/Double error; it does not change graph cutoffs, neighbor limits or tests.
+
 Submit `native.sbatch` with `DENOISED_SOURCE` pointing to the completed original
 directed16 run and `DENOISED_ROOT` to a fresh results directory. The existing
 `.venv-mattergen` is reused. All model work runs under Slurm on GPU.

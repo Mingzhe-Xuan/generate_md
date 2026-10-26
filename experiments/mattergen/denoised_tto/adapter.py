@@ -5,6 +5,7 @@ from pathlib import Path
 import sys
 import tarfile
 import numpy as np
+from contextlib import contextmanager
 from mapping import clean_estimate, symmetric_noise
 
 
@@ -85,6 +86,19 @@ class Denoiser:
             raise RuntimeError('MatterGen CPU fallback.')
         self.metadata = dict(source=self.spec, source_files=sources, score_calls=0,
             conditioning={'dft_band_gap': 2.5}, guidance_scale=2., fixed_species=True)
+        self.precision_helpers = None
+
+    @contextmanager
+    def precision_context(self, dtype):
+        if dtype == self.torch.float64:
+            from precision import helpers, replace_aliases
+            if self.precision_helpers is None:
+                self.precision_helpers, record = helpers()
+                self.metadata['F64_geometry_compatibility'] = record
+            with replace_aliases(self.precision_helpers):
+                yield
+        else:
+            yield
 
     def graph(self, geometry, q):
         from torch_geometric.data import Batch

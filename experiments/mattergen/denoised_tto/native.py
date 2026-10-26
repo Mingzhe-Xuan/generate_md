@@ -27,7 +27,7 @@ def save(path, obj):
 
 def evaluate(denoiser, scorer, geometry, time, q, dtype, backward=False, stop=False):
     torch = scorer.torch
-    with torch.enable_grad() if backward else torch.no_grad():
+    with denoiser.precision_context(dtype), torch.enable_grad() if backward else torch.no_grad():
         variable = torch.tensor(np.asarray(q), dtype=dtype, device='cuda', requires_grad=backward)
         graph = denoiser.graph(geometry, variable)
         t = torch.full((1,), time, dtype=dtype, device='cuda')
