@@ -33,6 +33,14 @@ The next gate409 passed0000 but found fine-step inconsistencies on0010.
 frozen weights in float32/float64 arithmetic, both one-sided and centered
 differences over eight resolutions. This diagnostic never authorizes scientific
 trials, changes tolerances or overwrites a failed proof.
+Diagnostic411 resolved the ambiguity:24 float64 checks at1e-5/1e-6A match
+autograd within5.73e-8, with float32/float64 whole-gradient relative differences
+at most1.83e-5 and forward gap differences at most1.04e-6eV. The gate now compares
+the actual float32 optimization derivative against these double-arithmetic finite
+differences with the original0.001/0.02 tolerances. Mandatory all16 controls also
+require same-weight float32/float64 forward agreement1e-5, gradient relative
+agreement0.001, and native/adapter double forward agreement1e-10. Scientific
+optimization and final scoring remain float32. Old coarse checks remain visible.
 
 `directions.py` compares three actual derivatives: ordinary CF gradient, a positive
 soft-Hessian preconditioner, and the gradient through eight physical gradient

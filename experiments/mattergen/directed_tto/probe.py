@@ -10,6 +10,7 @@ from directions import normalize,hessian,soft_descent,matched_random,forward,unr
 from settings import POLICY,SEED,derivative_checks_pass
 from runtime import Mechanics
 from cf_gradient import GradientScorer
+from numerics import score as precision_score,promote
 
 
 def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
@@ -18,7 +19,7 @@ def save(p,obj):Path(p).write_text(json.dumps(obj,indent=2,allow_nan=False)+'\n'
 
 
 def code_hashes():
-    result={p:sha(Path(__file__).with_name(p)) for p in ('geometry.py','directions.py','cf_gradient.py','mechanics.py','runtime.py','settings.py','probe.py')}
+    result={p:sha(Path(__file__).with_name(p)) for p in ('geometry.py','directions.py','cf_gradient.py','mechanics.py','runtime.py','settings.py','probe.py','numerics.py')}
     result['exact_gaussian_adapter']=sha(Path(__file__).resolve().parents[2]/'smoacs/block_alternating/gaussian.py')
     return result
 
@@ -35,7 +36,7 @@ def common_seed(geom,index,seed=SEED):
 def close(fd,predicted,absolute,relative):return bool(abs(fd-predicted)<=absolute+relative*max(abs(fd),abs(predicted)))
 
 
-def controls(geom,q,g,H,eta,client,scorer,index):
+def controls(geom,q,g,H,eta,client,scorer,index,double_scorer):
     rng=np.random.default_rng([SEED,index,777]);records=[]
     value_gradient=client.gradients(geom,np.array([q]))[0]
     callback=lambda Q:client.gradients(geom,Q)
@@ -46,8 +47,8 @@ def controls(geom,q,g,H,eta,client,scorer,index):
         if block=='strain':v[:-6]=0
         v=normalize(v)
         for eps in POLICY['CF_FD_steps_A']:
-            plus=scorer.evaluate(geom,q+eps*v);minus=scorer.evaluate(geom,q-eps*v);fd=(plus['loss']-minus['loss'])/(2*eps);pred=float(g@v)
-            records.append(dict(kind='CF_gradient',block=block,epsilon=eps,FD=fd,predicted=pred,passed=close(fd,pred,.001,.02)))
+            plus=precision_score(double_scorer,geom,q+eps*v,scorer.torch.float64);minus=precision_score(double_scorer,geom,q-eps*v,scorer.torch.float64);fd=(plus['loss']-minus['loss'])/(2*eps);pred=float(g@v)
+            records.append(dict(kind='CF_gradient',block=block,epsilon=eps,FD=fd,predicted=pred,FD_arithmetic='float64',AD_arithmetic='float32',passed=close(fd,pred,.001,.02)))
         for eps in POLICY['physical_and_unrolled_FD_steps_A']:
             plus=scorer.evaluate(geom,q+eps*v);minus=scorer.evaluate(geom,q-eps*v);fd=(plus['loss']-minus['loss'])/(2*eps);pred=float(g@v)
             records.append(dict(kind='CF_gradient_coarse_diagnostic',block=block,epsilon=eps,FD=fd,predicted=pred,passed=close(fd,pred,.001,.02)))
@@ -69,7 +70,8 @@ def main():
     if plan['policy']!=POLICY or len(plan['cases'])!=16:raise ValueError('Frozen protocol changed.')
     if (root/'native-probe.json').exists():raise ValueError('Use a fresh run for a new native gate.')
     operator_dir=root/'operators';operator_dir.mkdir(exist_ok=False);rpc=root/'probe-rpc';rpc.mkdir(exist_ok=False)
-    scorer=GradientScorer();client=Mechanics(rpc);checks=[];operators=[]
+    scorer=GradientScorer();double_scorer=GradientScorer();promote(double_scorer,scorer.torch.float64)
+    client=Mechanics(rpc);checks=[];operators=[]
     try:
         replays=client.request([dict(id=c['parent_id'],action='relax',source=c['raw_path'],output=str(root/'baseline-replay'/Path(c['parent_id']).stem)) for c in plan['cases']])
         strict=StructureMatcher(ltol=.02,stol=.05,angle_tol=1,primitive_cell=False,scale=False,attempt_supercell=False)
@@ -85,11 +87,18 @@ def main():
             score=scorer.evaluate(geom,q,True);frozen_seed=scorer.evaluate(geom,q)
             adapter_error=max(abs(score['gap']-frozen_seed['gap']),abs(score['eform']-frozen_seed['eform']))
             if adapter_error>1e-5:raise ValueError('Input-gradient adapter changed CF forward values: '+str(adapter_error))
-            g=geom.project(score['gradient']);H,asymmetry=hessian(lambda Q:client.gradients(geom,Q),q)
+            g=geom.project(score['gradient']);double=precision_score(double_scorer,geom,q,scorer.torch.float64,True)
+            double_native=precision_score(double_scorer,geom,q,scorer.torch.float64)
+            precision_forward_error=max(abs(score[k]-double[k]) for k in ('gap','eform'))
+            precision_gradient_error=float(np.linalg.norm(g-geom.project(double['gradient']))/max(np.linalg.norm(double['gradient']),1e-10))
+            double_adapter_error=max(abs(double[k]-double_native[k]) for k in ('gap','eform'))
+            if precision_forward_error>POLICY['CF_precision_forward_absolute_max'] or precision_gradient_error>POLICY['CF_precision_gradient_relative_max'] or double_adapter_error>1e-10:
+                raise ValueError('Same-weight precision control failed: '+str((parent,precision_forward_error,precision_gradient_error,double_adapter_error)))
+            H,asymmetry=hessian(lambda Q:client.gradients(geom,Q),q)
             if asymmetry>POLICY['Hessian_asymmetry_relative_max']:raise ValueError(f'Hessian asymmetry {parent}: {asymmetry}')
             eigenvalues=np.linalg.eigvalsh(H);eta=.3/max(np.max(np.abs(eigenvalues)),.1)
             native_checks=[]
-            if index<4:native_checks,glook,states=controls(geom,q,g,H,eta,client,scorer,global_index)
+            if index<4:native_checks,glook,states=controls(geom,q,g,H,eta,client,scorer,global_index,double_scorer)
             else:glook,states=unrolled(q,lambda Q:client.gradients(geom,Q),lambda v:scorer.evaluate(geom,v,True)['gradient'],eta,8,geom.project)
             stationary=np.linalg.norm(g)<1e-10
             plain=np.zeros_like(g) if stationary else normalize(-g)
@@ -98,6 +107,7 @@ def main():
             matrix=np.array([plain,soft,look]);randoms=np.array([matched_random(d,np.random.default_rng([plan['search_seed'],global_index,f,555]),geom.project) for f,d in enumerate(matrix)])
             path=operator_dir/(Path(parent).stem+'.npz');np.savez_compressed(path,qseed=q,descent=matrix,random=randoms,Hessian=H,gradient=g,unrolled_gradient=glook,eta=eta,lookahead_states=np.array(states))
             entry=dict(parent_id=parent,baseline_CF_error=cf_error,adapter_forward_error=adapter_error,baseline_energy_error_eV_atom=energy_error,baseline_match=fit,
+                precision_forward_error=precision_forward_error,precision_gradient_relative_error=precision_gradient_error,double_adapter_error=double_adapter_error,
                 Hessian_asymmetry=asymmetry,native_checks=native_checks,passed=derivative_checks_pass(native_checks) if index<4 else True,seed_draw_attempt=seed_attempt,
                 initial_gap=score['gap'],initial_eform=score['eform'],gradient_norm=float(np.linalg.norm(g)),unrolled_gradient_norm=float(np.linalg.norm(glook)),
                 eta=eta,soft_metadata=soft_meta,operator_path=str(path),operator_sha256=sha(path),source_sha256=sha(case['B']['relaxed_path']))
@@ -105,7 +115,7 @@ def main():
             save(root/'probe-progress.json',dict(cases=checks,CF=scorer.metadata,NFE=client.NFE))
             print(json.dumps({k:v for k,v in entry.items() if k not in ('native_checks','soft_metadata')}),flush=True)
             if not entry['passed']:raise ValueError('Native derivative gate failed; inspect probe-progress before any scientific proposals.')
-        save(root/'native-probe.json',dict(passed=True,code_sha256=code_hashes(),operators=operators,CF=scorer.metadata,mechanics=client.ready,NFE=client.NFE,mechanics_seconds=client.seconds,
+        save(root/'native-probe.json',dict(passed=True,code_sha256=code_hashes(),operators=operators,CF=scorer.metadata,CF_double_diagnostic=double_scorer.metadata,mechanics=client.ready,NFE=client.NFE,mechanics_seconds=client.seconds,
             note='16frozen-baseline controls, fullcanonicalB replay, 4predefined-parent FD input/physical/unrolled-gradient tests. Finite8-step derivative is not full-relaxation derivative.'))
     finally:client.close()
 

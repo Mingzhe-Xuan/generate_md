@@ -7,8 +7,13 @@ import numpy as np
 from geometry import Geometry
 from directions import normalize
 from settings import SEED
-from probe import common_seed,load,save,sha,close
 from cf_gradient import GradientScorer
+
+
+def promote(scorer,dtype):
+    for model in scorer.models:
+        model.to(dtype=dtype)
+        if hasattr(model,'atom_feat'):model.atom_feat=model.atom_feat.to(dtype=dtype)
 
 
 def score(scorer,geom,q,dtype,backward=False):
@@ -20,20 +25,22 @@ def score(scorer,geom,q,dtype,backward=False):
         gap,ef=scorer.author.Crystalformer_prediction(*scorer.models,atomic,cart,torch.zeros(geom.n,dtype=torch.long,device=device),cell[None],torch.tensor([geom.n],device=device))
         loss=.5*(gap.reshape(-1)[0]-2.5)**2
         gradient=torch.autograd.grad(loss,variable)[0].detach().cpu().double().numpy() if backward else None
+    if hasattr(scorer,'metadata'):
+        scorer.metadata['CF_calls']+=1
+        if backward:scorer.metadata['CF_backward_calls']+=1
     return dict(gap=float(gap.detach().reshape(-1)[0]),eform=float(ef.detach().reshape(-1)[0]),loss=float(loss.detach()),gradient=gradient)
 
 
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--run',type=Path,required=True);a=p.parse_args()
     if not os.environ.get('SLURM_JOB_ID'):p.error('GPU diagnostic must use Slurm.')
+    from probe import common_seed,load,save,sha,close
     from pymatgen.core import Structure
     plan=load(a.run/'plan.json');output=a.run/('numerics-'+os.environ['SLURM_JOB_ID']+'.json')
     if output.exists():raise ValueError('Refuse to overwrite numerical evidence.')
     scorer=GradientScorer();records={};gradients={};epsilon=(.004,.002,.001,.0005,.00025,.000125,1e-5,1e-6)
     for precision,dtype in [('float32',scorer.torch.float32),('float64',scorer.torch.float64)]:
-        for model in scorer.models:
-            model.to(dtype=dtype)
-            if hasattr(model,'atom_feat'):model.atom_feat=model.atom_feat.to(dtype=dtype)
+        promote(scorer,dtype)
         for case in plan['cases'][:4]:
             parent=case['parent_id'];index=int(Path(parent).stem.split('-')[1]);s=Structure.from_file(case['B']['relaxed_path'])
             geom=Geometry(s.atomic_numbers,s.lattice.matrix,s.frac_coords);q,_=common_seed(geom,index,plan['search_seed'])

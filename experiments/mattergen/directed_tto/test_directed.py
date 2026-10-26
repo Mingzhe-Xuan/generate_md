@@ -177,3 +177,12 @@ def test_precision_diagnostic_preserves_geometry_chainrule_and_dtype():
         direction=np.linspace(-1,1,ref.size);direction/=np.linalg.norm(direction);eps=.01 if dtype==torch.float32 else 1e-6
         fd=(score(scorer,ref,q+eps*direction,dtype)['loss']-score(scorer,ref,q-eps*direction,dtype)['loss'])/(2*eps)
         assert np.isclose(fd,ad['gradient']@direction,atol=1e-3 if dtype==torch.float32 else 1e-8,rtol=1e-3)
+
+
+def test_precision_promotion_includes_plain_atom_features_and_buffers():
+    import torch
+    from numerics import promote
+    model=torch.nn.Linear(2,1);model.register_buffer('offset',torch.tensor([.1]));model.atom_feat=torch.ones((2,2))
+    before=model.weight.detach().clone();promote(types.SimpleNamespace(models=[model]),torch.float64)
+    assert model.weight.dtype==model.offset.dtype==model.atom_feat.dtype==torch.float64
+    torch.testing.assert_close(model.weight.float(),before,rtol=0,atol=0)
