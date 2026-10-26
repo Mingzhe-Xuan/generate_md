@@ -166,6 +166,26 @@ weak aggregate cross-model retention; its new48 outcomes must not tune it. The
 new48 primary comparisons, raw query costs, held-out ALIGNN and tighter physical
 retention are required before attributing practical value to gradient direction.
 
+`validation_run.py` enforces the preregistered manifest SHA and native mathematical
+source, then checks all48 frozenCF baselines and canonical-B replays before any
+new rays. Same-weight double-arithmetic checks validate actual float32 gradients;
+the first four heldout parents require all six atomic/strain/mixed directional
+differences. No Hessian or finite-lookahead work is needed for this plain family.
+There are576 rays and48 seed quenches, plus48 baseline replays. The feasible
+seed-only comparator is best(originalB,rawseedB), matching the pilot control.
+All stationary/rejected/failed attempts remain in the ledger and48 denominator.
+
+`evaluation_export.py` exports the actual cohort size with input/terminal hashes,
+selection signatures and protected idempotence; incomplete exports are preserved
+before rebuilding. `validation.sbatch` runs the native gate/search then seven
+unchanged frozenCF/ALIGNN evaluations (two policies times three arms, plus a fresh
+baseline). `validation_report.py` audits all48 selections, original volume/energy,
+ordered species and independent scores, and reports parent-paired confidence
+intervals. It checks fresh baseline predictions against available archived values;
+ALIGNN unknowns retain their coverage and are never silently dropped from pass
+rate denominators. A positive directional flag still requires separate physical
+retention checks and cross-model interpretation before goal completion.
+
 Primary inspiration (not literal reproduction):
 - https://arxiv.org/abs/2105.15183
 - https://www.nature.com/articles/s41524-024-01506-0
