@@ -129,6 +129,24 @@ is a CPU-only afterok analysis, not new CF inference or a changed ongoing run.
 General smoothing inspiration: https://arxiv.org/abs/1103.4296 (convex theory;
 its convergence guarantees are not claimed for this nonconvex crystal search).
 
+## Tighter-force endpoint diagnostic
+
+`tight_relaxation.py` selects all material plain-CF gains (>=0.1eV beyond both
+originalB and seed-onlyB, physically eligible), not handpicked favorable cases.
+For both original and optimized endpoints it re-quenches the unperturbed pose
+plus three paired0.02A/0.003strain perturbations using the same MatterSim5M
+potential on CPU, fmax0.001/maxstep0.05/cap1600 and unconstrained free cells.
+Fresh CPU/GPU source energy/raw-force controls must pass1e-4 before trials.
+`tight_relaxation.sbatch` can overlap GPU experiments without accessing a GPU.
+
+`tight_evaluation.py` exports a variable-size trial inventory, checks original
+frozenCF scores on GPU, then uses the established independentCF/ALIGNN evaluator.
+`tight_evaluation.sbatch` runs after both the CPU diagnostic and active GPU work.
+Reports group the four correlated trials within each selected parent, keep all
+failures and require both raw/filter forces<=0.001 plus CFformation<-.5. This
+stronger profile diagnoses residual-force or symmetry artifacts; it does not
+replace the frozen0.01-force benchmark or certify DFT/phonon/global stability.
+
 Primary inspiration (not literal reproduction):
 - https://arxiv.org/abs/2105.15183
 - https://www.nature.com/articles/s41524-024-01506-0
