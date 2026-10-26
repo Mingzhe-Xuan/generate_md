@@ -186,6 +186,13 @@ ALIGNN unknowns retain their coverage and are never silently dropped from pass
 rate denominators. A positive directional flag still requires separate physical
 retention checks and cross-model interpretation before goal completion.
 
+`baseline_diagnostic.py` is a separate read-only GPU diagnostic when a raw-start
+quench does not reproduce an archived endpoint. It checks the same frozen poses'
+energies and raw forces with the unchanged1e-4 tolerances on all48 parents, while
+recording raw-path energy/geometry differences separately. Its report alone does
+not amend the validation gate or authorize candidate generation; source and
+potential consistency must be understood before proceeding.
+
 Primary inspiration (not literal reproduction):
 - https://arxiv.org/abs/2105.15183
 - https://www.nature.com/articles/s41524-024-01506-0
