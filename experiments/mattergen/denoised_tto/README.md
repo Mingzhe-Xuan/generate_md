@@ -62,3 +62,13 @@ images and makes +image/-image squared distances exactly equal. It is a declared
 arithmetic change in BOTH precisions, not a changed cutoff, checkpoint or gate.
 The original native/diagnostic records stay unchanged. The same four parents,
 two times, 1e-5/1e-6 finite differences and thresholds still have to pass.
+
+`double_native.py`/`double_native.sbatch` define a distinct execution choice:
+the proposal denoiser and CF gradient run in float64, while official final CF
+scoring stays float32. They require all48 original finite differences and
+<=1e-5 agreement with the official evaluator on EACH identical saved clean pose.
+This separates different decoded geometries from different score arithmetic.
+The failed original float32-proxy gates are never relabeled. A pass proves the
+actual double proposal derivative, not equivalence to a float32 denoising map
+and not post-MatterSim efficacy. Seed-corruption arithmetic is still float32,
+fixed and recorded; the subsequent differentiable map is evaluated in float64.
