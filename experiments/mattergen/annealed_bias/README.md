@@ -49,3 +49,19 @@ Frozen CF selects; ALIGNN only evaluates. Original energy+0.05eV/atom, original
 volume.65..1.4, force.01/raw.01 and CF formation<-0.5 remain final guards. Any
 positive development finding still needs new-parent and matched tighter-force
 confirmation. No SUN/DFT certification is implied.
+
+`anneal_experiment.py` runs either the first predefined parent (`--count 1`) as
+an integration check or all16 (`--count 16`) with identical schedules/controls.
+It requires the unchanged complete native proof, repeats baseline/seed controls,
+records each stage's solver and physical/bias telemetry, and validates all
+query/trajectory/pose/NFE/shared-pool links. `anneal_report.py` evaluates ten
+selected sets with the original frozen CF/ALIGNN pipeline. Integration1 cannot
+set population-efficacy flags. Full16 requires>=4 material gains>=.1eV beyond
+the complete zero-CF pool and>=.05eV/negative95%CI against reverse/random/zero;
+an additional fixed-bias contrast tests the value of annealing. The three full
+stage subsets have3newforks rather than9 and are diagnostic readouts.
+
+Use `run.sbatch` with `ANNEALED_SOURCE`, `ANNEALED_NATIVE`, a fresh `ANNEALED_ROOT`
+and `ANNEALED_COUNT=1` or16. No hyperparameters or parent selection may be tuned
+to pilot outcomes. The integration run proves the complete pipeline, not the
+scientific claim; the unchanged16-parent run remains required.
