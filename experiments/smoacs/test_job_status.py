@@ -11,7 +11,10 @@ HELPER = Path(__file__).with_name("job_status.sh").resolve()
 BASH = os.environ.get("SMOACS_TEST_BASH") or shutil.which("bash")
 
 
-@pytest.mark.parametrize("command, expected", [("true", 0), ("exit 7", 7), ("kill -TERM $$", 143)])
+@pytest.mark.parametrize("command, expected", [
+    ("true", 0), ("exit 7", 7), ("kill -TERM $$", 143),
+    ("mkdir child; cd child; true", 0), ("mkdir child; cd child; exit 7", 7),
+])
 def test_exit_status_is_preserved_and_recorded(tmp_path, command, expected):
     env = os.environ.copy()
     env["SLURM_JOB_ID"] = "123"
