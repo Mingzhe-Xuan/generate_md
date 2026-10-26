@@ -230,7 +230,9 @@ The retention plan pins all six source artifacts and its own implementation.
 Every parent has12 trials; failures and unknown predictions stay in the inventory.
 Summaries compare selected endpoints against BOTH matched tighter original and
 fresh baselines, requiring all four physically eligible pairs for a robust-parent
-flag. Trials remain correlated within each parent. Zero material parents produces
+flag. They retain the immutable original energy ceiling(+0.05eV/atom) and volume
+ratio bounds(0.65..1.4), in addition to strict forces/separation and CFformation.
+Trials remain correlated within each parent. Zero material parents produces
 an explicit zero-result report, without running an empty model evaluation. These
 diagnostics do not turn unsuccessful population directionality into success.
 

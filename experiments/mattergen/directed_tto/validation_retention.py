@@ -19,6 +19,7 @@ from policy import physical
 STAGES=('original','fresh','selected')
 RETENTION_POLICY=dict(fmax=.001,maxstep=.05,steps=1600,preserve_symmetry=False,trials=4,
     perturb_atomic_RMS_A=.02,perturb_strain=.003,seed=20261028,
+    original_energy_ceiling_eV_atom=.05,original_volume_ratio_bounds=[.65,1.4],
     selection='ALL48 retained-descent endpoints with physical CF gains>=.1 beyond BOTH originalB and feasible seedB; no fresh-B or ALIGNN filtering.',
     comparison='Each selected endpoint versus BOTH originalB and fresh raw-B, with trial-paired perturbations and identical tighter unconstrained relaxation.',
     role='Physical retention diagnostic within selected parents; does not replace independent48 directionality or certify global/DFT/phonon stability.')
@@ -63,6 +64,13 @@ def validate_trials(parents,records):
     expected={(p,s,t) for p in parents for s in STAGES for t in range(4)}
     if len(set(parents))!=len(parents) or len(records)!=len(expected) or {(r['parent_id'],r['stage'],r['trial']) for r in records}!=expected or len({r['candidate_id'] for r in records})!=len(records):
         raise ValueError('Missing/duplicate three-stage paired trials.')
+
+
+def retention_eligible(record):
+    if not tight_eligible(record):return False
+    keys=('final_energy_eV','num_atoms','original_energy_eV_atom','original_volume_ratio')
+    if any(record.get(k) is None for k in keys) or not np.isfinite([record[k] for k in keys]).all() or record['num_atoms']<=0:return False
+    return bool(.65<=record['original_volume_ratio']<=1.4 and record['final_energy_eV']/record['num_atoms']<=record['original_energy_eV_atom']+.05)
 
 
 def specification(root):
@@ -115,14 +123,17 @@ def physics(source,root):
                 controls.append(dict(parent_id=parent,stage=stage,source_sha256=q['B']['relaxed_sha256'],**validate_control(energy,force,q['B'],expected)))
                 templates[parent,stage]=atoms.copy()
         save(root/'retention-controls.json',dict(passed=True,device='cpu',checkpoint_sha256=expected,cases=controls))
+        original_points={plan['parent_ids'][i]:data['baseline'][i] for i in indices}
         for parent in parents:
             parent_index=int(Path(parent).stem.split('-')[1])
+            original_B=original_points[parent]['B'];original_energy=original_B['final_energy_eV']/original_B['num_atoms'];original_volume=original_B['volume_A3']
             for stage in STAGES:
                 reference=templates[parent,stage]
                 for trial in range(4):
                     folder=root/Path(parent).stem/stage/f'trial-{trial}';folder.mkdir(parents=True,exist_ok=False);path=folder/'input.vasp'
                     write(path,reference,format='vasp',direct=True,sort=False);start=time.perf_counter();nfe=calls[0]
-                    row=dict(candidate_id=f'{Path(parent).stem}-{stage}-t{trial}.vasp',parent_id=parent,stage=stage,trial=trial,input=str(path),status='failed',checkpoint_sha256=expected)
+                    row=dict(candidate_id=f'{Path(parent).stem}-{stage}-t{trial}.vasp',parent_id=parent,stage=stage,trial=trial,input=str(path),status='failed',checkpoint_sha256=expected,
+                        original_energy_eV_atom=original_energy,original_volume_A3=original_volume)
                     try:
                         atoms=perturb(reference,parent_index,trial);write(path,atoms,format='vasp',direct=True,sort=False);atoms.calc=calc
                         filtered=ExpCellFilter(atoms);opt=BFGS(filtered,logfile=str(folder/'optimizer.log'),maxstep=.05);converged=bool(opt.run(fmax=.001,steps=1600))
@@ -131,9 +142,10 @@ def physics(source,root):
                         terminal=folder/'relaxed.vasp';write(terminal,atoms,format='vasp',direct=True,sort=False)
                         row.update(status='converged' if converged else 'unconverged',converged=converged,num_atoms=len(atoms),final_energy_eV=energy,
                             max_filter_force=force,max_raw_atomic_force=raw,separated=not len(neighbor_list('d',atoms,.5-1e-9)),optimizer_steps=opt.get_number_of_steps(),
-                            volume_A3=atoms.get_volume(),volume_ratio=atoms.get_volume()/reference.get_volume(),relaxed_path=str(terminal),relaxed_sha256=sha(terminal))
+                            volume_A3=atoms.get_volume(),volume_ratio=atoms.get_volume()/reference.get_volume(),original_volume_ratio=atoms.get_volume()/original_volume,
+                            relaxed_path=str(terminal),relaxed_sha256=sha(terminal))
                     except Exception as error:row['error']=repr(error)
-                    row.update(input_sha256=sha(path),NFE=calls[0]-nfe,elapsed_seconds=time.perf_counter()-start,tight_eligible=tight_eligible(row))
+                    row.update(input_sha256=sha(path),NFE=calls[0]-nfe,elapsed_seconds=time.perf_counter()-start,tight_eligible=tight_eligible(row),retention_eligible=retention_eligible(row))
                     records.append(row);save(folder/'result.json',row)
                     save(root/'retention-physics.json',dict(records=records,controls=controls,NFE=calls[0],elapsed_seconds=time.perf_counter()-begun))
                     print(json.dumps(dict(parent_id=parent,stage=stage,trial=trial,status=row['status'],tight_eligible=row['tight_eligible'])),flush=True)
@@ -183,7 +195,7 @@ def paired_summary(parents,records,predictions):
                 gaps={s:predictions[r['candidate_id']].get(model+'_gap') for s,r in stages.items()};comparisons={}
                 for control in ('original','fresh'):
                     pair=[stages[control],stages['selected']]
-                    feasible=all(tight_eligible(r) and predictions[r['candidate_id']].get('crystalformer_eform') is not None and predictions[r['candidate_id']]['crystalformer_eform']<-.5 for r in pair)
+                    feasible=all(retention_eligible(r) and predictions[r['candidate_id']].get('crystalformer_eform') is not None and predictions[r['candidate_id']]['crystalformer_eform']<-.5 for r in pair)
                     known=gaps[control] is not None and gaps['selected'] is not None
                     comparisons[control]=dict(known=known,both_tight_eligible=feasible,error_gain_eV=abs(gaps[control]-2.5)-abs(gaps['selected']-2.5) if known else None)
                 models[model]=dict(gaps=gaps,comparisons=comparisons)

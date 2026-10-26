@@ -8,7 +8,7 @@ import subprocess
 import sys
 import pytest
 import validation_retention
-from validation_retention import material_indices,validate_trials,paired_summary,export_trials,report,STAGES
+from validation_retention import material_indices,validate_trials,paired_summary,export_trials,report,STAGES,retention_eligible
 from test_validation_runtime import fixture
 from probe import sha
 
@@ -41,7 +41,8 @@ def trials_fixture():
     for stage in STAGES:
         for trial in range(4):
             identifier=f'p-{stage}-t{trial}'
-            rows.append(dict(candidate_id=identifier,parent_id='p',stage=stage,trial=trial,status='converged',converged=True,separated=True,max_raw_atomic_force=.0005,max_filter_force=.0005))
+            rows.append(dict(candidate_id=identifier,parent_id='p',stage=stage,trial=trial,status='converged',converged=True,separated=True,max_raw_atomic_force=.0005,max_filter_force=.0005,
+                num_atoms=2,final_energy_eV=-5.,original_energy_eV_atom=-2.5,original_volume_ratio=1.))
             gap=dict(original=4.,fresh=3.7,selected=3.)[stage]
             predictions[identifier]=dict(crystalformer_gap=gap,crystalformer_eform=-1.,alignn_gap=gap)
     return rows,predictions
@@ -53,6 +54,12 @@ def test_three_stage_trials_require_all12_and_unique_identifiers():
         if len(bad)==12 and bad[-1] is not rows[0]:bad[-1]['candidate_id']=bad[0]['candidate_id']
         with pytest.raises(ValueError,match='paired trials'):validate_trials(['p'],bad)
     with pytest.raises(ValueError):validate_trials(['p','p'],rows)
+
+
+def test_retention_keeps_original_energy_volume_guards_after_tight_relaxation():
+    rows,_=trials_fixture();reference=rows[0];assert retention_eligible(reference)
+    for key,value in (('final_energy_eV',-4.8),('original_volume_ratio',1.5),('max_raw_atomic_force',.002),('final_energy_eV',float('nan')),('original_energy_eV_atom',None)):
+        assert not retention_eligible(dict(reference,**{key:value}))
 
 
 def test_retention_reports_matched_original_and_fresh_with_unknowns_and_failures():
