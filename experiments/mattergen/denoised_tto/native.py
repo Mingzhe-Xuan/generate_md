@@ -64,7 +64,8 @@ def conversion_check(denoiser, geometry, time):
     zero = torch.zeros(geometry.size, dtype=torch.float32, device='cuda')
     graph = denoiser.graph(geometry, zero)
     t = torch.tensor([time], dtype=zero.dtype, device=zero.device)
-    score, raw = score_with_raw(denoiser.module, graph, t)
+    with denoiser.precision_context(zero.dtype):
+        score, raw = score_with_raw(denoiser.module, graph, t)
     errors = {}
     for field in ('pos', 'cell'):
         sde = denoiser.module.corruption.sdes[field]
@@ -90,12 +91,14 @@ def main():
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument('--source', type=Path, required=True)
     p.add_argument('--run', type=Path, required=True)
+    p.add_argument('--stable-offsets', action='store_true')
     args = p.parse_args()
     if not os.environ.get('SLURM_JOB_ID'):
         p.error('Native model proof must run under Slurm.')
     root = args.run.resolve()
     root.mkdir(parents=True, exist_ok=False)
-    result = dict(policy=POLICY, cases=[], passed=False, source=str(args.source.resolve()),
+    result = dict(policy=POLICY | {'geometry_arithmetic': 'difference-before-offset' if args.stable_offsets else 'official'},
+        cases=[], passed=False, source=str(args.source.resolve()),
         implementation_sha256={q.name: sha(q) for q in Path(__file__).parent.glob('*.py')})
     try:
         from pymatgen.core import Structure
@@ -106,7 +109,7 @@ def main():
         if not json.loads((source/'native-probe.json').read_text())['passed']:
             raise ValueError('Original source native controls failed.')
         result['source_hashes'] = {n: sha(source/n) for n in ('plan.json', 'native-probe.json', 'direction-results.json', 'report.json')}
-        denoiser = Denoiser()
+        denoiser = Denoiser(stable_offsets=args.stable_offsets)
         scorer = GradientScorer()
         torch = scorer.torch
         torch.backends.cuda.matmul.allow_tf32 = False

@@ -39,15 +39,23 @@ def replace_aliases(replacements):
             setattr(module, name, original)
 
 
-def helpers():
+STABLE_OFFSET_EDITS = [
+    ('pos2 = pos2 + pbc_offsets_per_atom', 'relative_positions = pos1 - pos2 - pbc_offsets_per_atom'),
+    ('torch.sum((pos1 - pos2) ** 2, dim=1)', 'torch.sum(relative_positions ** 2, dim=1)')]
+
+
+def helpers(stable_offsets=False):
     from mattergen.common.utils import ocp_graph_utils as ocp, data_utils as data
     neighbor, a = clone_with_replacements(ocp.get_max_neighbors_mask, [
         ('torch.full([num_atoms * max_num_neighbors], np.inf, device=device)',
          'torch.full([num_atoms * max_num_neighbors], np.inf, device=device, dtype=atom_distance_squared.dtype)')])
-    radius, b = clone_with_replacements(ocp.radius_graph_pbc, [
+    radius_edits = [
         ('device=device, dtype=torch.float)', 'device=device, dtype=cell.dtype)'),
         ('cell_offsets.float().view(-1, 1, 3).bmm(cell_repeated.float())',
-         'cell_offsets.to(dtype=cell.dtype).view(-1, 1, 3).bmm(cell_repeated)')],
+         'cell_offsets.to(dtype=cell.dtype).view(-1, 1, 3).bmm(cell_repeated)')]
+    if stable_offsets:
+        radius_edits += STABLE_OFFSET_EDITS
+    radius, b = clone_with_replacements(ocp.radius_graph_pbc, radius_edits,
         {'get_max_neighbors_mask': neighbor})
     distances, c = clone_with_replacements(data.get_pbc_distances, [
         ('to_jimages.float()', 'to_jimages.to(dtype=lattice.dtype)')])

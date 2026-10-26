@@ -54,3 +54,11 @@ affine decode/CF path. All four original proof parents and both noise times are
 kept, with eps1e-4/1e-5/1e-6/1e-7. A completed diagnostic is not a passed native
 gate and cannot authorize scientific search. Set `DENOISED_FAILED` to the failed
 native run in addition to the source and fresh output variables.
+
+The separate `stable_native.sbatch` explicitly tests a numerical variant using
+`(pos1-pos2)-periodic_offset` for graph selection, instead of subtracting an
+already-offset position. This removes translation-dependent roundoff in self
+images and makes +image/-image squared distances exactly equal. It is a declared
+arithmetic change in BOTH precisions, not a changed cutoff, checkpoint or gate.
+The original native/diagnostic records stay unchanged. The same four parents,
+two times, 1e-5/1e-6 finite differences and thresholds still have to pass.

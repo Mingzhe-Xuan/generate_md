@@ -50,7 +50,7 @@ def score_with_raw(module, graph, time):
 
 
 class Denoiser:
-    def __init__(self):
+    def __init__(self, stable_offsets=False):
         import torch
         self.torch = torch
         if not torch.cuda.is_available():
@@ -85,16 +85,18 @@ class Denoiser:
         if not all(p.is_cuda for p in self.module.parameters()):
             raise RuntimeError('MatterGen CPU fallback.')
         self.metadata = dict(source=self.spec, source_files=sources, score_calls=0,
-            conditioning={'dft_band_gap': 2.5}, guidance_scale=2., fixed_species=True)
+            conditioning={'dft_band_gap': 2.5}, guidance_scale=2., fixed_species=True,
+            geometry_arithmetic='difference-before-offset' if stable_offsets else 'official')
+        self.stable_offsets = stable_offsets
         self.precision_helpers = None
 
     @contextmanager
     def precision_context(self, dtype):
-        if dtype == self.torch.float64:
+        if dtype == self.torch.float64 or self.stable_offsets:
             from precision import helpers, replace_aliases
             if self.precision_helpers is None:
-                self.precision_helpers, record = helpers()
-                self.metadata['F64_geometry_compatibility'] = record
+                self.precision_helpers, record = helpers(self.stable_offsets)
+                self.metadata['geometry_compatibility'] = record
             with replace_aliases(self.precision_helpers):
                 yield
         else:
