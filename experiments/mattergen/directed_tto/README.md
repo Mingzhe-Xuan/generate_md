@@ -87,6 +87,28 @@ If stage one is insufficient, subsequent work should implement feedback gradient
 steps and relaxed-ion strain/loading-unloading strategies; do not redefine the
 goal as CF-ranking-only random search or leave final structures unrelaxed.
 
+## Iterative feedback experiment
+
+`feedback.py` continues the exact cached plain-family first round of a complete
+stage-one run, then adds rounds2/3 for descent, reverse and block-norm-matched
+random policies. Each policy recomputes the actual CF gradient at its own fully
+relaxed incumbent plus a common small seed, evaluates four unchanged step sizes,
+and retains the best physically eligible fullB endpoint including its incumbent
+and seed-onlyB. The seed schedule is source_seed+1000*(round-1), shared across
+arms; all failures and geometric rejections consume attempts. Original parent
+energy/volume references remain fixed across rounds. There are384 fresh ray
+attempts and96 fresh seed quenches; the first192 rays and16 common seed quenches
+are reused exactly, not silently rerun or relabelled as independent data.
+
+`feedback.sbatch` runs only after the complete source evaluation. It verifies
+source/native hashes, cached species and fresh CF scores before continuation.
+`feedback_report.py` validates the complete adaptive ledger and independently
+scores all16 final structures under both CF and held-out ALIGNN. It reports
+round3-versus-round1 changes alongside descent-versus-random/reverse controls.
+More rounds alone do not prove gradient direction information. The operational
+discovery criterion is unchanged; this extension is exploratory development,
+followed by independent confirmation and endpoint re-quenching if positive.
+
 Primary inspiration (not literal reproduction):
 - https://arxiv.org/abs/2105.15183
 - https://www.nature.com/articles/s41524-024-01506-0
