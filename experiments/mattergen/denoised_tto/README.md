@@ -45,3 +45,12 @@ post-relaxation selection budget, full MatterSim relaxation, original energy/
 volume/formation guards, all original parents and held-out ALIGNN. Denoising
 itself, extra samples or favorable CF self-scoring cannot establish the value
 of the gradient. No new efficacy trial is authorized by this native module.
+
+`diagnostic.py` and `diagnostic.sbatch` investigate a failed native derivative
+test without changing it. They trace both ordered and canonical periodic-edge
+identities at each finite-difference point, decoded pose changes and CF scores.
+A second scan holds the MatterGen score tensors fixed, isolating the remaining
+affine decode/CF path. All four original proof parents and both noise times are
+kept, with eps1e-4/1e-5/1e-6/1e-7. A completed diagnostic is not a passed native
+gate and cannot authorize scientific search. Set `DENOISED_FAILED` to the failed
+native run in addition to the source and fresh output variables.
