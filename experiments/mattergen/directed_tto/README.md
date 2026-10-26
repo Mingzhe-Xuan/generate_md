@@ -147,6 +147,25 @@ failures and require both raw/filter forces<=0.001 plus CFformation<-.5. This
 stronger profile diagnoses residual-force or symmetry artifacts; it does not
 replace the frozen0.01-force benchmark or certify DFT/phonon/global stability.
 
+## Independent remaining48 validation
+
+`validation_plan.py` freezes ALL remaining48 parents from the original64
+strict-neutral/canonical-B-converged pool after excluding the complete pilot16.
+It uses original inventory order and searchseed20261027, without property or
+old-method outcome filters. `validation_plan.sbatch` runs this preregistration
+before any new48 directional outcomes. PlainCF is selected during pilot method
+development; the unsuccessful pilot criteria/results remain unchanged.
+
+`validation_policy.py` defines a new primary sufficient-decrease acceptance:
+retain the CF Best4 winner only if its fully relaxed error improves>=0.1eV beyond
+BOTH originalB and seed-onlyB; otherwise return originalB. Apply the same rule to
+descent/reverse/random controls, never using ALIGNN for ranking. OrdinaryBest4 is
+a separately reported secondary policy, including smaller threshold crossings.
+This conservative variant is motivated by pilot near-tie geometric changes and
+weak aggregate cross-model retention; its new48 outcomes must not tune it. The
+new48 primary comparisons, raw query costs, held-out ALIGNN and tighter physical
+retention are required before attributing practical value to gradient direction.
+
 Primary inspiration (not literal reproduction):
 - https://arxiv.org/abs/2105.15183
 - https://www.nature.com/articles/s41524-024-01506-0
