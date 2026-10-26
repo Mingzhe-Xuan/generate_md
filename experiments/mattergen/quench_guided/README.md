@@ -46,6 +46,7 @@ and authorize no proposals; use a fresh run for a corrected native experiment.
 parent-paired confidence intervals. Development evidence requires four material
 CF gains>=0.1 beyond the already-queried probe best, an average>=0.05eV beyond
 probe best, and>=0.05eV advantages with negative95%CI against reverse/random.
+Each family uses its own physical-eligibility mask for this update test.
 CF-prior importance separately requires>=0.05eV and negativeCI against BOTH
 isotropic/random-guided ES, for BOTH final MAE and improvement beyond each own
 probe pool. These strict pilot flags never certify goal completion; independent

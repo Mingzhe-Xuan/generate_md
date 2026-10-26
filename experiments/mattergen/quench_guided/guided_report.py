@@ -16,12 +16,14 @@ def contrast(x,y):
 
 
 def assessment(errors,eligible):
-    if any(np.asarray(v).shape!=(16,) for v in errors.values()) or np.asarray(eligible).shape!=(16,):raise ValueError('Incomplete16 development evidence.')
+    masks=eligible if isinstance(eligible,dict) else {f:eligible for f in FAMILIES}
+    if (set(masks)!=set(FAMILIES) or any(np.asarray(v).shape!=(16,) for v in errors.values())
+        or any(np.asarray(v).shape!=(16,) for v in masks.values())):raise ValueError('Incomplete16 development evidence.')
     family={}
     for name in FAMILIES:
         g=errors[name+'-descent'];pool=errors[name+'-probes'];controls={a:contrast(g,errors[name+'-'+a]) for a in ('reverse','random','raw_cf')}
-        material=int(sum((pool-g>=.1)&np.asarray(eligible,dtype=bool))) if name=='cf_guided' else None
-        update=contrast(g,pool);signal=bool(name=='cf_guided' and material>=4 and update['mean_delta']<=-.05 and update['CI95'][1]<0
+        material=int(sum((pool-g>=.1)&np.asarray(masks[name],dtype=bool)))
+        update=contrast(g,pool);signal=bool(material>=4 and update['mean_delta']<=-.05 and update['CI95'][1]<0
             and all(controls[a]['mean_delta']<=-.05 and controls[a]['CI95'][1]<0 for a in ('reverse','random')))
         family[name]=dict(material_parents_beyond_probe_pool=material,gradient_vs_controls=controls,gradient_vs_probe_best=update,development_directional_evidence=signal)
     prior={};g=errors['cf_guided-descent'];increment=g-errors['cf_guided-probes']
@@ -57,7 +59,7 @@ def main():
                 gap_pass=sum(r['prediction'][model+'_flags']['gap'] is True for r in rows),eform_pass=sum(r['prediction'][model+'_flags']['eform'] is True for r in rows),
                 joint_pass=sum(r['prediction'][model+'_flags']['joint'] is True and r['physical_eligible'] for r in rows))
         reports[method]=dict(cases=rows,summary=summary);errors[method]=np.array([abs(r['prediction']['crystalformer_gap']-2.5) for r in rows])
-    evidence=assessment(errors,[r['physical_eligible'] for r in reports['cf_guided-descent']['cases']])
+    evidence=assessment(errors,{f:[r['physical_eligible'] for r in reports[f+'-descent']['cases']] for f in FAMILIES})
     for method,entry in reports.items():
         for model in ('crystalformer','alignn'):
             delta=[]

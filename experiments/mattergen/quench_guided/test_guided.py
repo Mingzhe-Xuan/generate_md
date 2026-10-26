@@ -116,6 +116,20 @@ def test_prior_importance_needs_both_direction_and_both_incremental_controls():
     errors['isotropic-descent']=np.full(16,.3);assert not assessment(errors,np.ones(16,dtype=bool))['development_CF_gradient_importance']
 
 
+def test_each_gradient_family_uses_its_own_physical_mask_and_keeps_prior_separate():
+    errors=error_fixture()
+    for f in FAMILIES:
+        errors[f+'-probes']=np.ones(16)
+        for a in ARMS:errors[f+'-'+a]=np.full(16,.95)
+        errors[f+'-descent']=np.full(16,.4)
+    masks={f:np.ones(16,dtype=bool) for f in FAMILIES};masks['cf_guided'][:]=False
+    result=assessment(errors,masks)
+    assert result['families']['isotropic']['material_parents_beyond_probe_pool']==16
+    assert result['families']['isotropic']['development_directional_evidence']
+    assert not result['families']['cf_guided']['development_directional_evidence']
+    assert not result['development_CF_gradient_importance']
+
+
 def test_source_plan_is_all_original16_and_immutable(tmp_path,monkeypatch):
     monkeypatch.setattr(guided_common,'code_hashes',lambda:dict(math='frozen'))
     old=dict(parent_ids=list(PARENTS),cases=[dict(parent_id=p,neutral=True,B=dict(status='converged')) for p in PARENTS])
