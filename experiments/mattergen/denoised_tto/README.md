@@ -72,3 +72,49 @@ The failed original float32-proxy gates are never relabeled. A pass proves the
 actual double proposal derivative, not equivalence to a float32 denoising map
 and not post-MatterSim efficacy. Seed-corruption arithmetic is still float32,
 fixed and recorded; the subsequent differentiable map is evaluated in float64.
+
+## Full development16 comparison
+
+`denoised_policy.py` freezes two noise times(.1/.3), seed20261032 and four ray
+scales(.05/.2/.5/.8). Each operator computes one gradient of half-squared CF gap
+error through the denoiser. Five equal-ray-budget arms are full descent, exact
+reverse, atomic/cell-block-norm-matched random, stopped-score-Jacobian descent,
+and direct CF descent at the identical clean seed. Ordered species stay fixed;
+formation is a post-quench screening condition. The direct CF comparator uses
+its original RMS/symmetric-strain metric, while decoded arms use symmetric-cell
+latent variables; actual decoded displacements/FLOPs need not be equal.
+
+There are32 shared seed quenches and640 rays,672 total attempts. All16 parents
+remain, including failed seeds, geometric rejections and force failures. Every
+arm shares BOTH seed-B outcomes and originalB before adding its own eight rays;
+ALIGNN never ranks. A seed-only output isolates denoising gains. Proposal guards
+use minimum distance.7A, maximum translation-corrected atomic displacement2A,
+singular-value cell strain.15 and original volume bounds.65..1.4. Final B keeps
+the existing .01/raw.01/FixSymmetry/ExpCellFilter/BFGS1600/maxstep.05 profile,
+original energy+0.05eV/atom, volume/separation and CF formation<-0.5 guards.
+
+`denoised_search.py` requires the complete actual-double native proof and its
+unchanged core hashes. Before any new relaxation, all16 old frozenCF/same-pose
+MatterSim controls and all valid decoded seeds' same-pose CF controls are checked. It records
+gradient vectors, update directions, saved inputs, terminal hashes, all rejected
+attempts and actual NFE. Invalid noisy/decoded seed cells consume all their
+attempts rather than removing their parents. `denoised_validate.py` rebuilds
+directions,672-query coverage, input geometry/physical guards, shared fallback
+choices and NFE. Seven outputs use the original frozen CF/ALIGNN pipeline.
+
+`denoised_report.py` keeps all16 denominators and parent-paired confidence
+intervals. Directional evidence requires>=4 material gains>=.1eV beyond the
+already-queried seed pool and>=.05eV mean/negative95%CI against seed-only,
+reverse AND random. Jacobian value additionally requires>=.05eV/negativeCI
+against stopped-score and direct-CF controls. Even a positive development study
+requires new-parent confirmation and matched tighter physical retention.
+
+Submit `search.sbatch` with `DENOISED_SOURCE`=the original directed16 run,
+`DENOISED_NATIVE`=the completed actual-double native run and a fresh
+`DENOISED_ROOT`. `--export-only` can finish a complete validated search without
+repeating optimization. Reporter changes may be synchronized separately; all
+scientific core hashes stay frozen during a run. No SUN/DFT is added.
+
+`denoised_shared.py` loads legacy helpers under unique names and restores the
+process's prior `policy` module and import path. This prevents the alternating
+and basin-search policy files from silently changing these comparison rules.
