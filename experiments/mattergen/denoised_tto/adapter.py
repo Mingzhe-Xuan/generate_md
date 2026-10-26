@@ -36,6 +36,18 @@ def verify_source(assets, spec):
     return result
 
 
+def score_with_raw(module, graph, time):
+    captured = []
+    handle = module.model.register_forward_hook(lambda model, inputs, output: captured.append(output))
+    try:
+        score = module.score_fn(graph, time)
+    finally:
+        handle.remove()
+    if len(captured) != 1:
+        raise ValueError('Official score conversion did not perform one model call.')
+    return score, captured[0]
+
+
 class Denoiser:
     def __init__(self):
         import torch

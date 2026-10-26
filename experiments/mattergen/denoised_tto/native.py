@@ -6,7 +6,7 @@ from pathlib import Path
 import sys
 import traceback
 import numpy as np
-from adapter import Denoiser, sha
+from adapter import Denoiser, sha, score_with_raw
 from mapping import LatentGeometry, clean_estimate
 
 DIRECTED = Path(__file__).resolve().parents[1]/'directed_tto'
@@ -64,8 +64,7 @@ def conversion_check(denoiser, geometry, time):
     zero = torch.zeros(geometry.size, dtype=torch.float32, device='cuda')
     graph = denoiser.graph(geometry, zero)
     t = torch.tensor([time], dtype=zero.dtype, device=zero.device)
-    raw = denoiser.module.model(graph, t)
-    score = denoiser.module.score_fn(graph, t)
+    score, raw = score_with_raw(denoiser.module, graph, t)
     errors = {}
     for field in ('pos', 'cell'):
         sde = denoiser.module.corruption.sdes[field]
@@ -74,7 +73,7 @@ def conversion_check(denoiser, geometry, time):
         _, std = sde.marginal_prob(graph[field], t, graph.get_batch_idx(field), graph)
         error = float((score[field]-raw[field]/std).abs().max())
         if error > 1e-5:
-            raise ValueError('Explicit official score conversion mismatch.')
+            raise ValueError('Explicit official score conversion mismatch: '+repr(errors | {field: error}))
         errors[field] = error
     cell_sde = denoiser.module.corruption.sdes['cell']
     mean, std = cell_sde.marginal_prob(graph.cell, t, None, graph)

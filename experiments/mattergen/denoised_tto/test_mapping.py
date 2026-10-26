@@ -100,3 +100,29 @@ def test_decode_keeps_score_jacobian_and_can_isolate_stop_gradient_control():
     torch.testing.assert_close(stop_grad[0], torch.ones_like(pos))
     torch.testing.assert_close(stop_grad[1], torch.full_like(cell, 1.25))
     assert torch.equal(result.atomic_numbers, graph.atomic_numbers)
+
+
+def test_conversion_control_captures_actual_raw_forward_and_removes_hook():
+    import torch
+    from types import SimpleNamespace
+    from adapter import score_with_raw
+    class ChangingForward(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.calls = 0
+        def forward(self, graph, t):
+            self.calls += 1
+            return graph + self.calls
+    model = ChangingForward()
+    def score_fn(graph, t):
+        return model(graph, t)/.02
+    module = SimpleNamespace(model=model, score_fn=score_fn)
+    score, raw = score_with_raw(module, torch.tensor([1.]), torch.tensor([.1]))
+    assert model.calls == 1 and not model._forward_hooks
+    torch.testing.assert_close(score, raw/.02)
+    def fail(graph, t):
+        model(graph, t)
+        raise RuntimeError('test failure')
+    with pytest.raises(RuntimeError):
+        score_with_raw(SimpleNamespace(model=model, score_fn=fail), torch.tensor([1.]), None)
+    assert not model._forward_hooks
