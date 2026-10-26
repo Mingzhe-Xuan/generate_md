@@ -109,6 +109,26 @@ More rounds alone do not prove gradient direction information. The operational
 discovery criterion is unchanged; this extension is exploratory development,
 followed by independent confirmation and endpoint re-quenching if positive.
 
+## Relaxation-aware directional sign audit
+
+`relaxation_gradient.py` treats h(x) as MAE/(1+MAE) after a fullB quench when
+physical/formation guards pass, and1 otherwise. For a locally fixed CF-informed
+axis v, define H(s)=(1/(2sigma)) integral[-sigma,sigma] h(x+(s+t)v)dt. The
+fundamental theorem of calculus gives H'(0)=[h(x+sigma*v)-h(x-sigma*v)]/(2sigma),
+even if the unsmoothed quench map is locally constant. This is a derivative of
+the box-smoothed post-quench objective, not a promise about the unsmoothed fullR.
+
+The first audit reuses stage-one +/-0.5A endpoints to calibrate its sign, with a
+0.005 utility deadband, and chooses exactly one held-out +/-0.8A endpoint. All
+policies share the original, seed and both calibration points as their fallback
+pool. It compares calibrated sign with its reverse, rawCF sign and a predetermined
+random sign on all16 paired parents. Held-out scores cannot choose the sign.
+This is exploratory posthoc method development; fresh random-axis controls and
+native iterative optimization would still be required. `sign_calibration.sbatch`
+is a CPU-only afterok analysis, not new CF inference or a changed ongoing run.
+General smoothing inspiration: https://arxiv.org/abs/1103.4296 (convex theory;
+its convergence guarantees are not claimed for this nonconvex crystal search).
+
 Primary inspiration (not literal reproduction):
 - https://arxiv.org/abs/2105.15183
 - https://www.nature.com/articles/s41524-024-01506-0
