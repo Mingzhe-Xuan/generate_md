@@ -215,6 +215,25 @@ fresh raw-B. It cannot turn a failed primary criterion into success. Cached
 replay costs, current native/search work and the prior48-call diagnostic are
 reported separately. Failed420 and native421 files are read-only throughout.
 
+`validation_retention.py` follows the completed48-parent experiment without
+changing its primary result. It includes ALL materially improved retained-descent
+parents, including cases that do not beat fresh raw-B or agree with ALIGNN. For
+each parent, originalB, fresh raw-B and the selected endpoint each receive an
+unperturbed and three paired0.02A/0.003strain unconstrained re-quenches at fmax
+0.001/maxstep0.05/cap1600. All three original endpoint energy/raw-fmax CPU/GPU
+controls must pass1e-4 before trials. `validation_retention.sbatch` runs this CPU
+stage after the source validation; `validation_retention_evaluation.sbatch` runs
+frozen sourceCF controls and independentCF/ALIGNN evaluation on GPU afterwards.
+Set `RETENTION_SOURCE_ROOT` and a fresh `RETENTION_RUN_ROOT` for the two jobs.
+
+The retention plan pins all six source artifacts and its own implementation.
+Every parent has12 trials; failures and unknown predictions stay in the inventory.
+Summaries compare selected endpoints against BOTH matched tighter original and
+fresh baselines, requiring all four physically eligible pairs for a robust-parent
+flag. Trials remain correlated within each parent. Zero material parents produces
+an explicit zero-result report, without running an empty model evaluation. These
+diagnostics do not turn unsuccessful population directionality into success.
+
 Primary inspiration (not literal reproduction):
 - https://arxiv.org/abs/2105.15183
 - https://www.nature.com/articles/s41524-024-01506-0
