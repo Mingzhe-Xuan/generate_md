@@ -57,6 +57,25 @@ original directed16 run and `QUENCH_GUIDED_ROOT` pointing to a fresh results
 folder. All source edits are local and synchronized through Git before submission.
 No new models, environments, SUN or DFT are required.
 
+`guided_retention.py` follows all material>=0.1eV improvements beyond each own
+probe best, across all three families. It never selects cases using ALIGNN. Each
+family-parent case compares eight endpoints: original, probe best, reverse,
+random, rawCF, selected descent, and the other two families' descent outputs.
+Each receives one unperturbed and three paired-seed0.02A/0.003strain free-cell
+re-quenches at fmax0.001, without symmetry constraints, retaining the original
+energy/volume/separation/formation guards. SourceCPU/GPU energy/raw-force and
+frozenCF controls precede trials/evaluation. Every failure and unknown prediction
+remains in the actual32-per-case evaluation inventory; correlated trials and
+family cases are not independent parents.
+
+Submit `retention.sbatch` after the completed source job with
+`GUIDED_RETENTION_SOURCE` and a fresh `GUIDED_RETENTION_ROOT`, then
+`retention_evaluation.sbatch` after the CPU stage. Both original/probe-best
+material retention and superiority over strengthened direction/prior controls are
+reported separately; these conditional checks cannot rescue a failed full16
+development test or establish independent confirmation. A zero-case source writes
+an explicit negative report without initializing empty model evaluations.
+
 Primary method reference: [Maheswaranathan et al., ICML2019, Guided Evolutionary
 Strategies](https://proceedings.mlr.press/v97/maheswaranathan19a.html), equations1-2
 and the guiding covariance. Its benchmark results are not crystal-search evidence.
