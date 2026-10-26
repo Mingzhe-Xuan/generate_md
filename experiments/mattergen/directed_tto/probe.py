@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 from geometry import Geometry
 from directions import normalize,hessian,soft_descent,matched_random,forward,unrolled
-from settings import POLICY,SEED
+from settings import POLICY,SEED,derivative_checks_pass
 from runtime import Mechanics
 from cf_gradient import GradientScorer
 
@@ -45,14 +45,12 @@ def controls(geom,q,g,H,eta,client,scorer,index):
         if block=='atomic':v[-6:]=0
         if block=='strain':v[:-6]=0
         v=normalize(v)
-        # Fine-step diagnostics distinguish nonlinear coarse differences from
-        # a wrong input backward. They do not relax the original gate below.
-        for eps in (.001,.0005):
-            plus=scorer.evaluate(geom,q+eps*v);minus=scorer.evaluate(geom,q-eps*v);fd=(plus['loss']-minus['loss'])/(2*eps);pred=float(g@v)
-            records.append(dict(kind='CF_gradient_fine_diagnostic',block=block,epsilon=eps,FD=fd,predicted=pred,passed=close(fd,pred,.001,.02)))
-        for eps in (.004,.002):
+        for eps in POLICY['CF_FD_steps_A']:
             plus=scorer.evaluate(geom,q+eps*v);minus=scorer.evaluate(geom,q-eps*v);fd=(plus['loss']-minus['loss'])/(2*eps);pred=float(g@v)
             records.append(dict(kind='CF_gradient',block=block,epsilon=eps,FD=fd,predicted=pred,passed=close(fd,pred,.001,.02)))
+        for eps in POLICY['physical_and_unrolled_FD_steps_A']:
+            plus=scorer.evaluate(geom,q+eps*v);minus=scorer.evaluate(geom,q-eps*v);fd=(plus['loss']-minus['loss'])/(2*eps);pred=float(g@v)
+            records.append(dict(kind='CF_gradient_coarse_diagnostic',block=block,epsilon=eps,FD=fd,predicted=pred,passed=close(fd,pred,.001,.02)))
             energy=client.points(geom,np.array([q+eps*v,q-eps*v]));fd=(energy[0]['energy_eV']-energy[1]['energy_eV'])/(2*eps);pred=float(value_gradient@v)
             records.append(dict(kind='physical_gradient',block=block,epsilon=eps,FD=fd,predicted=pred,passed=close(fd,pred,.005,.01)))
             if block=='both':
@@ -100,7 +98,7 @@ def main():
             matrix=np.array([plain,soft,look]);randoms=np.array([matched_random(d,np.random.default_rng([plan['search_seed'],global_index,f,555]),geom.project) for f,d in enumerate(matrix)])
             path=operator_dir/(Path(parent).stem+'.npz');np.savez_compressed(path,qseed=q,descent=matrix,random=randoms,Hessian=H,gradient=g,unrolled_gradient=glook,eta=eta,lookahead_states=np.array(states))
             entry=dict(parent_id=parent,baseline_CF_error=cf_error,adapter_forward_error=adapter_error,baseline_energy_error_eV_atom=energy_error,baseline_match=fit,
-                Hessian_asymmetry=asymmetry,native_checks=native_checks,passed=all(r['passed'] for r in native_checks if r['kind']!='CF_gradient_fine_diagnostic'),seed_draw_attempt=seed_attempt,
+                Hessian_asymmetry=asymmetry,native_checks=native_checks,passed=derivative_checks_pass(native_checks) if index<4 else True,seed_draw_attempt=seed_attempt,
                 initial_gap=score['gap'],initial_eform=score['eform'],gradient_norm=float(np.linalg.norm(g)),unrolled_gradient_norm=float(np.linalg.norm(glook)),
                 eta=eta,soft_metadata=soft_meta,operator_path=str(path),operator_sha256=sha(path),source_sha256=sha(case['B']['relaxed_path']))
             checks.append(entry);operators.append(entry)

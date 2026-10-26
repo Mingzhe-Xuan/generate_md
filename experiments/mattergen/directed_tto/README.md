@@ -22,6 +22,12 @@ retain the native forward; all16 forward controls must agree at1e-5. The adapter
 hash and actual calls are recorded. Earlier Adam experiments already used this
 adapter; initial directed gate405 omitted its integration and stopped before any
 direction trials. Its failed operators must not be reused.
+Gate407 then found one coarse CF difference inconsistent at0.004A while
+0.002/0.001/0.0005A converge to the corrected derivative. CF validation therefore
+uses both0.001/0.0005A steps with the unchanged absolute0.001/relative0.02 error
+criterion, retaining coarse0.004/0.002A differences as diagnostics. Physical and
+unrolled derivative checks retain their original0.004/0.002A steps/tolerances.
+All14 required primary checks must exist and pass; omitted/duplicate checks fail.
 
 `directions.py` compares three actual derivatives: ordinary CF gradient, a positive
 soft-Hessian preconditioner, and the gradient through eight physical gradient

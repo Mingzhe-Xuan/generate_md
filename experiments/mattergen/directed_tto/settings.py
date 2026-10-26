@@ -12,6 +12,7 @@ POLICY=dict(target_gap=2.5,CF_eform_upper=-.5,final_fmax=.01,raw_fmax=.01,
     minimum_retained_gain_eV=.1,min_improved_parents=4,
     min_gradient_advantage_eV=.05,require_paired_CI_better_than_random_and_reverse=True,
     independent_confirmation_required=True,CF_FD_absolute_tolerance=.001,CF_FD_relative_tolerance=.02,
+    CF_FD_steps_A=[.001,.0005],physical_and_unrolled_FD_steps_A=[.004,.002],CF_coarse_FD_diagnostics_A=[.004,.002],
     energy_FD_absolute_tolerance=.005,energy_FD_relative_tolerance=.01,
     unrolled_FD_absolute_tolerance=.002,unrolled_FD_relative_tolerance=.05,
     Hessian_epsilon_A=.002,Hessian_asymmetry_relative_max=.02,
@@ -31,6 +32,16 @@ def interval(values):
     import numpy as np
     values=np.asarray(values,dtype=float);rng=np.random.default_rng(42)
     return np.quantile(values[rng.integers(0,len(values),(10000,len(values)))].mean(1),[.025,.975]).tolist()
+
+
+def derivative_checks_pass(records):
+    expected={(kind,block,eps) for kind,steps,blocks in (
+        ('CF_gradient',POLICY['CF_FD_steps_A'],('atomic','strain','both')),
+        ('physical_gradient',POLICY['physical_and_unrolled_FD_steps_A'],('atomic','strain','both')),
+        ('unrolled8_gradient',POLICY['physical_and_unrolled_FD_steps_A'],('both',))) for block in blocks for eps in steps}
+    primary=[r for r in records if r['kind']!='CF_gradient_coarse_diagnostic']
+    actual={(r['kind'],r['block'],r['epsilon']) for r in primary}
+    return bool(actual==expected and len(primary)==len(expected) and all(r['passed'] for r in primary))
 
 
 def assess_gradient(g,random_control,reverse,baseline,seed_control,eligible):

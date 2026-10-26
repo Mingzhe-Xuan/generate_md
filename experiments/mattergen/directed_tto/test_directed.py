@@ -109,3 +109,24 @@ def test_existing_gaussian_input_derivative_matches_finite_difference():
     y=torch.tensor([[[[-.3]],[[-.7]]]],dtype=torch.float64,requires_grad=True)
     function=lambda a,b:m.ExactGaussianAverage.apply(3.,4,a,b,-2)
     assert torch.autograd.gradcheck(function,(x,y),eps=1e-6,atol=1e-6,rtol=1e-4)
+
+
+def test_native_derivative_gate_requires_all_primary_checks_and_local_resolution():
+    # A large centered difference can cross a piecewise branch; smaller local
+    # differences must still detect the old missing-gradient error.
+    slope=-1.385238
+    f=lambda x:slope*x-.5*max(0,x-.003)
+    fd=lambda eps:(f(eps)-f(-eps))/(2*eps)
+    valid=lambda value,ad:abs(value-ad)<=.001+.02*max(abs(value),abs(ad))
+    assert not valid(fd(.004),slope)
+    assert all(valid(fd(eps),slope) and not valid(fd(eps),-.250568) for eps in settings.POLICY['CF_FD_steps_A'])
+    records=[]
+    for kind,steps,blocks in [('CF_gradient',settings.POLICY['CF_FD_steps_A'],('atomic','strain','both')),
+        ('physical_gradient',settings.POLICY['physical_and_unrolled_FD_steps_A'],('atomic','strain','both')),
+        ('unrolled8_gradient',settings.POLICY['physical_and_unrolled_FD_steps_A'],('both',))]:
+        records.extend(dict(kind=kind,block=b,epsilon=e,passed=True) for b in blocks for e in steps)
+    records.append(dict(kind='CF_gradient_coarse_diagnostic',block='atomic',epsilon=.004,passed=False))
+    assert settings.derivative_checks_pass(records)
+    assert not settings.derivative_checks_pass(records[1:])
+    assert not settings.derivative_checks_pass(records+[records[0]])
+    records[0]['passed']=False;assert not settings.derivative_checks_pass(records)
