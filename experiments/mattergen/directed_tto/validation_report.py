@@ -3,7 +3,8 @@ import argparse
 import json
 from pathlib import Path
 import numpy as np
-from validation_run import validate_manifest,validate_results,core_hashes,OUTPUTS
+from validation_run import validate_manifest,validate_results,core_hashes,OUTPUTS,EXTRA_BASELINE
+from baseline_amendment import load_amendment
 from validation_policy import VALIDATION_POLICY
 from settings import ARMS,interval
 from probe import load,save,sha
@@ -22,6 +23,24 @@ def assess(errors,baseline,seed,eligible):
         physical_retention_checks_still_required=bool(material>0),goal_completion_proven=False)
 
 
+def fresh_sensitivity(reports,parents):
+    """Use the independently re-quenched no-CF endpoint, without choosing a baseline."""
+    fresh=reports[EXTRA_BASELINE]['cases'];result={}
+    if len(parents)!=48 or [r['parent_id'] for r in fresh]!=parents:raise ValueError('Fresh baseline must keep all48 parents.')
+    for method in OUTPUTS:
+        rows=reports[method]['cases']
+        if [r['parent_id'] for r in rows]!=parents:raise ValueError('Fresh sensitivity parent pairing changed.')
+        summary={}
+        for model in ('crystalformer','alignn'):
+            pairs=[(r,b) for r,b in zip(rows,fresh) if r['prediction'].get(model+'_gap') is not None and b['prediction'].get(model+'_gap') is not None]
+            deltas=[abs(r['prediction'][model+'_gap']-2.5)-abs(b['prediction'][model+'_gap']-2.5) for r,b in pairs]
+            summary[model]=dict(denominator=48,paired_known=len(pairs),MAE_vs_fresh_rawB_delta=float(np.mean(deltas)) if deltas else None,
+                CI95=interval(deltas) if deltas else None,paired_structure_eligible=sum(r['structure_eligible'] and b['structure_eligible'] for r,b in pairs),
+                material_gains_beyond_fresh_rawB=sum(r['material_CF_gain'] and abs(b['prediction'][model+'_gap']-2.5)-abs(r['prediction'][model+'_gap']-2.5)>=.1 for r,b in pairs))
+        result[method]=summary
+    return result
+
+
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('--run',type=Path,required=True);a=p.parse_args();root=a.run
     from pymatgen.core import Structure
@@ -30,17 +49,22 @@ def main():
     from effect_geometry import measure
     plan=load(root/'validation-plan.json');data=load(root/'validation-results.json');proof=load(root/'validation-native.json');complete=load(root/'validation.complete.json')
     validate_manifest(plan,sha(root/'validation-plan.json'));validate_results(plan,data)
+    amendment,diagnostic,replays=load_amendment(root,plan)
+    if (proof['baseline_amendment_sha256']!=sha(root/'baseline-amendment.json') or data['baseline_amendment_sha256']!=proof['baseline_amendment_sha256']
+        or data['raw_replay_baseline']!=proof['raw_replay_baseline'] or any(any(q['B'].get(k)!=v for k,v in r.items() if k!='volume_A3') for q,r in zip(data['raw_replay_baseline'],replays))):
+        raise ValueError('Fresh raw-B/protocol amendment linkage changed.')
     if not complete['completed'] or complete['data_sha256']!=sha(root/'validation-results.json') or proof['code_sha256']!=core_hashes():raise ValueError('Validation data/source proof changed.')
     if not proof['passed'] or len(proof['cases'])!=48 or not all(c['passed'] for c in proof['cases']):raise ValueError('Native48 gates incomplete.')
     reports={};predictions={};checked={};base_structures={}
     for case in plan['cases']:base_structures[case['parent_id']]=Structure.from_file(case['B']['relaxed_path'])
-    for method in OUTPUTS:
+    for method in OUTPUTS+(EXTRA_BASELINE,):
         folder=root/f'evaluation-{method}/cross-prediction';metadata=load(folder/'metadata.json')
         if not metadata['crystalformer_control']['control_passed'] or len(metadata['controls'])<2 or any(max(c['max_errors'])>1e-5 for c in metadata['controls']):raise ValueError('Frozen evaluator controls failed.')
         records=[r for r in load(folder/'predictions.json') if r['stage']=='after'];byid={r['candidate_id']:r for r in records}
         if len(records)!=48 or set(byid)!=set(plan['parent_ids']):raise ValueError('Final48 evaluation coverage changed.')
         predictions[method]=byid;rows=[]
-        for i,(case,q) in enumerate(zip(plan['cases'],data['selected'][method])):
+        selected=data['raw_replay_baseline'] if method==EXTRA_BASELINE else data['selected'][method]
+        for i,(case,q) in enumerate(zip(plan['cases'],selected)):
             parent=case['parent_id'];pred=byid[parent]
             if pred.get('crystalformer_gap') is None or max(abs(pred['crystalformer_gap']-q['gap']),abs(pred['crystalformer_eform']-q['eform']))>1e-5:raise ValueError('Independent CF score differs from selected score.')
             if q['pose'] not in checked:
@@ -79,9 +103,16 @@ def main():
     for policy in ('retained','ordinary'):
         errors={arm:np.array([abs(r['prediction']['crystalformer_gap']-2.5) for r in reports[policy+'-'+arm]['cases']]) for arm in ARMS}
         policies[policy]=assess(errors,base,seed,[r['physical_eligible'] for r in reports[policy+'-descent']['cases']])
+    sensitivity=fresh_sensitivity(reports,plan['parent_ids']);fresh_primary=sensitivity['retained-descent']['crystalformer']
+    robust=bool(policies['retained']['independent_directional_evidence'] and fresh_primary['paired_known']==48
+        and fresh_primary['material_gains_beyond_fresh_rawB']>=4 and fresh_primary['CI95'][1]<0)
     result=dict(role='Independent48-parent/search-seed directional validation; original16 is development only.',policy=VALIDATION_POLICY,parent_ids=plan['parent_ids'],
         primary=policies['retained'],secondary=policies['ordinary'],arms=reports,baseline_predictor_controls=baseline_controls,report_sha256=sha(__file__),plan_sha256=sha(root/'validation-plan.json'),
+        baseline_amendment=amendment,raw_path_diagnostics=diagnostic['cases'],fresh_raw_baseline_sensitivity=sensitivity,
+        primary_directional_evidence_survives_fresh_rawB=robust,
         costs=dict(NFE_total=data['NFE_total'],NFE_native=data['NFE_native'],NFE_search=data['NFE_search'],
+            NFE_cached_raw_replays=data['NFE_cached_replay'],NFE_current_execution=data['NFE_total']-data['NFE_cached_replay'],
+            NFE_prior_fixed_pose_diagnostic=diagnostic['NFE'],NFE_total_including_diagnostic=data['NFE_total']+diagnostic['NFE'],
             rays={arm:dict(attempts=sum(r['arm']==arm for r in data['attempts']),eligible=sum(r['arm']==arm and r['eligible'] for r in data['attempts']),
                 B_NFE=sum(r.get('B',{}).get('NFE',0) for r in data['attempts'] if r['arm']==arm)) for arm in ARMS}),
         limitations='All48 denominators andfailedattempts retained. Policies share rays andcannot be treated as independent repetitions. CF-only acceptance never uses ALIGNN. Directional evidence is not goal completion without independent physical retention and honest cross-model interpretation; no SUN/DFT/phonon claims.')

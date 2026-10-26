@@ -167,8 +167,9 @@ new48 primary comparisons, raw query costs, held-out ALIGNN and tighter physical
 retention are required before attributing practical value to gradient direction.
 
 `validation_run.py` enforces the preregistered manifest SHA and native mathematical
-source, then checks all48 frozenCF baselines and canonical-B replays before any
-new rays. Same-weight double-arithmetic checks validate actual float32 gradients;
+source, then checks all48 frozenCF baselines and same-pose potential values before
+any new rays. Raw-start replays remain explicit diagnostics and a separately
+evaluated no-CF control, as described below. Same-weight double-arithmetic checks validate actual float32 gradients;
 the first four heldout parents require all six atomic/strain/mixed directional
 differences. No Hessian or finite-lookahead work is needed for this plain family.
 There are576 rays and48 seed quenches, plus48 baseline replays. The feasible
@@ -178,8 +179,8 @@ All stationary/rejected/failed attempts remain in the ledger and48 denominator.
 `evaluation_export.py` exports the actual cohort size with input/terminal hashes,
 selection signatures and protected idempotence; incomplete exports are preserved
 before rebuilding. `validation.sbatch` runs the native gate/search then seven
-unchanged frozenCF/ALIGNN evaluations (two policies times three arms, plus a fresh
-baseline). `validation_report.py` audits all48 selections, original volume/energy,
+unchanged frozenCF/ALIGNN evaluations (two policies times three arms, plus original
+baseline), and an eighth fresh raw-replay baseline. `validation_report.py` audits all48 selections, original volume/energy,
 ordered species and independent scores, and reports parent-paired confidence
 intervals. It checks fresh baseline predictions against available archived values;
 ALIGNN unknowns retain their coverage and are never silently dropped from pass
@@ -192,6 +193,27 @@ energies and raw forces with the unchanged1e-4 tolerances on all48 parents, whil
 recording raw-path energy/geometry differences separately. Its report alone does
 not amend the validation gate or authorize candidate generation; source and
 potential consistency must be understood before proceeding.
+
+`baseline_amendment.py` records the explicit pre-outcome amendment after native421:
+all48 frozen poses passed unchanged1e-4 energy/raw-fmax controls, while three raw
+replays reached different endpoints. This demonstrates same-pose consistency;
+the cause of path variability is not established. The original raw-path gate
+failed and is never relabeled as passed. The diagnostic is pinned by exact SHA.
+The preparation CLI takes `--source` failed420root and `--run` a NEW execution
+folder, checks all48 cached replay tasks/record hashes/input/terminal/checkpoint/
+profile, copies the original manifest bytes unchanged and records the amendment
+before proposals. It refuses any source with scientific candidate outcomes.
+
+Every new native run repeats all48 fixed-pose energy/raw-force controls and the
+unchanged CF/gradient checks. All seven original selections remain unchanged;
+`raw-replay-baseline` independently scores all48 new direct-B endpoints with CF
+and ALIGNN. Reports include parent-paired contrasts against BOTH original and
+fresh raw-B, unknown-model coverage, and material gains that also exceed fresh
+raw-B by0.1eV. The additional robustness flag requires the original directional
+criterion, at least four such gains, and a negative upper pairedCF CI against
+fresh raw-B. It cannot turn a failed primary criterion into success. Cached
+replay costs, current native/search work and the prior48-call diagnostic are
+reported separately. Failed420 and native421 files are read-only throughout.
 
 Primary inspiration (not literal reproduction):
 - https://arxiv.org/abs/2105.15183
