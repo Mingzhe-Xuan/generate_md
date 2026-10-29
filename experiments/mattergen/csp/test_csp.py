@@ -6,12 +6,38 @@ import tempfile
 import unittest
 import yaml
 
-from validation import digest, validate_composition, validate_csp_config, validate_sampling
+from validation import assemble_parts, byte_ranges, digest, validate_composition, validate_csp_config, validate_sampling
 
 HERE = Path(__file__).resolve().parent
 
 
 class CSPContracts(unittest.TestCase):
+    def test_download_ranges_cover_all_bytes_exactly(self):
+        ranges = byte_ranges(460952872)
+        self.assertEqual(ranges[0][0], 0)
+        self.assertEqual(ranges[-1][1], 460952871)
+        self.assertTrue(all(a[1] + 1 == b[0] for a, b in zip(ranges, ranges[1:])))
+
+    def test_assemble_rejects_truncation_and_preserves_old_download(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / 'parts').mkdir()
+            (root / 'checkpoints').mkdir()
+            old = root / 'checkpoints/last.ckpt.partial'
+            old.write_bytes(b'old interrupted download')
+            payload = bytes(range(101))
+            for i, (start, end) in enumerate(byte_ranges(len(payload))):
+                (root / 'parts' / f'part-{i:02d}').write_bytes(payload[start:end+1])
+            damaged = root / 'parts/part-07'
+            good = damaged.read_bytes()
+            damaged.write_bytes(good[:-1])
+            with self.assertRaises(ValueError):
+                assemble_parts(root, len(payload))
+            self.assertFalse((root / 'checkpoints/last.ckpt.assembled').exists())
+            damaged.write_bytes(good)
+            self.assertEqual(assemble_parts(root, len(payload)).read_bytes(), payload)
+            self.assertEqual(old.read_bytes(), b'old interrupted download')
+
     def test_published_config_matches_both_hashes(self):
         spec = json.loads((HERE / 'sources.json').read_text())
         self.assertEqual(digest(HERE / 'model_config.yaml'), spec['config_sha256'])

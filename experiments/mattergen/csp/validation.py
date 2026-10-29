@@ -12,6 +12,29 @@ def digest(path, algorithm='sha256'):
     return result.hexdigest()
 
 
+def byte_ranges(size, count=8):
+    if size < 1 or count < 1 or count > size:
+        raise ValueError('Invalid download partition.')
+    return [(i * size // count, (i + 1) * size // count - 1) for i in range(count)]
+
+
+def assemble_parts(root, size):
+    """Called under Slurm; preserve the interrupted monolithic download."""
+    import shutil
+    ranges = byte_ranges(size)
+    files = [root / 'parts' / f'part-{i:02d}' for i in range(len(ranges))]
+    if any(p.stat().st_size != end - start + 1 for p, (start, end) in zip(files, ranges)):
+        raise ValueError('Incomplete ranged checkpoint download.')
+    target = root / 'checkpoints/last.ckpt.assembled'
+    if target.exists():
+        raise ValueError('Refuse to overwrite an existing assembled checkpoint.')
+    with target.open('xb') as output:
+        for part in files:
+            with part.open('rb') as stream:
+                shutil.copyfileobj(stream, output, length=1024 * 1024)
+    return target
+
+
 def validate_composition(composition):
     if not isinstance(composition, dict) or not composition:
         raise ValueError('Provide explicit element counts for the simulation cell.')

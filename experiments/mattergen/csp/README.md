@@ -19,6 +19,13 @@ Assets go in ignored `results/mattergen/csp-assets/`, with checkpoint at
 Zenodo URL through the documented healthy SSH proxy on the login node.
 Never replace the old source, checkpoint or environments.
 
+For a slow endpoint, `download.py --direct` (only with direct-download permission)
+or `download.py --proxy socks5h://127.0.0.1:1080` fetches eight exact byte ranges
+with at most four concurrent curl downloads. This is network I/O only; assembly
+and publisher checksum verification stay in `prepare.py` under Slurm. Interrupted
+monolithic files remain intact. A same-sized chunk alone is never trusted for
+model loading: the complete checkpoint must match the publisher MD5 first.
+
 ```bash
 sbatch --export=ALL,CSP_ROOT=results/mattergen/csp-smoke-20261029 \
   experiments/mattergen/csp/smoke.sbatch
