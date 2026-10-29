@@ -1,0 +1,15 @@
+{
+  "repository": "https://github.com/Yifang-Qin/Generative-Structure-Search",
+  "release_commit": "e3c1b8d8cdf2458ba83f3ba0528b1edc564a1270",
+  "model": "MatterGen-derived CSP trained on Alex-MP20; GSS author weights, no GSS guidance",
+  "checkpoint_url": "https://zenodo.org/records/22847747/files/last.ckpt?download=1",
+  "zenodo_record": 22847747,
+  "doi": "10.5281/zenodo.22847747",
+  "checkpoint_size_bytes": 460952872,
+  "checkpoint_md5": "91f5938be6fbd069bcc2ec0bb92a7513",
+  "config_sha256": "d408099ae279afcf40c913ee498672849e862d96fa15cb85dc1d3420c9adbe87",
+  "config_md5": "635d8c2995c2b4bc0e7eafe7f684d45b",
+  "config_source": "outputs/csp_model/checkpoints/config.yaml",
+  "license": "Author code MIT; see release metadata for assets",
+  "native_runtime_commit": "92423660a8bd70e83679086e88f88596d484dc16"
+}
