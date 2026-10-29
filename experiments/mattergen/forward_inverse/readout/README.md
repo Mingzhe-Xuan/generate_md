@@ -57,7 +57,10 @@ Both feature vectors and raw score repeats are saved; no score-precision or
 score-Jacobian validation is inferred from feature success. The448 selected
 structures, labels and corruption protocol are unchanged.
 
-Outputs stay under ignored `results/mattergen/forward-inverse-readout-20261030`.
+Completed outputs stay under ignored
+`results/mattergen/forward-inverse-readout-20261030-v2`; the original unsuffixed
+failed attempt is preserved. Results and uncertainty are summarized in the
+parent [research report](../REPORT.md).
 Use READOUT_ROOT for the three Slurm wrappers. This module reuses pinned CSP and
 ALIGNN adapters in its parent; all source changes originate locally.
 

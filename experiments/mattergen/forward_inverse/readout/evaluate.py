@@ -77,13 +77,15 @@ def plot(report,output):
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     fig,axes=plt.subplots(1,2,figsize=(12,4.6),constrained_layout=True)
+    labels=dict(composition_cell='Composition + cell',clean_head='CSP clean-trained head',
+        noise_head='CSP noise-trained head',shuffled_head='Shuffled-label control',ALIGNN='Pretrained ALIGNN control')
     for j,(axis,prop) in enumerate(zip(axes,report['policy']['properties'])):
         for name,result in report['results'].items():
-            axis.plot(report['policy']['times'],np.array(result['noisy']['MAE_by_time'])[:,j],'o-',label=name)
+            axis.plot(report['policy']['times'],np.array(result['noisy']['MAE_by_time'])[:,j],'o-',label=labels[name])
         axis.set(title=prop,xlabel='Diffusion time of coordinate corruption',ylabel='MAE against clean author labels')
         axis.grid(alpha=.2)
     axes[1].legend(fontsize=8)
-    fig.suptitle('Frozen generator readouts: equal label budgets; 128 held-out readout-label parents')
+    fig.suptitle('Frozen CSP readout heads: 256 shared training labels; 128 label-held-out test structures\nPretrained ALIGNN is a reference with a different supervision budget',fontsize=10)
     fig.savefig(output/'readout.png',dpi=180);fig.savefig(output/'readout.svg');plt.close(fig)
 
 

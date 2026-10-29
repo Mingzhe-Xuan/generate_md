@@ -1,7 +1,8 @@
 # Cross-system confirmation and property response through relaxation
 
-The broader research goal remains active. This extends the four-system pilot
-in [RESULTS.md](RESULTS.md), retaining all failures and original thresholds.
+This stage extends the four-system pilot in [RESULTS.md](RESULTS.md), retaining
+all failures and original thresholds. The final synthesis and subsequent
+forward-readout experiment are in [REPORT.md](REPORT.md).
 
 ## Empirical protocols and coverage
 
@@ -124,7 +125,9 @@ source/script hash and all384 response decompositions independently audited.
 
 Completed: broader frozen numerical confirmation, actual forward-property
 response through relaxation, and connectivity-only counterfactuals, with
-failures and uncertainty. Remaining: assess a noise-aware forward readout
-with held-out labels, controls and uncertainty. MP20 checkpoint structure
+failures and uncertainty. The subsequent frozen forward readout and its
+held-out-label controls are now reported in [REPORT.md](REPORT.md): generative
+features improve on composition/cell features, while additional noisy training
+has no resolved advantage over clean training in this study. MP20 checkpoint structure
 exposure remains unknown, so frozen-backbone comparisons must not be advertised
 as unseen-structure CSP generalization. No DFT/SUN or old paused job was resumed.

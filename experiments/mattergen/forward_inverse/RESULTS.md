@@ -1,6 +1,7 @@
 # Forward prediction and inverse generation: ongoing mechanistic study
 
-This is an exploratory pilot, not completion of the broader research goal.
+This file records the initial exploratory pilot. The final research synthesis
+and subsequent forward-readout results are in [REPORT.md](REPORT.md).
 No new guidance improvement, benchmark generalization, physical temperature,
 full phonon stability or DFT result is claimed.
 
@@ -116,11 +117,11 @@ Response archiveSHA256:
 `018635659628cdd72213957c7b48b1d397b5bdc469f977a7f25cabd5555e9ae5`.
 Local pilot audit checks13 source blobs and independently reconstructs64 raw
 matrices. The response report checks all vector hashes, raw directional
-responses and adjoint orientations. Current module suite:37 tests.
+responses and adjoint orientations. Current suite:37 parent-module and6 readout tests.
 
 The subsequent twelve-system confirmation and relaxation-map measurements are
 reported in [FOLLOWUP.md](FOLLOWUP.md), including the completed graph
-counterfactual. Remaining: assess a noise-aware forward readout with held-out labels,
-controls and uncertainty. MP20 checkpoint structure exposure remains unknown,
+counterfactual. The held-out-label forward readout, its controls and uncertainty
+are now reported in [REPORT.md](REPORT.md). MP20 checkpoint structure exposure remains unknown,
 so frozen-backbone comparisons must not be advertised as unseen-structure CSP
-generalization. The broader goal remains active.
+generalization. Negative findings and unvalidated numerical cases remain explicit.

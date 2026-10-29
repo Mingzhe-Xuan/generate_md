@@ -1,7 +1,9 @@
 # Forward prediction and inverse crystal generation
 
-Research module for the active user goal: derive and empirically test deeper
+Research module to derive and empirically test deeper
 links between predictive energy/property models and a generative CSP backbone.
+Start with the Chinese [research synthesis](REPORT.md). Initial numerical
+attempts, expanded GSS tests and frozen MP20 readouts retain separate evidence.
 The existing 192-state and16-trajectory probes show direction correlation, not
 that MatterGen is a physical force field. New work must go beyond that evidence.
 
@@ -99,7 +101,7 @@ posterior calculations, finite-difference Jacobians and integrability controls.
 finite differences and explicit counterexamples. Native-model evidence belongs
 in ignored `results/mattergen/forward-inverse-*` with source/asset hashes.
 
-The planned local-response experiment uses the pinned CSP checkpoint and
+The local-response experiment uses the pinned CSP checkpoint and
 MatterSim5M on property-blind GSS anchors. It compares full centered Cartesian
 score Jacobians and physical Hessians at two displacement scales; reports
 antisymmetry, stable/unstable modes and covariance-aware predictions, then tests
