@@ -116,11 +116,11 @@ Response archiveSHA256:
 `018635659628cdd72213957c7b48b1d397b5bdc469f977a7f25cabd5555e9ae5`.
 Local pilot audit checks13 source blobs and independently reconstructs64 raw
 matrices. The response report checks all vector hashes, raw directional
-responses and adjoint orientations. Current module suite:28 tests.
+responses and adjoint orientations. Current module suite:37 tests.
 
-Remaining: freeze and confirm the usable numerical regimes across more GSS
-systems; test actual property response through the relaxation map; assess a
-noise-aware forward predictor or mechanism-based guidance with held-out labels,
+The subsequent twelve-system confirmation and relaxation-map measurements are
+reported in [FOLLOWUP.md](FOLLOWUP.md), including the completed graph
+counterfactual. Remaining: assess a noise-aware forward readout with held-out labels,
 controls and uncertainty. MP20 checkpoint structure exposure remains unknown,
 so frozen-backbone comparisons must not be advertised as unseen-structure CSP
 generalization. The broader goal remains active.
