@@ -164,6 +164,22 @@ and pullback checks; undefined ratios at raw slope<1e-5 stay undefined. Submit
 select.sbatch with FORWARD_INVERSE_SYSTEMS=all, then property.sbatch afterok,
 using a fresh FORWARD_INVERSE_ROOT. All model computation remains in Slurm.
 
+`property_report.py` independently reconstructs raw/relaxed property slopes,
+checks endpoint forces/species/cell and input-gradient FD controls, and reports
+all completed versus gradient-QC cohorts separately. Ratios retain zero-response
+denominators; bootstrap intervals resample whole parents. Its Slurm wrapper uses
+FORWARD_INVERSE_ROOT and fresh FORWARD_INVERSE_REPORT.
+
+`confirm_curl.py` consumes the property experiment's immutable12-system probes,
+with new seed20261055 orthonormal random planes and frozen0.0005/0.001angstrom
+steps. It checks two-plane AD versus FD in native inference and grad-enabled
+paths separately, reports FP64 as a distinct diagnostic, and evaluates MatterSim
+on the same plane as a conservative control. This is not full-matrix derivative
+certification. Counts for the eight systems beyond the initial pilot stay
+separate. Submit confirm.sbatch after the property job with
+FORWARD_INVERSE_SOURCE and fresh FORWARD_INVERSE_CONFIRM; all inference is GPU
+under Slurm. No anchors are relaxed again and no structure is reselected.
+
 ```bash
 export FORWARD_INVERSE_ROOT=results/mattergen/forward-inverse-20261029-pilot
 selection=$(sbatch --parsable experiments/mattergen/forward_inverse/select.sbatch)
