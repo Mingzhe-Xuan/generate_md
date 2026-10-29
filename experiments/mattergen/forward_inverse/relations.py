@@ -57,6 +57,19 @@ def harmonic_curvature(hessian, covariance, beta):
     return np.linalg.inv(np.linalg.inv(beta * hessian) + covariance)
 
 
+def posterior_covariance_from_score_jacobian(jacobian, noise_covariance):
+    """Gaussian second-order Tweedie identity; no symmetrization/PSD repair."""
+    c = np.asarray(noise_covariance, dtype=float)
+    return c + c @ np.asarray(jacobian, dtype=float) @ c
+
+
+def linear_property_posterior_gradient(jacobian, noise_covariance, clean_gradient):
+    """Posterior gradient for a linear clean property, not a general nonlinear readout."""
+    c = np.asarray(noise_covariance, dtype=float)
+    mean_jacobian = np.eye(len(c)) + c @ np.asarray(jacobian, dtype=float)
+    return mean_jacobian.T @ np.asarray(clean_gradient, dtype=float)
+
+
 def mixture_posterior(x, means, covariances, weights, noise_covariance, values=None):
     """Exact latent clean posterior for a finite Gaussian mixture plus Gaussian noise.
 
@@ -83,8 +96,12 @@ def mixture_posterior(x, means, covariances, weights, noise_covariance, values=N
     clean_means = means + np.einsum('kij,kjl,kl->ki', covariances, inverse, residual)
     clean_mean = responsibility @ clean_means
     score = responsibility @ scores
+    component_covariances = covariances - covariances @ inverse @ covariances
+    deviations = clean_means - clean_mean
+    clean_covariance = np.sum(responsibility[:, None, None] * (
+        component_covariances + deviations[:, :, None] * deviations[:, None, :]), axis=0)
     result = dict(score=score, clean_mean=clean_mean, responsibility=responsibility,
-                  log_density=maximum + np.log(normalizer))
+                  clean_covariance=clean_covariance, log_density=maximum + np.log(normalizer))
     if values is not None:
         values = np.asarray(values, dtype=float)
         mean_value = float(responsibility @ values)

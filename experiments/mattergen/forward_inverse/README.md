@@ -35,6 +35,25 @@ be specified. Fractional row coordinates obey `r=f L`; a score covector becomes
    pointwise removal of their parallel component. Orthogonality implies zero
    first-order energy change; finite steps can increase energy at second order.
 
+There is also a second-order link which needs no thermal assumption. For fixed
+Gaussian corruption covariance C, the clean posterior mean m and covariance V
+satisfy `D m=I+C J_s` and `V=C+C J_s C`. An exact score therefore has a symmetric
+Jacobian and a positive-semidefinite covariance proxy. A learned vector field
+need not satisfy either condition. Numerical derivative checks must precede
+interpreting violations, and the proxy must not be symmetrized/clipped and then
+presented as a validated posterior covariance.
+
+For a linear clean property `y=a^T x_0`, the noisy posterior property gradient
+is `(I+C J_s)^T a = C^{-1} V a`. In the harmonic Boltzmann special case it is
+`(I+beta H C)^{-1}a`: uncertain/soft and stiff coordinates receive different
+guidance. For nonlinear properties, `y(E[x_0|x])` generally differs from
+`E[y(x_0)|x]`; applying this linear formula to an arbitrary clean predictor is
+an approximation requiring a separate test. `test_posterior_geometry.py` checks
+the two identities independently using anisotropic Gaussian mixtures, central
+differences, and the law of total covariance. The practical opportunity is a
+noise-aware posterior property predictor with uncertainty, not an assumed
+physical interpretation for an arbitrary learned score.
+
 These are analytic connections/conditional hypotheses, not claims that this
 checkpoint obeys a Boltzmann law, has a known temperature, is integrable, or that
 a new guidance method improves CSP. Wrapped coordinates admit the Gaussian
@@ -112,13 +131,21 @@ a new directory via FORWARD_INVERSE_ROOT and FORWARD_INVERSE_ANALYSIS.
 
 `precision_response.py` reuses every original completed probe pose, centered
 basis and random test directions. It compares full native/FP64 autograd matrices
-and directional central differences at0.0005..0.032angstrom, saving both dtypes'
+and directional central differences at0.000125..0.032angstrom, saving both dtypes'
 raw fields, adjoints, graph hashes and repeats. This separates precision noise,
 graph changes and finite-step nonlinearity; a failed0.005 native-value equivalence
 check stays failed. It does not rerun anchor relaxation or replace native output
 with FP64 results. Submit response.sbatch with FORWARD_INVERSE_ROOT and a fresh
 FORWARD_INVERSE_RESPONSE directory. Numerical failures are not evidence against
 a physical hypothesis until an adequate measurement regime is demonstrated.
+
+`response_report.py` independently rebuilds the directional responses and
+adjoint matrices, verifies hashes and separates graph/precision checks from
+nonzero cross-curl evidence. The0.0005/0.001angstrom reporting window is an
+exploratory pilot choice, not a preregistered population test. Raw fields and
+all nine step sizes remain available. Nonzero two-direction curl does not
+certify the entire Jacobian. See [RESULTS.md](RESULTS.md) for current evidence
+and the still-incomplete broader research plan.
 
 ```bash
 export FORWARD_INVERSE_ROOT=results/mattergen/forward-inverse-20261029-pilot
