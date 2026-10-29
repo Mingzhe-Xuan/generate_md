@@ -97,6 +97,19 @@ because its code finished. All raw adjoint and FD vectors are retained. The prob
 center is displaced0.01angstrom atomic RMS from a relaxed anchor to avoid
 assuming a learned density maximum exactly coincides with a physical minimum.
 
+`analyze.py` reconstructs every saved physical/score finite-difference matrix
+and native adjoint matrix from raw vectors, verifies vector hashes, and retains
+all selected structures in coverage. Noise-law fits use all cases and a separate
+native-QC cohort. Harmonic-law fits require the entire centered physical Hessian
+to be positive definite (minimum eigenvalue >1e-4eV/angstrom^2); no negative
+modes are removed to manufacture a harmonic distribution. A second cohort also
+requires native derivative QC and physical FD/antisymmetry <=0.02. All methods
+in a cohort share its structures. Coefficients leave entire chemical systems
+out; fewer than three eligible systems produces an unavailable result. This is
+a fixed-cell Gamma-point local curvature probe, not a full phonon or thermal
+stability assessment. `analysis.sbatch` creates report.json and PNG/SVG plots in
+a new directory via FORWARD_INVERSE_ROOT and FORWARD_INVERSE_ANALYSIS.
+
 ```bash
 export FORWARD_INVERSE_ROOT=results/mattergen/forward-inverse-20261029-pilot
 selection=$(sbatch --parsable experiments/mattergen/forward_inverse/select.sbatch)
