@@ -147,6 +147,23 @@ all nine step sizes remain available. Nonzero two-direction curl does not
 certify the entire Jacobian. See [RESULTS.md](RESULTS.md) for current evidence
 and the still-incomplete broader research plan.
 
+`property_model.py` reuses the pinned ALIGNN geometry adapter/weights with
+native architecture controls and FP64 Cartesian input derivatives on GPU.
+`property_pullback.py` tests raw versus post-relaxation property responses on
+hash-selected references from all12 GSS systems. Each full-cell anchor is
+perturbed0.03angstrom atomic RMS; around this same probe, random, target-gap-loss
+descent and formation-energy descent directions have unit atomic RMS. Both signs
+at0.005/0.02/0.05angstrom are evaluated before and after fixed-cell unconstrained
+MatterSim relaxation at0.001 and0.0002eV/angstrom. Zero gradients and unconverged
+structures remain explicit in coverage. Fixed/fresh graph FD checks accompany
+the property gradients. Ordered-site MIC displacement is a continuous response
+measure, not proof of basin or crystallographic equivalence. This is a local
+mechanism test, not a full gradient optimizer or a held-out property-accuracy
+benchmark. `pullback_math.py` computes finite-map contraction, raw/relaxed slopes
+and pullback checks; undefined ratios at raw slope<1e-5 stay undefined. Submit
+select.sbatch with FORWARD_INVERSE_SYSTEMS=all, then property.sbatch afterok,
+using a fresh FORWARD_INVERSE_ROOT. All model computation remains in Slurm.
+
 ```bash
 export FORWARD_INVERSE_ROOT=results/mattergen/forward-inverse-20261029-pilot
 selection=$(sbatch --parsable experiments/mattergen/forward_inverse/select.sbatch)
