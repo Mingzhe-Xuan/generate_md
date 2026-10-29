@@ -1,5 +1,11 @@
 # MatterGen on the current property/SUN task
 
+Current fixed-composition score/force research uses the
+[MatterGen CSP module](csp/README.md): author-released CSP weights, native
+coordinate/lattice diffusion and fixed atomic identities from the initial prior.
+Its RTX5090 four-structure smoke and canonical MatterSim relaxation passed on
+2026-10-29. The settings below describe the earlier de novo property/SUN runs.
+
 Use the official pinned MatterGen dft_band_gap model, target2.5eV,
 classifier-free guidance2.0, seed42 and its unchanged1000-step sampler.
 Generate128 de novo structures. These are independent generated samples,

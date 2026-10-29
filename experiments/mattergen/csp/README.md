@@ -59,3 +59,13 @@ DFT and old broad TTO/dimer work remain paused.
 ```bash
 python -m unittest discover -s experiments/mattergen/csp -p 'test_*.py'
 ```
+
+Validated on2026-10-29: Slurm467 completed with exit0; all four native
+1000-step trajectories passed8000 total score/denoiser-call checks. All four
+MatterSim relaxations converged (7,21,14,86 steps), including raw atomic
+fmax below0.01eV/angstrom. Sampling took407.61s and the core sampling/physics
+workflow434.92s, excluding downloads. Slurm468 archived the evidence; local
+independent checks verified source blobs, all24 saved states, ordered species,
+geometry hashes, energies, force thresholds and full physical NFE accounting.
+Ignored artifacts are under `results/mattergen/evidence/csp-smoke-20261029`.
+This is runtime validation, with no property-throughput or SUN claim.
