@@ -12,18 +12,23 @@ sys.path.insert(0,str(Path(__file__).resolve().parent.parent))
 from csp_model import CSP,sha
 from property_model import Properties
 from relations import relative_error
+from observer import hook_embedding,wrapper_embedding
 
 
 def embedding(model,numbers,cell,cart,t):
-    captured=[]
-    handle=model.native.model.gemnet.register_forward_hook(lambda m,args,out:captured.append(out.node_embeddings))
-    try:field=model.score(numbers,cell,cart,t,dtype='single')
-    finally:handle.remove()
-    if len(captured)!=1 or captured[0].ndim!=2 or len(captured[0])!=len(numbers) or not captured[0].is_cuda:
-        raise ValueError('Unexpected native node-embedding interface.')
-    nodes=captured[0].detach().cpu().double().numpy()
-    if not np.isfinite(nodes).all():raise ValueError('Nonfinite embedding.')
-    return nodes.mean(0),field
+    return hook_embedding(model,numbers,cell,cart,t)
+
+
+def checked_embedding(model,numbers,cell,cart,t):
+    feature,field=hook_embedding(model,numbers,cell,cart,t)
+    reference,repeat=wrapper_embedding(model,numbers,cell,cart,t)
+    error=relative_error(feature,reference)
+    if error>1e-5 or field['graph_hash']!=repeat['graph_hash']:
+        raise ValueError('Independent native feature-capture validation failed.')
+    diagnostics=dict(feature_relative_error=error,same_graph=True,feature_QC_passed=True,
+        score_relative_error=relative_error(field['score'],repeat['score']),
+        original_score_relative_criterion_passed=relative_error(field['score'],repeat['score'])<=1e-5)
+    return feature,field,reference,repeat,diagnostics
 
 
 def composition_cell(numbers,cell):
@@ -41,32 +46,39 @@ def main():
     model=CSP();properties=Properties(root);started=time.perf_counter()
     plan=dict(selection_sha256=sha(root/'selection.json'),policy=policy,backbone=model.metadata,
         properties=properties.metadata,commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
-        script_sha256=sha(Path(__file__)),labels_enter_backbone=False)
+        script_sha256=sha(Path(__file__)),observer_sha256=sha(Path(__file__).with_name('observer.py')),labels_enter_backbone=False,
+        observer_validation=dict(feature_relative=1e-5,same_graph=True,all_states=True,
+            original_score_relative=1e-5,original_score_status='486failed;488unobservednative repeats also fail, retained as diagnostic only.'))
+    diagnostic=Path('results/mattergen/forward-inverse-readout-feature-diagnostic-20261030')
+    plan['observer_validation']['diagnostic_complete_sha256']=sha(diagnostic/'complete.json')
     (root/'feature-plan.json').write_text(json.dumps(plan,indent=2)+'\n')
     clean_features=[];noisy_features=[];baseline=[];clean_alignn=[];noisy_alignn=[];manifests=[]
     for index,case in enumerate(selection['cases']):
         numbers=np.array(case['numbers']);cell=np.array(case['cell']);frac=np.array(case['frac']);cart=frac@cell
         seed=int.from_bytes(hashlib.sha256(f"20261056|{case['split']}|{case['id']}|noise".encode()).digest()[:8],'little')
         rng=np.random.default_rng(seed)
-        b=composition_cell(numbers,cell);cf=[];nf=[];pa=[];ca=[];noise=[];coordinates=[];standards=[];graphs=[]
+        b=composition_cell(numbers,cell);cf=[];nf=[];pa=[];ca=[];noise=[];coordinates=[];standards=[];graphs=[];controls=[]
+        clean_wrapper=[];noisy_wrapper=[];clean_scores=[];clean_repeat=[];noisy_scores=[];noisy_repeat=[]
         clean_property,_=properties.evaluate(numbers,cell,cart)
         for t in policy['times']:
-            clean,field=embedding(model,numbers,cell,cart,t)
-            if index==0 and t==policy['times'][0]:
-                repeat=model.score(numbers,cell,cart,t,dtype='single')
-                if relative_error(field['score'],repeat['score'])>1e-5:raise ValueError('Feature hook altered native score/replay.')
+            clean,field,reference,repeat,clean_control=checked_embedding(model,numbers,cell,cart,t)
+            clean_wrapper.append(reference);clean_scores.append(field['score']);clean_repeat.append(repeat['score'])
             gaussian=rng.normal(size=frac.shape);gaussian-=gaussian.mean(0)
             displacement=field['std']*gaussian
             noisy_cart=(frac+displacement)@cell
-            noisy,noisy_field=embedding(model,numbers,cell,noisy_cart,t)
+            noisy,noisy_field,reference,repeat,noisy_control=checked_embedding(model,numbers,cell,noisy_cart,t)
+            noisy_wrapper.append(reference);noisy_scores.append(noisy_field['score']);noisy_repeat.append(repeat['score'])
+            controls.append(dict(t=t,clean=clean_control,noisy=noisy_control))
             prediction,_=properties.evaluate(numbers,cell,noisy_cart)
             cf.append(np.r_[b,clean]);nf.append(np.r_[b,noisy]);ca.append(clean_property['values']);pa.append(prediction['values'])
             noise.append(displacement);coordinates.append(noisy_cart);standards.append(field['std']);graphs.append([field['graph_hash'],noisy_field['graph_hash']])
         folder=root/'parents'/case['split'];folder.mkdir(parents=True,exist_ok=True)
         path=folder/(case['id']+'.npz')
         np.savez_compressed(path,numbers=numbers,cell=cell,frac=frac,noisy_cart=coordinates,fractional_noise=noise,std=standards,
-            clean_features=cf,noisy_features=nf,composition_cell=b,clean_alignn=ca,noisy_alignn=pa)
-        manifests.append(dict(id=case['id'],split=case['split'],vectors=str(path.relative_to(root)),sha256=sha(path),graphs=graphs,noise_seed=seed))
+            clean_features=cf,noisy_features=nf,composition_cell=b,clean_alignn=ca,noisy_alignn=pa,
+            clean_wrapper_embeddings=clean_wrapper,noisy_wrapper_embeddings=noisy_wrapper,
+            clean_scores=clean_scores,clean_repeat_scores=clean_repeat,noisy_scores=noisy_scores,noisy_repeat_scores=noisy_repeat)
+        manifests.append(dict(id=case['id'],split=case['split'],vectors=str(path.relative_to(root)),sha256=sha(path),graphs=graphs,noise_seed=seed,controls=controls))
         clean_features.append(cf);noisy_features.append(nf);baseline.append(np.repeat(b[None],len(policy['times']),axis=0))
         clean_alignn.append(ca);noisy_alignn.append(pa)
         if (index+1)%32==0:

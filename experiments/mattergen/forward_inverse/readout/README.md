@@ -43,6 +43,16 @@ predictions are frozen. Paired bootstrap differences resample whole test
 structures, retaining all four correlated noise levels. Constant per-time
 residuals are not presented as calibrated posterior uncertainty.
 
+An initial score-replay gate failed before extraction. Same-input diagnostic488
+showed that unobserved native FP32 score repeats themselves exceeded1e-5 at the
+first clean parent, while independent hook/wrapper pooled features differed by
+about2e-7. That score gate remains a failed diagnostic. Readout validation now
+compares both independent feature-capture mechanisms at every clean/noisy state
+with the unchanged1e-5 relative feature threshold and identical graph hashes.
+Both feature vectors and raw score repeats are saved; no score-precision or
+score-Jacobian validation is inferred from feature success. The448 selected
+structures, labels and corruption protocol are unchanged.
+
 Outputs stay under ignored `results/mattergen/forward-inverse-readout-20261030`.
 Use READOUT_ROOT for the three Slurm wrappers. This module reuses pinned CSP and
 ALIGNN adapters in its parent; all source changes originate locally.

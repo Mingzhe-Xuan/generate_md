@@ -12,5 +12,7 @@ export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1
 .venv-mattergen/bin/python experiments/mattergen/forward_inverse/readout/evaluate.py --run "${READOUT_ROOT:?}"
 tar -czf "$READOUT_ROOT/evidence.tar.gz" -- \
     "$READOUT_ROOT/selection.json" "$READOUT_ROOT/feature-plan.json" "$READOUT_ROOT/feature-complete.json" \
-    "$READOUT_ROOT/features.npz" "$READOUT_ROOT/parents" "$READOUT_ROOT/evaluation"
+    "$READOUT_ROOT/features.npz" "$READOUT_ROOT/parents" "$READOUT_ROOT/evaluation" \
+    results/mattergen/forward-inverse-readout-feature-diagnostic-20261030/complete.json \
+    results/mattergen/forward-inverse-readout-feature-diagnostic-20261030/vectors.npz
 sha256sum "$READOUT_ROOT/evidence.tar.gz" > "$READOUT_ROOT/evidence.tar.gz.sha256"
