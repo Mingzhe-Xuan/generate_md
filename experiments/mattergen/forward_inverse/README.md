@@ -214,6 +214,11 @@ response without another relaxation or geometry update. It does not establish
 DFT property accuracy. Submit graph_counterfactual.sbatch with the immutable
 FORWARD_INVERSE_SOURCE and a fresh FORWARD_INVERSE_GRAPH.
 
+The [readout module](readout/README.md) tests the practical forward use of frozen
+generative node representations with held-out labels and controlled positional
+noise, composition/cell and ALIGNN baselines, equal unique-label budgets and
+whole-parent uncertainty. It updates neither CSP weights nor sampling methods.
+
 ```bash
 export FORWARD_INVERSE_ROOT=results/mattergen/forward-inverse-20261029-pilot
 selection=$(sbatch --parsable experiments/mattergen/forward_inverse/select.sbatch)
