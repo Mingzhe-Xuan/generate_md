@@ -1,0 +1,102 @@
+# Forward prediction and inverse crystal generation
+
+Research module for the active user goal: derive and empirically test deeper
+links between predictive energy/property models and a generative CSP backbone.
+The existing 192-state and16-trajectory probes show direction correlation, not
+that MatterGen is a physical force field. New work must go beyond that evidence.
+
+## Theoretical distinctions and falsifiable connections
+
+Let `x` denote continuous coordinates with fixed species/cell in a local chart,
+`F=-grad U`, and `s_t=grad log p_t`. Noise covariance and coordinate metric must
+be specified. Fractional row coordinates obey `r=f L`; a score covector becomes
+`s_r=s_f L^{-T}`, while a sampling displacement becomes `d_r=d_f L`.
+
+1. If and only if the modeled clean density is the physical Boltzmann density
+   under the stated measure, its clean score is `s_0=beta F`. Gaussian noise
+   gives `s_t(x)=beta E[F(X_0)|X_t=x]`, under the integration-by-parts boundary
+   conditions. This is a posterior average, not generally `beta F(x)`.
+   Curated equilibrium-minimum databases are not demonstrated thermal ensembles.
+2. In an SPD harmonic basin with Hessian H and additive covariance C, the exact
+   score curvature is `K_t=(beta^{-1} H^{-1}+C)^{-1}`. An empirical delta at a
+   minimum instead gives `K_t=C^{-1}`. Both can restore a perturbed structure;
+   high force/score cosine alone distinguishes neither. Local Jacobians,
+   Hessians, noise dependence and held-out predictions can test this connection.
+3. For Gaussian corruption, `E[X_0|x]=x+C s_t(x)` and
+   `grad E[Y_0|x]=C^{-1} Cov(X_0,Y_0|x)`. Tilting the clean distribution by a
+   likelihood w gives `s_w-s=C^{-1}(E_w[X_0|x]-E[X_0|x])`. Thus a noisy-state
+   property guide should be a posterior quantity; a clean-only predictor's raw
+   gradient on arbitrary noisy structures is not automatically this guide.
+4. For a converged relaxation map R into an isolated basin,
+   `grad(y composed with R)=J_R^T grad y(R)`. Within a basin J_R can contract
+   strongly; raw property descent can disappear after relaxation. Basin changes
+   and finite optimizer tolerances must be measured, not assumed.
+5. Even exact conservative s and F can yield a nonconservative field after
+   pointwise removal of their parallel component. Orthogonality implies zero
+   first-order energy change; finite steps can increase energy at second order.
+
+These are analytic connections/conditional hypotheses, not claims that this
+checkpoint obeys a Boltzmann law, has a known temperature, is integrable, or that
+a new guidance method improves CSP. Wrapped coordinates admit the Gaussian
+identities only in a local chart or with the appropriate periodic formulation.
+Joint lattice diffusion makes fixed-cell probes conditional slices, not tests
+of the complete joint density. Negative Hessian modes invalidate a stable-well
+Boltzmann fit and must remain visible in reports.
+
+## Prior primary literature
+
+- [Zaidi et al., pre-training via denoising](https://arxiv.org/abs/2206.00133):
+  equilibrium-structure denoising, Gaussian-mixture force interpretation and
+  improved forward property representations.
+- [Two for One](https://arxiv.org/abs/2302.00600): physical force connections for
+  MD-trained diffusion models; conservative versus vector-valued networks.
+- [Fractional Denoising](https://arxiv.org/abs/2307.10683): isotropic noise is
+  limited; molecular anisotropy and noise design matter.
+- [Generative Pseudo-Force Fields](https://arxiv.org/abs/2605.19050): geometric
+  restoration pseudo-forces need not equal the physical PES gradient.
+- [Boltzmann Generators](https://arxiv.org/abs/1812.01729): energy/distribution
+  connections require thermodynamic training/reweighting assumptions.
+- [GSS](https://arxiv.org/abs/2604.27636): joint score/MLFF search is prior art;
+  its existence does not establish the mechanisms tested here.
+
+## Interfaces and validation plan
+
+`relations.py` supplies coordinate/translation bases, exact harmonic and mixture
+posterior calculations, finite-difference Jacobians and integrability controls.
+`test_relations.py` checks identities with anisotropic, noncommuting matrices,
+finite differences and explicit counterexamples. Native-model evidence belongs
+in ignored `results/mattergen/forward-inverse-*` with source/asset hashes.
+
+The planned local-response experiment uses the pinned CSP checkpoint and
+MatterSim5M on property-blind GSS anchors. It compares full centered Cartesian
+score Jacobians and physical Hessians at two displacement scales; reports
+antisymmetry, stable/unstable modes and covariance-aware predictions, then tests
+raw versus post-relaxation property responses. Pilot gates precede expansion
+across the12 chemical systems. All model work is CUDA under Slurm. Existing
+environments/data are reused; no DFT or old paused dimer job is resumed.
+
+`prepare_anchors.py` selects hash-ordered eligible references (2..12 atoms,
+ordered, MatterSim-supported) with no property/energy ranking. `csp_model.py`
+loads strict native FP32 and an FP64 copy with the pre-existing dtype-only
+compatibility helpers, recording rebuilt periodic graph fingerprints and
+raw-to-score conversions. No stable-offset arithmetic rewrite is enabled.
+`physics_worker.py` uses unconstrained BFGS/ExpCellFilter at0.001eV/angstrom,
+800-step cap; this research map differs from the earlier symmetry-constrained
+canonical B. Its counted RPC is isolated in the existing postprocess environment.
+
+`probe.py` builds full translation-removed Jacobians/Hessians at two displacement
+scales, with fresh graphs at every input. Native FP32/FP64, FP64 replay, autograd
+adjoint versus central differences, and force versus energy checks gate the
+pilot. Neighbor changes and negative physical modes remain explicit. The probe
+center is displaced0.01angstrom atomic RMS from a relaxed anchor to avoid
+assuming a learned density maximum exactly coincides with a physical minimum.
+
+```bash
+export FORWARD_INVERSE_ROOT=results/mattergen/forward-inverse-20261029-pilot
+selection=$(sbatch --parsable experiments/mattergen/forward_inverse/select.sbatch)
+sbatch --dependency=afterok:$selection experiments/mattergen/forward_inverse/probe.sbatch
+```
+
+```bash
+python -m unittest discover -s experiments/mattergen/forward_inverse -p 'test_*.py'
+```
