@@ -110,6 +110,16 @@ a fixed-cell Gamma-point local curvature probe, not a full phonon or thermal
 stability assessment. `analysis.sbatch` creates report.json and PNG/SVG plots in
 a new directory via FORWARD_INVERSE_ROOT and FORWARD_INVERSE_ANALYSIS.
 
+`precision_response.py` reuses every original completed probe pose, centered
+basis and random test directions. It compares full native/FP64 autograd matrices
+and directional central differences at0.0005..0.032angstrom, saving both dtypes'
+raw fields, adjoints, graph hashes and repeats. This separates precision noise,
+graph changes and finite-step nonlinearity; a failed0.005 native-value equivalence
+check stays failed. It does not rerun anchor relaxation or replace native output
+with FP64 results. Submit response.sbatch with FORWARD_INVERSE_ROOT and a fresh
+FORWARD_INVERSE_RESPONSE directory. Numerical failures are not evidence against
+a physical hypothesis until an adequate measurement regime is demonstrated.
+
 ```bash
 export FORWARD_INVERSE_ROOT=results/mattergen/forward-inverse-20261029-pilot
 selection=$(sbatch --parsable experiments/mattergen/forward_inverse/select.sbatch)
