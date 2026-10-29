@@ -13,6 +13,7 @@ from property_model import Properties
 from prepare_anchors import symmetric_cell
 from pullback_math import rms_direction, response
 from relations import centered
+from resume_property import continuation
 
 
 POLICY = dict(seed=20261053, target_gap_eV=2.5, probe_RMS_A=.03, amplitudes_RMS_A=[.005,.02,.05],
@@ -32,22 +33,31 @@ def save(path, obj):
     path.write_text(json.dumps(obj, indent=2, allow_nan=False, default=default)+'\n')
 
 
-def execute(root):
+def execute(root,resume_from=None):
     from ase.geometry import find_mic
     if (root/'plan.json').exists():raise ValueError('Preserve previous attempt.')
     selection = json.loads((root/'selection.json').read_text())
+    carried,resume_metadata=continuation(resume_from,root/'selection.json',POLICY) if resume_from else ({},None)
     physics = None;started = time.perf_counter();cases = []
     try:
         properties = Properties(root);physics = Physics(root/'physics')
-        files = [Path(__file__), Path(__file__).with_name('property_model.py'), Path(__file__).with_name('pullback_math.py'),
+        files = [Path(__file__), Path(__file__).with_name('property_model.py'), Path(__file__).with_name('pullback_math.py'),Path(__file__).with_name('resume_property.py'),
                  Path(__file__).with_name('physics_client.py'), Path(__file__).with_name('physics_worker.py')]
         plan = dict(policy=POLICY, selection=selection, selection_sha256=sha(root/'selection.json'),
                     commit=subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip(),
-                    code_sha256={p.name:sha(p) for p in files}, properties=properties.metadata, physics=physics.metadata)
+                    code_sha256={p.name:sha(p) for p in files}, properties=properties.metadata, physics=physics.metadata,resume=resume_metadata)
         save(root/'plan.json', plan)
         for index, selected in enumerate(selection['selected']):
             folder=root/selected['id'];folder.mkdir();tic=time.perf_counter();before=physics.NFE
             if sha(selected['source']) != selected['source_sha256']:raise ValueError('Source reference changed.')
+            if selected['id'] in carried:
+                case=carried[selected['id']]
+                if case['status']=='completed':
+                    value,_=properties.evaluate(np.array(case['numbers']),np.array(case['cell']),np.array(case['probe']),native=True)
+                    if not np.allclose(value['values'],case['original']['values'],rtol=0,atol=1e-8):raise ValueError('Resumed property model replay changed.')
+                    case['native_control_recheck']=dict(passed=True,control=properties.predictor.native_controls[-1],values=value['values'])
+                save(folder/'result.json',case);cases.append(case);save(root/'progress.json',cases)
+                print('PROPERTY_REUSED',selected['id'],flush=True);continue
             numbers=np.array(selected['numbers']);n=len(numbers);cell=np.array(selected['cell'])
             serial=[0]
             def task(coordinates, label, tolerance, fullcell=False):
@@ -55,14 +65,31 @@ def execute(root):
                 return dict(id=selected['id']+'-'+str(serial[0]), action='relax', numbers=numbers.tolist(),
                     cell=cell.tolist(), frac=(coordinates@np.linalg.inv(cell)).tolist(), fmax=tolerance,
                     max_steps=POLICY['max_steps'], cell_relax=fullcell, output=str(folder/label))
-            anchor=physics.request([task(np.array(selected['frac'])@cell, 'anchor', POLICY['anchor_fmax'], True)])[0]
+            anchor_source=resume_from/selected['id']/'anchor/result.json' if resume_from else None
+            if anchor_source is not None and anchor_source.exists():
+                anchor_input=json.loads((anchor_source.parent/'input.json').read_text())
+                if not (anchor_input['numbers']==selected['numbers'] and np.array_equal(anchor_input['cell'],cell) and
+                        np.allclose(anchor_input['frac'],selected['frac'],rtol=0,atol=1e-12) and
+                        anchor_input['cell_relax'] and anchor_input['fmax']==POLICY['anchor_fmax'] and anchor_input['max_steps']==POLICY['max_steps']):
+                    raise ValueError('Resume anchor input changed.')
+                anchor=json.loads(anchor_source.read_text())
+            else:anchor=physics.request([task(np.array(selected['frac'])@cell, 'anchor', POLICY['anchor_fmax'], True)])[0]
             case=dict(id=selected['id'], system=selected['system'], num_atoms=n, anchor=anchor, status='pending', pairs=[])
+            if anchor_source is not None and anchor_source.exists():
+                case.update(resumed_anchor=str(anchor_source),resumed_anchor_sha256=sha(anchor_source))
             if anchor['status'] != 'converged':
                 case.update(status='anchor_'+anchor['status'], seconds=time.perf_counter()-tic, NFE=physics.NFE-before)
                 save(folder/'result.json',case);cases.append(case);save(root/'progress.json',cases);continue
             cell=symmetric_cell(np.array(anchor['cell']));anchor_cart=np.array(anchor['frac'])@cell
             rng=np.random.default_rng([POLICY['seed'],index]);probe=anchor_cart+POLICY['probe_RMS_A']*rms_direction(rng.normal(size=(n,3)),n)
-            original,original_graphs=properties.evaluate(numbers,cell,probe,gradient=True,native=True)
+            case.update(cell=cell,numbers=numbers,probe=probe)
+            try:original,original_graphs=properties.evaluate(numbers,cell,probe,gradient=True,native=True)
+            except ValueError as error:
+                if not str(error).startswith('Native graph geometry-feature check failed:'):raise
+                case.update(status='native_geometry_control_failed',error=str(error),seconds=time.perf_counter()-tic,NFE=physics.NFE-before)
+                save(folder/'result.json',case);cases.append(case);save(root/'progress.json',cases)
+                print('PROPERTY_CONTROL_FAILED',selected['id'],str(error),flush=True);continue
+            case['native_control']=properties.predictor.native_controls[-1]
             directions=dict(random=rms_direction(rng.normal(size=(n,3)),n),
                 gap_loss_descent=rms_direction(-(original['values'][0]-POLICY['target_gap_eV'])*original['gradients'][0],n),
                 eform_descent=rms_direction(-original['gradients'][1],n))
@@ -137,9 +164,9 @@ def execute(root):
 
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--run',type=Path,required=True);args=parser.parse_args()
+    parser.add_argument('--run',type=Path,required=True);parser.add_argument('--resume-from',type=Path);args=parser.parse_args()
     if not os.environ.get('SLURM_JOB_ID'):parser.error('Use Slurm.')
-    execute(args.run.resolve())
+    execute(args.run.resolve(),args.resume_from.resolve() if args.resume_from else None)
 
 
 if __name__=='__main__':main()

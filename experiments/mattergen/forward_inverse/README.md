@@ -180,6 +180,17 @@ separate. Submit confirm.sbatch after the property job with
 FORWARD_INVERSE_SOURCE and fresh FORWARD_INVERSE_CONFIRM; all inference is GPU
 under Slurm. No anchors are relaxed again and no structure is reselected.
 
+If property execution stops after terminal parents, `--resume-from` (or
+FORWARD_INVERSE_RESUME in property.sbatch) requires a new output root and the
+exact same selection bytes/scientific policy. Every terminal parent is carried,
+including unsuccessful ones; completed physics is never rerun. Pinned property
+native controls and saved predictions are rechecked, and validated existing
+anchors are reused. Only a specifically identified native graph-geometry control
+failure becomes an explicit per-parent failure; its threshold stays1e-5, other
+unexpected errors still abort. The original failed run and its ledger are
+archived with the continuation. This preserves all12 attempted parents rather
+than selecting replacements or weakening a failed control.
+
 ```bash
 export FORWARD_INVERSE_ROOT=results/mattergen/forward-inverse-20261029-pilot
 selection=$(sbatch --parsable experiments/mattergen/forward_inverse/select.sbatch)

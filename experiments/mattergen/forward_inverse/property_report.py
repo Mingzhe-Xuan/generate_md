@@ -74,6 +74,9 @@ def execute(run, output):
             direction_status=case.get('direction_status'),pairs=len(case['pairs']),
             completed_pairs=sum(r['status']=='completed' for r in case['pairs']),NFE=case['NFE']))
         if case['status']!='completed':continue
+        native=case.get('native_control_recheck',{}).get('control',case.get('native_control'))
+        if native is None or max(native['max_errors']+native['geometry_feature_max_errors'])>1e-5:
+            raise ValueError('Missing or failed native property control.')
         expected=sum(value=='active' for value in case['direction_status'].values())*len(policy['amplitudes_RMS_A'])*len(policy['tolerances_eV_A'])
         if len(case['pairs'])!=expected:raise ValueError('Missing active-direction pairs.')
         numbers=np.array(case['numbers']);cell=np.array(case['cell'])
