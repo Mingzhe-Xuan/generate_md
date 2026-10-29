@@ -33,7 +33,12 @@ def cartesian_noise_covariance(cell, fractional_std, n):
 def fd_jacobian(plus, minus, step):
     if step <= 0:
         raise ValueError('Positive displacement required.')
-    return (np.asarray(plus) - np.asarray(minus)).T / (2 * step)
+    return (np.asarray(plus, dtype=float) - np.asarray(minus, dtype=float)).T / (2 * step)
+
+
+def projected_adjoint_jacobian(basis, adjoints):
+    """Each adjoint is grad_R((Q e_j).s); stack projected vectors as ROWS."""
+    return np.stack([basis.T @ gradient for gradient in adjoints])
 
 
 def matrix_diagnostics(matrix):

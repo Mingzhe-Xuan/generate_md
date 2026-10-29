@@ -136,7 +136,10 @@ class CSP:
                 gradient = None
                 if adjoint is not None:
                     w = torch.tensor(adjoint, dtype=scalar, device='cuda').reshape(sr.shape)
-                    gradient = torch.autograd.grad((sr*w).sum(), positions)[0].detach().cpu().numpy().ravel()
+                    derivative = torch.autograd.grad((sr*w).sum(), positions)[0]
+                    if not torch.isfinite(derivative).all():
+                        raise ValueError('Nonfinite native input derivative.')
+                    gradient = derivative.detach().cpu().numpy().ravel()
             self.metadata['calls_fp64' if dtype == 'double' else 'calls_fp32'] += 1
             return dict(score=sr.detach().cpu().numpy().ravel(), fractional_score=score.pos.detach().cpu().numpy(),
                 std=float(std.detach().flatten()[0]), std_range=float((std.max()-std.min()).detach()),

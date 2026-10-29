@@ -8,13 +8,22 @@ from types import SimpleNamespace
 from unittest.mock import patch
 import numpy as np
 from relations import (centered_basis, cartesian_noise_covariance, fd_jacobian,
-                       harmonic_curvature, mixture_posterior, remove_force_parallel)
+                       harmonic_curvature, mixture_posterior, remove_force_parallel, projected_adjoint_jacobian)
 from prepare_anchors import symmetric_cell
 from probe import save
 from physics_client import Physics
 
 
 class ForwardInverseIdentities(unittest.TestCase):
+    def test_adjoint_jacobian_orientation_for_nonconservative_field(self):
+        rng = np.random.default_rng(52)
+        q = centered_basis(3)
+        matrix = rng.normal(size=(9,9))
+        adjoints = [matrix.T @ v for v in q.T]
+        actual = projected_adjoint_jacobian(q, adjoints)
+        np.testing.assert_allclose(actual, q.T @ matrix @ q, atol=1e-14)
+        self.assertGreater(np.linalg.norm(actual-actual.T), 1.)
+
     def test_worker_keeps_virtualenv_executable_symlink(self):
         original = Path.resolve
         def emulate_symlink(path, *a, **kw):

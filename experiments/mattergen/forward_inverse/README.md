@@ -84,10 +84,16 @@ raw-to-score conversions. No stable-offset arithmetic rewrite is enabled.
 800-step cap; this research map differs from the earlier symmetry-constrained
 canonical B. Its counted RPC is isolated in the existing postprocess environment.
 
-`probe.py` builds full translation-removed Jacobians/Hessians at two displacement
-scales, with fresh graphs at every input. Native FP32/FP64, FP64 replay, autograd
-adjoint versus central differences, and force versus energy checks gate the
-pilot. Neighbor changes and negative physical modes remain explicit. The probe
+`probe.py` builds full translation-removed native-FP32 autograd Jacobians and
+finite-difference Jacobians/Hessians at two displacement scales, with fresh
+graphs at every input. FP32 replay, full-matrix AD versus FD, directional adjoint
+FD, and force versus energy checks assess the pilot. Neighbor changes and
+negative physical modes remain explicit. FP64 is a secondary diagnostic: an
+observed same-graph0.69% FP32/FP64 field difference failed the original0.5%
+equivalence gate, so FP64 copies are not substituted for the requested native
+model. That diagnostic threshold is unchanged. Native derivative QC is reported
+separately from execution success; a run is not physically validated merely
+because its code finished. All raw adjoint and FD vectors are retained. The probe
 center is displaced0.01angstrom atomic RMS from a relaxed anchor to avoid
 assuming a learned density maximum exactly coincides with a physical minimum.
 

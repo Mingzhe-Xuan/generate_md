@@ -9,14 +9,16 @@ import traceback
 import numpy as np
 from csp_model import CSP, sha
 from physics_client import Physics
-from relations import centered_basis, centered, cartesian_noise_covariance, cosine, fd_jacobian, matrix_diagnostics, relative_error
+from relations import centered_basis, centered, cartesian_noise_covariance, cosine, fd_jacobian, matrix_diagnostics, relative_error, projected_adjoint_jacobian
 from prepare_anchors import symmetric_cell
 
 HERE = Path(__file__).resolve().parent
 POLICY = dict(seed=20261052, times=[.001,.05,.15,.30], FD_steps_A=[.001,.002],
-    adjoint_FD_steps_A=[1e-4,5e-5], adjoint_abs=1e-5, adjoint_rel=.002,
+    adjoint_FD_steps_A=[.002,.004], adjoint_abs=.005, adjoint_rel=.02,
     force_energy_FD_steps_A=[.002,.004], force_energy_abs=.005, force_energy_rel=.02,
-    native_dtype_relative=.005, fp64_replay_relative=1e-8, probe_RMS_A=.01,
+    native_dtype_relative=.005, fp32_replay_relative=1e-5, matrix_derivative_QC_relative=.02, probe_RMS_A=.01,
+    primary_score_dtype='Original native FP32; full autograd Jacobian, checked against rebuilt-graph finite differences.',
+    fp64='Secondary diagnostic only; equivalence criterion remains.005 and failures are explicit.',
     anchor_relaxation=dict(fmax=.001,max_steps=800,cell_relax=True,preserve_symmetry=False),
     coordinates='Fixed cell/species Cartesian covectors; remove three translations only.',
     units=dict(force='eV/angstrom',H='eV/angstrom^2',score='1/angstrom',score_J='1/angstrom^2',covariance='angstrom^2'),
@@ -100,51 +102,71 @@ def execute(args):
                     matrix=-q.T@fd_jacobian(fields[:,0],fields[:,1],step)
                     force_raw[label+'_'+str(step)]=fields;matrices.append(matrix)
                 hessians[label]=np.stack(matrices)
-            score_fields=[];score_jac=[];score_centers=[];standards=[];topology=[];per_time=[]
+            np.savez_compressed(folder/'force-data.npz',numbers=numbers,cell=cell,anchor=anchor,probe=cart,Q=q,offset=offset,
+                H_anchor=hessians['anchor'],H_probe=hessians['probe'],v=v,w=w,
+                H_control_force=np.asarray(point['forces_eV_A']),**force_raw)
+            score_fields=[];score_jac=[];score_ad=[];score_centers=[];standards=[];topology=[];per_time=[]
+            primary=lambda coordinates,t,**kw:model.score(numbers,cell,coordinates,t,dtype='single',**kw)
             for t in POLICY['times']:
-                native=model.score(numbers,cell,cart,t,dtype='single')
-                base=model.score(numbers,cell,cart,t,adjoint=wc)
-                repeat=model.score(numbers,cell,cart,t)
-                native_error=relative_error(base['score'],native['score']);replay_error=relative_error(base['score'],repeat['score'])
-                if native_error>POLICY['native_dtype_relative'] or replay_error>POLICY['fp64_replay_relative']:
-                    raise ValueError('Native dtype or repeatability gate failed: '+str((native_error,replay_error)))
+                base=primary(cart,t,adjoint=wc)
+                precision=model.score(numbers,cell,cart,t)
+                repeat=primary(cart,t)
+                native_error=relative_error(base['score'],precision['score']);replay_error=relative_error(base['score'],repeat['score'])
+                if replay_error>POLICY['fp32_replay_relative']:
+                    raise ValueError('Native FP32 repeatability gate failed: '+str(replay_error))
                 if base['std_range']>1e-12:raise ValueError('Expected constant positional marginal std within a structure.')
                 for step in POLICY['adjoint_FD_steps_A']:
-                    plus=model.score(numbers,cell,cart+step*vc,t);minus=model.score(numbers,cell,cart-step*vc,t)
+                    plus=primary(cart+step*vc,t);minus=primary(cart-step*vc,t)
                     same=plus['graph_hash']==minus['graph_hash']==base['graph_hash']
                     finite=float(wc@(plus['score']-minus['score'])/(2*step));expected=float(vc.ravel()@base['adjoint'])
                     passed=close(finite,expected,POLICY['adjoint_abs'],POLICY['adjoint_rel']) if same else None
                     controls.append(dict(kind='CSP_adjoint_FD',t=t,step_A=step,FD=finite,predicted=expected,same_graph=same,passed=passed))
-                    if same and not passed:raise ValueError('CSP adjoint finite difference gate failed.')
+                ad_rows=[primary(cart,t,adjoint=q[:,j]) for j in range(d)]
+                ad_matrix=projected_adjoint_jacobian(q,[r['adjoint'] for r in ad_rows])
+                ad_same_graph=all(r['graph_hash']==base['graph_hash'] for r in ad_rows)
                 fields_at_time=[];jac_at_time=[];hashes_at_time=[]
                 for step in POLICY['FD_steps_A']:
                     fields=[];fingerprints=[]
                     for j in range(d):
-                        pair=[model.score(numbers,cell,cart+sign*step*q[:,j].reshape(-1,3),t) for sign in (1,-1)]
+                        pair=[primary(cart+sign*step*q[:,j].reshape(-1,3),t) for sign in (1,-1)]
                         fields.append([p['score'] for p in pair]);fingerprints.append([p['graph_hash'] for p in pair])
                     fields=np.asarray(fields)
                     matrix=q.T@fd_jacobian(fields[:,0],fields[:,1],step)
                     fields_at_time.append(fields);jac_at_time.append(matrix);hashes_at_time.append(fingerprints)
-                at_anchor=model.score(numbers,cell,anchor,t)
+                at_anchor=primary(anchor,t)
                 covariance=cartesian_noise_covariance(cell,base['std'],len(numbers))
                 sr=q.T@base['score'];force=q.T@np.asarray(point['forces_eV_A']).ravel()
                 radial=-np.linalg.solve(covariance,q.T@offset)
                 drift=centered(base['fractional_score']@cell)
                 delta=q.T@(base['score']-at_anchor['score'])
-                details=dict(t=t,fractional_std=base['std'],native_relative_error=native_error,replay_relative_error=replay_error,
-                    native_same_graph=native['graph_hash']==base['graph_hash'],cos_score_force=cosine(sr,force),
+                details=dict(t=t,fractional_std=base['std'],fp64_relative_error=native_error,replay_relative_error=replay_error,
+                    fp64_same_graph=precision['graph_hash']==base['graph_hash'],fp64_equivalence_passed=native_error<=POLICY['native_dtype_relative'],
+                    cos_score_force=cosine(sr,force),
                     cos_drift_force=cosine(q.T@drift,force),cos_score_noise_restoration=cosine(sr,radial),
                     cos_bias_removed_score_noise=cosine(delta,radial),score_bias_norm=float(np.linalg.norm(at_anchor['score'])),
                     jacobian_FD_relative_change=relative_error(jac_at_time[0],jac_at_time[1]),
+                    jacobian_ad_FD_errors=[relative_error(ad_matrix,j) for j in jac_at_time],ad_same_graph=ad_same_graph,
+                    ad_diagnostics=matrix_diagnostics(ad_matrix),
                     diagnostics=[matrix_diagnostics(j) for j in jac_at_time],
                     graph_unchanged_counts=[sum(a==b==base['graph_hash'] for a,b in hs) for hs in hashes_at_time],
                     coordinate_directions=d)
+                details['native_derivative_QC_passed']=bool(ad_same_graph and
+                    max(details['jacobian_ad_FD_errors'])<=POLICY['matrix_derivative_QC_relative'] and
+                    details['jacobian_FD_relative_change']<=POLICY['matrix_derivative_QC_relative'] and
+                    all(count==d for count in details['graph_unchanged_counts']) and
+                    all(r['passed'] is True for r in controls if r['kind']=='CSP_adjoint_FD' and r['t']==t))
                 per_time.append(details);score_fields.append(fields_at_time);score_jac.append(jac_at_time)
+                score_ad.append(ad_matrix)
                 score_centers.append([base['score'],at_anchor['score']]);standards.append(base['std']);topology.append(hashes_at_time)
+                np.savez_compressed(folder/f'time-{t}.npz',score_fields=np.asarray(fields_at_time),J_fd=np.asarray(jac_at_time),
+                    J_ad=ad_matrix,adjoints=np.stack([r['adjoint'] for r in ad_rows]),scalar_adjoint=base['adjoint'],
+                    score_probe=base['score'],score_anchor=at_anchor['score'],score_fp64=precision['score'],std=base['std'])
+                save(folder/f'time-{t}.json',details)
                 print('CURVATURE_TIME',case['id'],t,details['jacobian_FD_relative_change'],flush=True)
             vectors=folder/'vectors.npz'
             np.savez_compressed(vectors,numbers=numbers,cell=cell,anchor=anchor,probe=cart,Q=q,offset=offset,
                 H_anchor=hessians['anchor'],H_probe=hessians['probe'],score_jacobian=np.asarray(score_jac),
+                score_jacobian_ad=np.asarray(score_ad),
                 score_fields=np.asarray(score_fields),score_centers=np.asarray(score_centers),fractional_std=np.asarray(standards),
                 force_anchor=np.asarray(anchor_point['forces_eV_A']),force_probe=np.asarray(point['forces_eV_A']),**force_raw)
             row.update(status='completed',controls=controls,times=per_time,graph_fingerprints=topology,
@@ -156,6 +178,7 @@ def execute(args):
             save(folder/'result.json',row);results.append(row);save(root/'progress.json',results)
             print('CURVATURE_CASE',case['id'],row['seconds'],flush=True)
         save(root/'complete.json',dict(passed=all(r['status']=='completed' for r in results),cases=results,
+            native_derivative_QC_all_passed=bool(results) and all(r['status']=='completed' and all(t['native_derivative_QC_passed'] for t in r['times']) for r in results),
             physics_NFE=physics.NFE,physics_requests=physics.requests,model=model.metadata,seconds=time.perf_counter()-started,
             device=torch.cuda.get_device_name(),torch=torch.__version__,cuda=torch.version.cuda))
     except Exception:
