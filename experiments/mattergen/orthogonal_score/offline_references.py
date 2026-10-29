@@ -6,8 +6,8 @@ import io
 import json
 import os
 from pathlib import Path
+import subprocess
 import sys
-import numpy as np
 
 HERE=Path(__file__).resolve().parent
 
@@ -53,6 +53,11 @@ def main(args):
     sys.path.insert(0,str(HERE.parents[1]/'smoacs/references'))
     import prepare as official
     root=args.run.resolve();source=root/'combined/inventory-249/inventory.json'
+    execution=dict(job_id=os.environ.get('SLURM_JOB_ID'),retry_of=os.environ.get('ORTHOGONAL_REF_RETRY_OF'),
+        commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),python=sys.executable,
+        source_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+        official_prepare_sha256=hashlib.sha256(Path(official.__file__).read_bytes()).hexdigest())
+    (root/('reference-selection-execution-'+str(execution['job_id'])+'.json')).write_text(json.dumps(execution,indent=2)+'\n')
     inventory=json.loads(source.read_text())
     eligible=[c for c in inventory['candidates'] if json.loads((root/'combined/relaxation'/Path(c['candidate_id']).stem/'result.json').read_text())['status']=='converged']
     systems=[frozenset(c['elements']) for c in eligible]

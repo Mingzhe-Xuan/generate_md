@@ -5,6 +5,7 @@ from pathlib import Path
 import tempfile
 import unittest
 import hashlib
+from unittest.mock import patch
 import numpy as np
 
 
@@ -16,6 +17,17 @@ m=load('projection');Offline=load('offline_references').OfflineRanges
 
 
 class ProjectionTests(unittest.TestCase):
+    def test_offline_module_import_without_numpy(self):
+        import builtins
+        original=builtins.__import__
+        def guarded(name,*args,**kwargs):
+            if name=='numpy' or name.startswith('numpy.'):
+                raise ImportError('Minimal reference environment has no numpy')
+            return original(name,*args,**kwargs)
+        with patch('builtins.__import__',side_effect=guarded):
+            module=load('offline_references')
+        self.assertEqual(module.OfflineRanges.block_size,1024*1024)
+
     def test_positive_negative_zero_dot_without_threshold(self):
         force=np.array([[1.,0.,0.],[-1.,0.,0.]])
         for direction in [np.array([[.2,2.,0.],[-.2,-2.,0.]]),np.array([[-.2,2.,0.],[.2,-2.,0.]]),np.array([[0.,2.,0.],[0.,-2.,0.]])]:
