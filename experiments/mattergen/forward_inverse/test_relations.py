@@ -4,14 +4,30 @@ from pathlib import Path
 import sys
 import json
 import tempfile
+from types import SimpleNamespace
+from unittest.mock import patch
 import numpy as np
 from relations import (centered_basis, cartesian_noise_covariance, fd_jacobian,
                        harmonic_curvature, mixture_posterior, remove_force_parallel)
 from prepare_anchors import symmetric_cell
 from probe import save
+from physics_client import Physics
 
 
 class ForwardInverseIdentities(unittest.TestCase):
+    def test_worker_keeps_virtualenv_executable_symlink(self):
+        original = Path.resolve
+        def emulate_symlink(path, *a, **kw):
+            return Path('/system/python') if path.name == 'python' else original(path, *a, **kw)
+        fake = SimpleNamespace(stdout=object(), poll=lambda: 0)
+        rpc = SimpleNamespace(read_response=lambda *a: {'ready': True})
+        with tempfile.TemporaryDirectory() as tmp, patch.dict(sys.modules, {'rpc': rpc}), \
+             patch('physics_client.subprocess.Popen', return_value=fake) as launch, \
+             patch.object(Path, 'resolve', emulate_symlink):
+            client = Physics(Path(tmp)/'rpc')
+            self.assertEqual(launch.call_args.args[0][0], str(Path.cwd()/'.venv-smoacs-postprocess/bin/python'))
+            client.close()
+
     def test_actual_probe_record_handles_numpy_geometry(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp)/'result.json'

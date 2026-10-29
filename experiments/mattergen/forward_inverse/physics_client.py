@@ -14,7 +14,8 @@ class Physics:
         from rpc import read_response
         self.read = read_response
         self.log = (root/'worker.err').open('w')
-        self.process = subprocess.Popen([str(Path('.venv-smoacs-postprocess/bin/python').resolve()),
+        # Resolving the venv executable symlink selects the system interpreter.
+        self.process = subprocess.Popen([str(Path.cwd()/'.venv-smoacs-postprocess/bin/python'),
             str(Path(__file__).with_name('physics_worker.py')), '--checkpoint',
             str(Path('results/smoacs/postprocess-206/models/mattersim-v1.0.0-5M.pth').resolve())],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=self.log, text=True, bufsize=1,
