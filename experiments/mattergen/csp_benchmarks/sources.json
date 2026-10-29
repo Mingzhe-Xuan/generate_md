@@ -1,0 +1,53 @@
+{
+  "gss_repository": "https://github.com/Yifang-Qin/Generative-Structure-Search",
+  "gss_commit": "e3c1b8d8cdf2458ba83f3ba0528b1edc564a1270",
+  "gss_doi": "10.5281/zenodo.22847747",
+  "gss_expected_counts": {
+    "Al": 106,
+    "C": 404,
+    "Si": 281,
+    "Ti": 43,
+    "Al2O3": 377,
+    "SiO2": 267,
+    "TiO2": 301,
+    "BN": 1118,
+    "CaTiO3": 324,
+    "LiCoO2": 398,
+    "AlPN": 736,
+    "LaCuSO": 564
+  },
+  "mp20_repository": "https://github.com/jiaor17/DiffCSP",
+  "mp20_commit": "7121d159826efa2ba9500bf299250d96da37f146",
+  "mp20_split_policy": "Original author train.csv/val.csv/test.csv, without filtering, reordering or resplitting.",
+  "checkpoint_training_overlap": "UNKNOWN for the current Alex-MP20-trained CSP checkpoint.",
+  "assets": [
+    {
+      "path": "downloads/gss_reference_structures.tar.gz",
+      "url": "https://zenodo.org/records/22847747/files/gss_reference_structures.tar.gz?download=1",
+      "size": 1832311,
+      "algorithm": "md5",
+      "checksum": "3b4bff26cf6cfc0bf11e149c521d02c2"
+    },
+    {
+      "path": "mp20/test.csv",
+      "url": "https://raw.githubusercontent.com/jiaor17/DiffCSP/7121d159826efa2ba9500bf299250d96da37f146/data/mp_20/test.csv",
+      "size": 26846148,
+      "algorithm": "git_sha1",
+      "checksum": "133f5697e1d3fd94f9bf0ab6a3b6c5054d325955"
+    },
+    {
+      "path": "mp20/train.csv",
+      "url": "https://raw.githubusercontent.com/jiaor17/DiffCSP/7121d159826efa2ba9500bf299250d96da37f146/data/mp_20/train.csv",
+      "size": 80920549,
+      "algorithm": "git_sha1",
+      "checksum": "206f82f8dd4d5ddf4d6e33ae2b2928dbba8a011a"
+    },
+    {
+      "path": "mp20/val.csv",
+      "url": "https://raw.githubusercontent.com/jiaor17/DiffCSP/7121d159826efa2ba9500bf299250d96da37f146/data/mp_20/val.csv",
+      "size": 26864684,
+      "algorithm": "git_sha1",
+      "checksum": "6070ef70053415f6436eddc30f2f4137fcac19eb"
+    }
+  ]
+}
