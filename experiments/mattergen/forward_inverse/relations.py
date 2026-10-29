@@ -70,6 +70,15 @@ def linear_property_posterior_gradient(jacobian, noise_covariance, clean_gradien
     return mean_jacobian.T @ np.asarray(clean_gradient, dtype=float)
 
 
+def gaussian_linear_likelihood_guidance(mean, posterior_covariance, mean_jacobian,
+                                        clean_gradient, target, observation_variance):
+    """Exact Gaussian posterior/linear likelihood; covariance is x-independent."""
+    if observation_variance <= 0:raise ValueError('Positive observation variance required.')
+    a = np.asarray(clean_gradient)
+    variance = observation_variance + a @ posterior_covariance @ a
+    return np.asarray(mean_jacobian).T @ a * (target-a @ mean) / variance
+
+
 def mixture_posterior(x, means, covariances, weights, noise_covariance, values=None):
     """Exact latent clean posterior for a finite Gaussian mixture plus Gaussian noise.
 

@@ -54,6 +54,19 @@ differences, and the law of total covariance. The practical opportunity is a
 noise-aware posterior property predictor with uncertainty, not an assumed
 physical interpretation for an arbitrary learned score.
 
+For a property likelihood w, exact conditional guidance is
+`grad_x log E[w(x_0)|x_t=x]`. For a Gaussian clean posterior N(m,V), a linear
+property a^T x_0, and observation variance tau^2, it becomes
+`(D m)^T a (y-a^T m)/(tau^2+a^T V a)` when V is independent of x. Replacing the
+posterior with a point prediction drops both the mean-map geometry and/or
+posterior variance. `test_likelihood_guidance.py` checks the full expression
+against an independently conditioned joint Gaussian, including an explicit
+overconfidence counterexample. These are known Bayesian guidance connections;
+see [classifier guidance](https://arxiv.org/abs/2105.05233),
+[DPS](https://arxiv.org/abs/2209.14687), and the
+[generalized h-transform](https://arxiv.org/abs/2406.01781). A nonlinear property
+or x-dependent V adds terms/approximations and requires separate validation.
+
 These are analytic connections/conditional hypotheses, not claims that this
 checkpoint obeys a Boltzmann law, has a known temperature, is integrable, or that
 a new guidance method improves CSP. Wrapped coordinates admit the Gaussian
@@ -190,6 +203,16 @@ failure becomes an explicit per-parent failure; its threshold stays1e-5, other
 unexpected errors still abort. The original failed run and its ledger are
 archived with the continuation. This preserves all12 attempted parents rather
 than selecting replacements or weakening a failed control.
+
+`confirm_report.py` verifies all48 vector hashes and independently rebuilds
+score planes/FD responses, physical planes and energy controls from the raw
+physics ledger. `graph_counterfactual.py` then holds each of the384 completed
+relaxed endpoint geometries fixed, evaluating ALIGNN with either its fresh graph
+or the corresponding reference graph. Cached values must replay within1e-8.
+This separates fixed-connectivity geometry response from graph-selection
+response without another relaxation or geometry update. It does not establish
+DFT property accuracy. Submit graph_counterfactual.sbatch with the immutable
+FORWARD_INVERSE_SOURCE and a fresh FORWARD_INVERSE_GRAPH.
 
 ```bash
 export FORWARD_INVERSE_ROOT=results/mattergen/forward-inverse-20261029-pilot
