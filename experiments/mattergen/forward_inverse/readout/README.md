@@ -35,6 +35,10 @@ Interfaces:
   regularization, paired whole-parent bootstrap; no model fitting on test labels.
 - `evaluate.py`: frozen predictions, per-time/clean MAE and RMSE, uncertainty,
   fitted coefficients and plots, CPU Slurm only.
+- `audit.py`: independent author-row/geometry/noise/feature/source audit, then
+  independent train/val reconstruction of all heads/selection and held-out
+  metrics/parent-bootstrap intervals, CPU Slurm only. Run audit.sbatch after
+  evaluation; its separate audited archive preserves the original evidence.
 
 Regularization grid1e-6..1e6 (13 values), validation MSE selects each property's
 alpha. Gap predictions are clipped at zero for every ridge model; formation
