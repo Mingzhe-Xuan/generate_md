@@ -2,11 +2,11 @@
 
 ## 当前状态
 
-Bandgap+CSP public checkpoint search COMPLETE: no verified matching downloadable MatterGen weight found in official catalog, GSS release, or12publicHFmattergenrepositories. Existing dft_band_gap is joint species/geometry generation; cached GSS CSP lacks property embeddings. No server connection, new large weight, training or inference. Earlier conditioned-trajectory evidence remains complete and unchanged.
+Bandgap-conditioned CSP training-design task COMPLETE. Proposal experiments/mattergen/csp/TRAINING_PLAN.md source-verified: existing GSS CSP, species-fixed native denoising, DFT gap condition, adapter-first freezing, CFG dropout, polymorph coverage and split-provenance gates, explicit property-loader forwarding, matched post-relaxation evaluation. No training/server job/data preprocessing launched.
 
 ## 当前计划
 
-No verified direct-download target available from this search. Report scoped availability with official config/catalog links, preserve uncertain weight-only releases as unverified. Further property-conditioned CSP fine-tuning or joint-model species clamping requires a separate experimental scope; do not silently replace requested checkpoint.
+Proposed next implementation order: labeled dataset/polymorph/pretraining overlap audit; local adapter and property-loader implementation plus invariance/gradient/config tests;200optimizer-stepSlurmGPUprofile;2000-5000step feasibility pilot with attainable within-composition targets and relaxed evaluation. Hyperparameters and compute cost are unverified proposals. Await training implementation direction; existing results preserved.
 
 ## 变更记录
 
@@ -30,3 +30,5 @@ No verified direct-download target available from this search. Report scoped ava
 - 2026-10-30T16:52:08: Conditional trajectory task COMPLETE. GPU505 sampling/evaluation and all required CPU audits complete; final CPU510 fixed manifest ownership and passed. Local final archive/raw/model hashes/figures/numeric documentation verified. No active jobs submitted by this task remain; no proxy holder was started. Deliver figures, data and stage explanation.
 
 - 2026-10-30T17:03:27: Public checkpoint availability verification COMPLETE; requested direct download has no verified matching public target. No global nonexistence claim: weight-only opaque repositories unverified. Documented exact scope/evidence; retain existing cached weights. Further CSP property fine-tuning or clamped joint-model sampling would be separate work, not silently substituted.
+
+- 2026-10-30T17:13:10: Training-design task COMPLETE. Concrete protocol and implementation/test boundaries recorded and source-checked. Next experimental unit would audit labeled polymorph coverage, then implement adapter/loader flow and200optimizer-stepSlurmGPUprofile before5000-step-scale pilot; these have not been run.

@@ -96,3 +96,8 @@ No new large weights, server connection, training or inference were needed.
 A trained property adapter on a CSP backbone is a possible subsequent project.
 Applying the joint bandgap model while clamping species would be a distinct
 sampling intervention requiring validation, not a downloaded CSP checkpoint.
+
+See [the proposed training protocol](TRAINING_PLAN.md) for an adapter-first
+bandgap-conditioned CSP design, including polymorph-data checks, species-fixed
+denoising supervision, sampling-condition forwarding and relaxed evaluation.
+It is a proposal; no training run has been launched for it.
