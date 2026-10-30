@@ -81,12 +81,40 @@ def main(root):
             raise ValueError('Unknown state invalidly counted.')
     if sum(a['score_calls'] for a in result['sampling_audit'])!=6000 or result['native_forward_calls']!=6000:
         raise ValueError('Native forward accounting mismatch.')
+    controls=json.loads((root/'force-controls.json').read_text())
+    control_points={}
+    with (root/'force-controls/ledger.jsonl').open() as f:
+        for line in f:
+            entry=json.loads(line)
+            for task,point in zip(entry['tasks'],entry['results']):
+                if task['id'] in control_points or task['id']!=point['id'] or point['status']!='completed':
+                    raise ValueError('Force control ledger invalid.')
+                control_points[task['id']]=(task,point)
+    for check in controls['checks']:
+        if 'epsilon' not in check:continue
+        i=check['trajectory'];eps=check['epsilon'];d=arrays[i];cell=d['cell'][-1];cart=d['frac'][-1]@cell
+        direction=np.arange(cart.size,dtype=float).reshape(cart.shape)**2
+        direction-=direction.mean(0);direction/=np.linalg.norm(direction)
+        base=control_points[f'base:{i}'][1]
+        expected=-float(np.sum(np.asarray(base['forces_eV_A'])*direction))
+        endpoints=[]
+        for sign in (1,-1):
+            task,point=control_points[f'{i}:{eps}:{sign}']
+            if not np.allclose(np.asarray(task['frac'])@cell,cart+sign*eps*direction,atol=1e-12,rtol=0):
+                raise ValueError('Force control displacement mismatch.')
+            endpoints.append(point['energy_eV'])
+        fd=(endpoints[0]-endpoints[1])/(2*eps)
+        if abs(fd-check['FD'])>1e-12 or abs(expected-check['expected'])>1e-12 or not check['passed'] or abs(fd-expected)>.005+.02*max(abs(fd),abs(expected)):
+            raise ValueError('Force energy-derivative audit failed.')
+    if not controls['passed'] or len(control_points)!=controls['requests']:
+        raise ValueError('Incomplete force controls.')
     analysis=analyze(result['states'])
     analysis.update(audit=dict(passed=True,array_paths=24,states=24024,ledger_points=len(observed),NFE=nfe,
         maximum_cosine_error=max_error,native_batched_forward_calls=6000),
         statuses=dict(Counter(r['status'] for r in rows.values())),
         exclusions=dict(Counter(reason for r in rows.values() for reason in r['reasons'])),
-        elapsed_seconds=result['elapsed_seconds'],input_sha256={name:sha(root/name) for name in ('complete.json','plan.json','composition_plan.json','physics/ledger.jsonl')})
+        elapsed_seconds=result['elapsed_seconds'],force_controls=controls,
+        input_sha256={name:sha(root/name) for name in ('complete.json','plan.json','composition_plan.json','physics/ledger.jsonl','force-controls.json')})
     (root/'report.json').write_text(json.dumps(analysis,indent=2,allow_nan=False)+'\n')
     fig,axes=plt.subplots(2,2,figsize=(13,9),constrained_layout=True)
     colors=['#1967a3','#d05d21'];labels=['Cartesian score / force','Coordinate denoising direction / force']

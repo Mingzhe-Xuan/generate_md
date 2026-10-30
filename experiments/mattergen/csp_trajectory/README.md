@@ -33,7 +33,8 @@ Run from repository root under Slurm:
 ```bash
 export CSP_TRAJECTORY_ROOT=results/mattergen/csp-trajectory-20261030
 sbatch --export=ALL experiments/mattergen/csp_trajectory/prepare.sbatch
-# Submit run.sbatch afterok:prepare, then report.sbatch afterok:run.
+# Submit run.sbatch afterok:prepare, controls.sbatch afterok:run,
+# then report.sbatch afterok:controls.
 ```
 
 Modules: `prepare.py` writes `selection/selection.json` and
@@ -42,3 +43,9 @@ states, force ledger, progress and `complete.json`; `metrics.py` is pure numeric
 analysis; `report.py` writes audited `report.json`, `REPORT.md`, PNG/SVG and
 `evidence.tar.gz`. Local tests: `python -m unittest discover -s
 experiments/mattergen/csp_trajectory -p 'test_*.py'`.
+
+`controls.py` checks four prespecified last predictor inputs (path IDs 0,7,15,23)
+against two-scale central energy differences (0.002/0.001 A), using the existing
+force-check tolerance 0.005 + 0.02*max(abs(FD),abs(expected)). Unknown endpoints
+are reported as such. These GPU controls run after the observational sampling
+job and cannot change its random trajectory. Their separate ledger is audited.
