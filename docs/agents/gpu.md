@@ -15,3 +15,5 @@
 - 首次 GPU 查询未执行成功：vlab 跳板机主动关闭连接，未取得硬件或 Slurm 信息。下一连接重试相同只读检查，设置连接超时与 keepalive。
 
 - 2026-10-22 12:23:59 +08:00：Guqq2（node42）检测到 1 张 NVIDIA GeForce RTX 5090；显存总量 32607 MiB、已用 184 MiB、GPU 利用率 0%。Slurm 仅列出 node42，Gres=gpu:1，分区 compute，State=IDLE，squeue 无作业。 首次连接被跳板机断开，第二次查询成功，退出码 0。
+
+- 2026-10-30T16:25:26: Pre-submission synchronization authorization: local tested source will be committed/pushed and copied as verified Git bundle, remote mandatory pull then Slurm GPU sampling/ALIGNN/MatterSim single points and dependent CPU audit/archive only. No login-node model compute or internet required.
