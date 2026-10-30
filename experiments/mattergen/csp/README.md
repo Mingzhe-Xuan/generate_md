@@ -101,3 +101,9 @@ See [the proposed training protocol](TRAINING_PLAN.md) for an adapter-first
 bandgap-conditioned CSP design, including polymorph-data checks, species-fixed
 denoising supervision, sampling-condition forwarding and relaxed evaluation.
 It is a proposal; no training run has been launched for it.
+
+[Template-local editing](TEMPLATE_EDITING.md) describes a separate warm-start
+route for near-final input structures: matched low-noise geometry corruption,
+native suffix denoising and post-relaxation candidate selection. Existing joint
+bandgap weights are a proposed low-noise editing candidate; this does not assert
+that they are a trained fixed-composition CSP checkpoint. No editing run yet.

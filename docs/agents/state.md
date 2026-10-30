@@ -2,11 +2,11 @@
 
 ## 当前状态
 
-CSP training proposal and conditional-adapter architecture clarification COMPLETE. Correct default: numeric bandgap uses fixed512dim sine/cosine encoding; trainable new modules are per-block1024->512->512MLP plus zero-initialized512x512mix,4.1984Mparamsfor4blocks. Source/AST checks passed. No model training/inference/server job launched; prior results unchanged.
+Template-local MatterGen editing design COMPLETE. Proposal csp/TEMPLATE_EDITING.md: native low-noise geometry marginals, last50/100/200round suffix, exact species invariance, unified relaxation, constrained best-of-N and matched controls. Existing joint bandgap model is a proposed low-noise editor, not a downloaded/trained CSP. Source/grid/docs checks passed; no jobs/inference/training.
 
 ## 当前计划
 
-Future implementation retains prior data/polymorph audit, species-fixed CSP loss, target forwarding and relaxed evaluation plan. Train only new control modules initially; fixed scalar encoding has no trainable parameters. Gradient tests must account for zero-init mix gating. Further experimental work awaits user direction.
+If user requests implementation: add explicit warm-start sampler bypassing prior reset, preserve1000-step discrete mapping, test native suffix and species/condition invariants, then small Slurm pilot versus direct relaxation/noise-only/CFG0/CFG2. Optimize relaxed objective within original-template distance/strain bounds and retain feasible baseline. No automatic experiment launch from this proposal.
 
 ## 变更记录
 
@@ -34,3 +34,5 @@ Future implementation retains prior data/polymorph audit, species-fixed CSP loss
 - 2026-10-30T17:13:10: Training-design task COMPLETE. Concrete protocol and implementation/test boundaries recorded and source-checked. Next experimental unit would audit labeled polymorph coverage, then implement adapter/loader flow and200optimizer-stepSlurmGPUprofile before5000-step-scale pilot; these have not been run.
 
 - 2026-10-30T17:49:38: Conditional-adapter explanation/documentation correction COMPLETE. Source/AST/dimension/parameter checks passed. Existing training proposal remains unlaunched; no new compute or experimental result changes.
+
+- 2026-10-30T19:14:57: Template-local MatterGen editing design COMPLETE, source/grid/document checks passed. Protocol is proposed only, no new model or measured improvement. Existing bandgap checkpoint can be investigated for low-noise editing before training a dedicated CSP; species/locality and relaxed property gains remain validation requirements.
