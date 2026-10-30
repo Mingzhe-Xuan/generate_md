@@ -10,6 +10,25 @@ spec=importlib.util.spec_from_file_location('early_effect_geometry',path)
 effect=importlib.util.module_from_spec(spec);spec.loader.exec_module(effect)
 
 
+def support(numbers,cell,frac):
+    from pymatgen.core import Structure
+    cell=np.asarray(cell);frac=np.asarray(frac)
+    if not np.isfinite(cell).all() or not np.isfinite(frac).all() or np.linalg.det(cell)<=1e-6:
+        return dict(reasons=['invalid_cell_or_coordinates'])
+    volume=float(np.linalg.det(cell)/len(numbers))
+    result=dict(volume_per_atom_A3=volume,reasons=[])
+    if volume<2.:
+        result['reasons'].append('density_guard_volume_per_atom_below_2A3');return result
+    structure=Structure(cell,numbers,frac).get_reduced_structure()
+    minimum=float(np.linalg.svd(structure.lattice.matrix,compute_uv=False).min())
+    result['reduced_cell_min_singular_A']=minimum
+    if minimum<.3:result['reasons'].append('nearly_singular_reduced_cell')
+    matrix=structure.distance_matrix;np.fill_diagonal(matrix,np.inf)
+    result['minimum_pair_A']=float(matrix.min())
+    if result['minimum_pair_A']<.5:result['reasons'].append('collision_below_0.5A')
+    return result
+
+
 def compare(first,second):
     if Counter(first.atomic_numbers)!=Counter(second.atomic_numbers):raise ValueError('Compositions differ.')
     strict=StructureMatcher(ltol=.02,stol=.05,angle_tol=1,primitive_cell=False,scale=False,attempt_supercell=False)

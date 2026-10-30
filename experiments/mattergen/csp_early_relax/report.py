@@ -6,9 +6,10 @@ import json
 import os
 from pathlib import Path
 import tarfile
+import shutil
 import numpy as np
 from comparison import classify,eligible,stats,native_force_norm
-from geometry import compare
+from geometry import compare,support,effect
 
 ARMS=('mean800','sample800','mean1000')
 
@@ -30,6 +31,11 @@ def main(root):
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     data=json.loads((root/'complete.json').read_text());plan=json.loads((root/'plan.json').read_text())
+    if (root/'report.json').exists() and 'endpoint_support' not in json.loads((root/'report.json').read_text()):
+        backup=root.with_name(root.name+'-force-only-report-'+sha(root/'report.json')[:12])
+        backup.mkdir(exist_ok=True)
+        for name in ('report.json','REPORT.md','comparison.png','comparison.svg','evidence.tar.gz','evidence.tar.gz.sha256'):
+            if (root/name).exists() and not (backup/name).exists():shutil.copyfile(root/name,backup/name)
     target_fmax=plan['policy']['fmax'];acceptance_fmax=plan['policy'].get('force_acceptance_fmax',.01)
     inputs={(r['trajectory'],r['arm']):r for r in data['inputs']}
     rows={(r['trajectory'],r['arm']):r for r in data['relaxations']}
@@ -55,7 +61,7 @@ def main(root):
                 if task['id'] in ledger or task['id']!=result['id']:raise ValueError('Duplicate/misaligned ledger.')
                 ledger[task['id']]=(task,result);nfe+=result['NFE']
     if nfe!=data['NFE'] or len(ledger)!=data['requests']:raise ValueError('NFE accounting mismatch.')
-    structures={};initials={};filter_error=0.;output_sha={}
+    structures={};initials={};endpoint_support={};filter_error=0.;output_sha={}
     for key,item in inputs.items():
         path=root/item['path']
         if sha(path)!=item['sha256']:raise ValueError('Input hash changed.')
@@ -95,18 +101,22 @@ def main(root):
         delta=vasp.get_scaled_positions(wrap=False)-np.array(point['frac']);delta-=np.rint(delta)
         if np.max(np.abs(delta))>1e-12:raise ValueError('Output VASP coordinates changed.')
         structures[key]=Structure(point['cell'],point['numbers'],point['frac'])
+        endpoint_support[key]=support(point['numbers'],point['cell'],point['frac'])
         output_sha[str(folder.relative_to(root))+'/relaxed.vasp']=sha(folder/'relaxed.vasp')
     if data['native_forwards']!=6000 or any(a['score_calls']!=2000 or a['replacements']!=2000 or not a['rng_unchanged'] or not a['next_corrector_is_sample800'] for a in data['sampling_audit']):
         raise ValueError('Sampler audit failed.')
     branches={};pairs={}
     for arm in ARMS:
-        branch=[rows[i,arm] for i in range(24)];valid=[r for r in branch if r['force_eligible']]
-        branches[arm]=dict(total=24,statuses=dict(Counter(r['result']['status'] for r in branch)),force_converged=len(valid),
+        branch=[rows[i,arm] for i in range(24)]
+        valid=[r for r in branch if r['force_eligible'] and not endpoint_support[r['trajectory'],arm]['reasons']]
+        branches[arm]=dict(total=24,statuses=dict(Counter(r['result']['status'] for r in branch)),force_converged=sum(r['force_eligible'] for r in branch),
+            raw_force_converged=sum(r['force_eligible'] for r in branch),valid_endpoint=len(valid),
+            geometry_invalid=sum(bool(endpoint_support.get((i,arm),{}).get('reasons')) for i in range(24)),
             steps=stats([r['result']['steps'] for r in valid]),seconds=stats([r['result']['seconds'] for r in valid]),
             NFE=sum(r['result']['NFE'] for r in branch),
             attempted_seconds=sum(r['result']['seconds'] for r in branch),
             initial_max_force=stats([r['result']['initial_max_raw_force'] for r in valid]),
-            relaxation_internal_RMS_A=stats([compare(initials[r['trajectory'],arm],structures[r['trajectory'],arm])['ordered']['internal_RMS_A'] for r in valid]))
+            relaxation_internal_RMS_A=stats([effect.measure(initials[r['trajectory'],arm],structures[r['trajectory'],arm])['internal_RMS_A'] for r in valid]))
         generation_seconds=sum(a['seconds1000' if arm=='mean1000' else 'seconds800'] for a in data['sampling_audit'])
         branches[arm].update(native_generation_seconds=generation_seconds,
             estimated_generation_plus_relaxation_seconds=generation_seconds+branches[arm]['attempted_seconds'])
@@ -121,6 +131,9 @@ def main(root):
             early,full=rows[i,arm],rows[i,'mean1000'];case=dict(trajectory=i,system=early['system'],early_status=early['result']['status'],full_status=full['result']['status'])
             if not early['force_eligible'] or not full['force_eligible']:
                 case.update(status='not_both_converged');cases.append(case);continue
+            if endpoint_support[i,arm]['reasons'] or endpoint_support[i,'mean1000']['reasons']:
+                case.update(status='endpoint_geometry_invalid',early_geometry=endpoint_support[i,arm],full_geometry=endpoint_support[i,'mean1000'])
+                cases.append(case);continue
             n=len(structures[i,arm]);delta=(early['result']['energy_eV']-full['result']['energy_eV'])/n
             geom=compare(structures[i,'mean1000'],structures[i,arm])
             case.update(status='compared',**classify(delta,geom['strict_match'],geom['conventional_match']),geometry=geom,
@@ -139,6 +152,7 @@ def main(root):
             aligned_internal_RMS_A=stats([c['geometry']['aligned_internal_RMS_A'] for c in valid if c['geometry']['aligned_internal_RMS_A'] is not None]))
     report=dict(audit=dict(passed=True,inputs=72,requests=len(ledger),NFE=nfe,max_filter_force_reconstruction_error=filter_error),
         branches=branches,pairs=pairs,sampling_audit=data['sampling_audit'],policy=plan['policy'],
+        endpoint_support={f'{i}:{arm}':value for (i,arm),value in endpoint_support.items()},
         input_sha256={n:sha(root/n) for n in ('plan.json','complete.json','physics/ledger.jsonl')},output_sha256=output_sha,
         code_sha256={p.name:sha(p) for p in Path(__file__).parent.glob('*.py')},elapsed_seconds=data['elapsed_seconds'])
     (root/'report.json').write_text(json.dumps(report,indent=2,allow_nan=False)+'\n')
@@ -167,10 +181,13 @@ def main(root):
         f'MatterSim5M, unconstrained coordinates+cell, BFGS/ExpCellFilter, current-stage fmax{target_fmax}, maxstep0.05, cap1600. '
         f'Physical eligibility requires both atomic and filter forces <={acceptance_fmax}. Strict match: ltol.02, stol.05, angle1deg, no rescaling/primitive reduction. '
         'Endpoint consistency additionally requires energy difference <=1meV/atom. This is a numerical criterion, not proof of basin identity.','',
-        '| Branch | Force-converged /24 | Mean current-stage BFGS steps | Median current-stage BFGS steps | Mean current-stage relaxation seconds | Current-stage NFE |',
-        '|---|---:|---:|---:|---:|---:|']
+        'The same geometry domain used for trajectory inputs is checked on relaxed endpoints: volume/atom >=2 A^3, '
+        'pair distance >=0.5 A, reduced-cell minimum singular value >=0.3 A. Cell reduction avoids mistaking an equivalent skew basis for a singular physical lattice. '
+        'Force convergence and geometry support are separate; invalid endpoints remain in all24-parent denominators and in total cost, but not in normal energy/structure comparisons.','',
+        '| Branch | Raw/filter force-converged /24 | Force + geometry-valid /24 | Mean current-stage BFGS steps (valid) | Median steps (valid) | Mean seconds (valid) | Current-stage NFE (all) |',
+        '|---|---:|---:|---:|---:|---:|---:|']
     for arm in ARMS:
-        b=branches[arm];lines.append(f'| {arm} | {b["force_converged"]}/24 | {b["steps"].get("mean")} | {b["steps"].get("median")} | {b["seconds"].get("mean")} | {b["NFE"]} |')
+        b=branches[arm];lines.append(f'| {arm} | {b["raw_force_converged"]}/24 | {b["valid_endpoint"]}/24 | {b["steps"].get("mean")} | {b["steps"].get("median")} | {b["seconds"].get("mean")} | {b["NFE"]} |')
     if any('cumulative_steps' in b for b in branches.values()):
         lines+=['','All72 coarse endpoints received the same tighter continuation, including those already passing the physical force criterion. '
             'The coarse run is preserved separately. The following costs include both relaxation stages; generation cost uses the original three replay batches.','',
@@ -178,7 +195,7 @@ def main(root):
             '|---|---:|---:|---:|---:|---:|']
         for arm in ARMS:
             b=branches[arm];lines.append(f'| {arm} | {b["cumulative_steps"].get("mean")} | {b["cumulative_steps"].get("median")} | {b["cumulative_relaxation_seconds"]} | {b["estimated_generation_plus_relaxation_seconds"]} | {b["cumulative_NFE"]} |')
-    lines+=['','| Early branch vs mean1000 | Both converged | Strict matches | Conventional matches | Strict + <=1meV/atom | Mean signed delta (meV/atom) | Median absolute delta (meV/atom) |',
+    lines+=['','| Early branch vs mean1000 | Both force + geometry-valid | Strict matches | Conventional matches | Strict + <=1meV/atom | Mean signed delta (meV/atom) | Median absolute delta (meV/atom) |',
         '|---|---:|---:|---:|---:|---:|---:|']
     for arm in ('mean800','sample800'):
         p=pairs[arm];lines.append(f'| {arm} | {p["both_converged"]}/24 | {p["strict_match"]} | {p["conventional_match"]} | {p["consistent_endpoint"]} | {1000*p["delta_energy_eV_atom"].get("mean",float("nan"))} | {1000*p["absolute_delta_energy_eV_atom"].get("median",float("nan"))} |')

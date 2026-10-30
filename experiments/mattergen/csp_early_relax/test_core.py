@@ -66,6 +66,16 @@ class CoreTests(unittest.TestCase):
         b=Structure(Lattice.cubic(6.3),['Na','Cl'],a.frac_coords)
         self.assertFalse(compare(a,b)['strict_match'])
 
+    def test_endpoint_support_and_integer_basis_invariance(self):
+        import numpy as np
+        from geometry import support
+        numbers=[11,17];cell=np.eye(3)*3.;frac=np.array([[0,0,0],[.5,.5,.5]])
+        self.assertEqual(support(numbers,cell,frac)['reasons'],[])
+        transform=np.array([[1,0,0],[100,1,0],[0,0,1]])
+        self.assertEqual(support(numbers,transform@cell,frac@np.linalg.inv(transform))['reasons'],[])
+        self.assertIn('density_guard_volume_per_atom_below_2A3',support(numbers,np.eye(3),frac)['reasons'])
+        self.assertIn('collision_below_0.5A',support(numbers,cell,[[0,0,0],[.01,0,0]])['reasons'])
+
     def test_filter_force_reconstruction_at_changed_cell(self):
         import numpy as np
         from ase import Atoms

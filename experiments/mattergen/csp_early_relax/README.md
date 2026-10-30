@@ -51,3 +51,11 @@ criterion unchanged. The report verifies exact coarse-to-fine pose lineage and
 shows cumulative steps/time/NFE. It preserves the complete coarse run and never
 selects only advantageous outcomes for tighter refinement. Submit `refine.sbatch`
 with `CSP_EARLY_COARSE` and a fresh `CSP_EARLY_ROOT`, then the same CPU report.
+
+Final endpoint geometry support is checked independently of force convergence,
+with the original domain thresholds (volume/atom2 A^3, pair distance0.5 A,
+cell minimum singular value0.3 A). Relaxed cells are reduced before the condition
+check because integer basis shear does not change the physical lattice. Collapsed
+endpoints remain failed geometries in all24-parent denominators and total cost;
+they do not enter ordinary energy/structure comparisons. The initial force-only
+report/archive is copied to a sibling backup before this geometry-aware audit.
