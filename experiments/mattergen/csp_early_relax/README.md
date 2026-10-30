@@ -42,3 +42,12 @@ Outputs include `inputs/*.npz`, immutable source hashes, sampling and relaxation
 progress, full physics ledger/optimizer trajectories, report JSON/Markdown,
 PNG/SVG and an evidence archive. Local numeric/observer tests:
 `python -m unittest discover -s experiments/mattergen/csp_early_relax -p 'test_*.py'`.
+
+The coarse optimizer converged on72/72 inputs, but raw Cartesian force checks
+passed only21/24 mean800,20/24 sample800 and23/24 mean1000 endpoints. To remove
+this residual-force confound, `refine.py` uniformly continues ALL72 endpoints
+with fmax0.001 in a fresh root, keeping the original0.01 physical acceptance
+criterion unchanged. The report verifies exact coarse-to-fine pose lineage and
+shows cumulative steps/time/NFE. It preserves the complete coarse run and never
+selects only advantageous outcomes for tighter refinement. Submit `refine.sbatch`
+with `CSP_EARLY_COARSE` and a fresh `CSP_EARLY_ROOT`, then the same CPU report.

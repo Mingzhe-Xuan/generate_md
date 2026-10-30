@@ -30,11 +30,23 @@ def main(root):
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     data=json.loads((root/'complete.json').read_text());plan=json.loads((root/'plan.json').read_text())
+    target_fmax=plan['policy']['fmax'];acceptance_fmax=plan['policy'].get('force_acceptance_fmax',.01)
     inputs={(r['trajectory'],r['arm']):r for r in data['inputs']}
     rows={(r['trajectory'],r['arm']):r for r in data['relaxations']}
     expected={(i,a) for i in range(24) for a in ARMS}
     if set(inputs)!=expected or set(rows)!=expected or len(data['inputs'])!=72 or len(data['relaxations'])!=72:
         raise ValueError('Incomplete/duplicated input or relaxation cohort.')
+    if (root/'coarse-complete.json').exists():
+        if sha(root/'coarse-complete.json')!=plan['source_sha256']['complete.json']:
+            raise ValueError('Coarse source hash changed.')
+        coarse=json.loads((root/'coarse-complete.json').read_text())
+        coarse_rows={(r['trajectory'],r['arm']):r for r in coarse['relaxations']}
+        if set(coarse_rows)!=expected:raise ValueError('Refinement omitted a coarse endpoint.')
+        for key,row in rows.items():
+            if row['coarse_result']!=coarse_rows[key]['result']:raise ValueError('Coarse record changed.')
+            with np.load(root/inputs[key]['path']) as d:
+                for field in ('numbers','cell','frac'):
+                    if not np.array_equal(d[field],row['coarse_result'][field]):raise ValueError('Refinement start differs from coarse endpoint.')
     ledger={};nfe=0
     with (root/'physics/ledger.jsonl').open() as f:
         for line in f:
@@ -51,12 +63,12 @@ def main(root):
             numbers=d['numbers'];cell=d['cell'];frac=d['frac']
         initial=Structure(cell,numbers,frac);initials[key]=initial
         row=rows[key];point=row['result']
-        if row['force_eligible']!=eligible(point):raise ValueError('Eligibility mismatch.')
+        if row['force_eligible']!=eligible(point,acceptance_fmax):raise ValueError('Eligibility mismatch.')
         if point['status']=='unknown':
             if point['id'] in ledger or not point['reasons']:raise ValueError('Unknown was evaluated/has no reason.')
             continue
         task,stored=ledger[point['id']]
-        if stored!=point or task['action']!='relax' or task['fmax']!=.01 or task['max_steps']!=1600 or task['cell_relax'] is not True:
+        if stored!=point or task['action']!='relax' or task['fmax']!=target_fmax or task['max_steps']!=1600 or task['cell_relax'] is not True:
             raise ValueError('Physics settings/result changed.')
         for name,value in (('numbers',numbers),('cell',cell),('frac',frac)):
             if not np.array_equal(task[name],value):raise ValueError('Relaxation used wrong input.')
@@ -98,6 +110,11 @@ def main(root):
         generation_seconds=sum(a['seconds1000' if arm=='mean1000' else 'seconds800'] for a in data['sampling_audit'])
         branches[arm].update(native_generation_seconds=generation_seconds,
             estimated_generation_plus_relaxation_seconds=generation_seconds+branches[arm]['attempted_seconds'])
+        if any('coarse_result' in r for r in branch):
+            branches[arm].update(cumulative_steps=stats([r['result']['steps']+r['coarse_result']['steps'] for r in valid]),
+                cumulative_relaxation_seconds=sum(r['result']['seconds']+r['coarse_result']['seconds'] for r in branch),
+                cumulative_NFE=sum(r['result']['NFE']+r['coarse_result']['NFE'] for r in branch))
+            branches[arm]['estimated_generation_plus_relaxation_seconds']=generation_seconds+branches[arm]['cumulative_relaxation_seconds']
     for arm in ('mean800','sample800'):
         cases=[]
         for i in range(24):
@@ -147,13 +164,20 @@ def main(root):
         'All24GSSparents retained. Main comparison: noise-free-last-predictor mean800 versus native mean1000; '
         'sample800 is the actual stochastic continuation state. The original1000-step time grid is unchanged. '
         'All endpoints come from the same replay. Native CUDA replay differences versus the old run are recorded separately.','',
-        'MatterSim5M, unconstrained coordinates+cell, BFGS/ExpCellFilter, fmax0.01, maxstep0.05, cap1600. '
-        'Physical eligibility requires both atomic and filter forces <=0.01. Strict match: ltol.02, stol.05, angle1deg, no rescaling/primitive reduction. '
+        f'MatterSim5M, unconstrained coordinates+cell, BFGS/ExpCellFilter, current-stage fmax{target_fmax}, maxstep0.05, cap1600. '
+        f'Physical eligibility requires both atomic and filter forces <={acceptance_fmax}. Strict match: ltol.02, stol.05, angle1deg, no rescaling/primitive reduction. '
         'Endpoint consistency additionally requires energy difference <=1meV/atom. This is a numerical criterion, not proof of basin identity.','',
-        '| Branch | Force-converged /24 | Mean BFGS steps | Median BFGS steps | Mean relaxation seconds | Total NFE |',
+        '| Branch | Force-converged /24 | Mean current-stage BFGS steps | Median current-stage BFGS steps | Mean current-stage relaxation seconds | Current-stage NFE |',
         '|---|---:|---:|---:|---:|---:|']
     for arm in ARMS:
         b=branches[arm];lines.append(f'| {arm} | {b["force_converged"]}/24 | {b["steps"].get("mean")} | {b["steps"].get("median")} | {b["seconds"].get("mean")} | {b["NFE"]} |')
+    if any('cumulative_steps' in b for b in branches.values()):
+        lines+=['','All72 coarse endpoints received the same tighter continuation, including those already passing the physical force criterion. '
+            'The coarse run is preserved separately. The following costs include both relaxation stages; generation cost uses the original three replay batches.','',
+            '| Branch | Mean cumulative BFGS steps | Median cumulative BFGS steps | Total cumulative relaxation seconds | Estimated generation + relaxation seconds | Cumulative NFE |',
+            '|---|---:|---:|---:|---:|---:|']
+        for arm in ARMS:
+            b=branches[arm];lines.append(f'| {arm} | {b["cumulative_steps"].get("mean")} | {b["cumulative_steps"].get("median")} | {b["cumulative_relaxation_seconds"]} | {b["estimated_generation_plus_relaxation_seconds"]} | {b["cumulative_NFE"]} |')
     lines+=['','| Early branch vs mean1000 | Both converged | Strict matches | Conventional matches | Strict + <=1meV/atom | Mean signed delta (meV/atom) | Median absolute delta (meV/atom) |',
         '|---|---:|---:|---:|---:|---:|---:|']
     for arm in ('mean800','sample800'):

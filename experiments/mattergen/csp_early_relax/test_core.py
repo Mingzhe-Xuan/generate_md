@@ -40,6 +40,13 @@ class CoreTests(unittest.TestCase):
         self.assertNotEqual(float(np.linalg.norm(np.array(forces.tolist()),axis=1).max()),native)
         with self.assertRaises(ValueError):native_force_norm([[.1,.2,.3]])
 
+    def test_refinement_keeps_coarse_endpoints_above_raw_threshold(self):
+        from refine import continuation_pose
+        pose=dict(numbers=[13,13],cell=[[5,0,0],[0,5,0],[0,0,5]],frac=[[0,0,0],[.5,.5,.5]])
+        row=dict(force_eligible=False,result=dict(pose,status='converged',max_raw_force=.02))
+        self.assertEqual(continuation_pose(row),pose)
+        with self.assertRaises(ValueError):continuation_pose(dict(result=dict(pose,status='failed')))
+
     def test_energy_and_geometry_are_separate(self):
         self.assertFalse(classify(0.,False,True)['consistent_endpoint'])
         self.assertFalse(classify(.002,True,True)['consistent_endpoint'])
