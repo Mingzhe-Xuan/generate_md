@@ -51,3 +51,20 @@ against two-scale central energy differences (0.002/0.001 A), using the existing
 force-check tolerance 0.005 + 0.02*max(abs(FD),abs(expected)). Unknown endpoints
 are reported as such. These GPU controls run after the observational sampling
 job and cannot change its random trajectory. Their separate ledger is audited.
+
+`energy_trajectory.py` audits the existing raw single-point energies and plots
+one15-panel figure: pooled energy change from each path's last observed input,
+a fixed-cohort late-window view, energy coverage, and absolute energy/atom for
+all12systems with two paths each. It retains missing-state gaps and uses25-step
+medians only when at least20states are present. It writes CSV, JSON, Markdown
+and PNG/SVG/PDF with raw input and source hashes. No new inference is needed.
+The plotted original dense run is distinct from the later800/1000 replay.
+
+```bash
+python experiments/mattergen/csp_trajectory/energy_trajectory.py \
+  --source results/mattergen/evidence/csp-trajectory-20261030 \
+  --output results/mattergen/evidence/csp-energy-trajectory-20261030
+```
+
+Cached local analysis is lightweight. If running this batch analysis remotely,
+submit it through Slurm using an existing postprocess environment.
