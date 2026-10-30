@@ -60,9 +60,12 @@ def main(root):
             raise ValueError('Physics settings/result changed.')
         for name,value in (('numbers',numbers),('cell',cell),('frac',frac)):
             if not np.array_equal(task[name],value):raise ValueError('Relaxation used wrong input.')
-        folder=Path(task['output']);saved=json.loads((folder/'result.json').read_text())
-        if saved!=point:raise ValueError('Saved relaxation record differs.')
-        output_sha[str(folder.relative_to(root))+'/result.json']=sha(folder/'result.json')
+        folder=Path(task['output']);record_path=folder/'result.json'
+        if record_path.exists():
+            if json.loads(record_path.read_text())!=point:raise ValueError('Saved relaxation record differs.')
+            output_sha[str(record_path.relative_to(root))]=sha(record_path)
+        elif point['status']!='failed':
+            raise ValueError('Nonfailed endpoint is missing its saved record.')
         if point['status'] not in ('converged','unconverged'):continue
         if point['numbers']!=numbers.tolist() or point['preserve_symmetry'] is not False or point['cell_relax'] is not True:
             raise ValueError('Ordered species/profile changed.')
