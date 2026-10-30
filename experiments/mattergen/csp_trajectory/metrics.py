@@ -35,6 +35,7 @@ def analyze(rows):
     rows=[r for r in rows if r['stage']=='predictor']
     ids=sorted({r['trajectory'] for r in rows})
     by={i:sorted((r for r in rows if r['trajectory']==i),key=lambda r:r['step']) for i in ids}
+    indexed={i:{r['step']:r for r in by[i]} for i in ids}
     paths=[]
     for i in ids:
         item=dict(trajectory=i,system=by[i][0]['system'],batch=by[i][0]['batch'])
@@ -65,9 +66,22 @@ def analyze(rows):
         item=dict(start=start,end=999)
         for key in KEYS:
             eligible=[i for i in ids if len([r for r in by[i] if start<=r['step']<=999 and r.get(key) is not None])==1000-start]
-            curve=[float(np.mean([by[i][s][key] for i in eligible])) for s in range(start,1000)] if eligible else []
+            curve=[float(np.mean([indexed[i][s][key] for i in eligible])) for s in range(start,1000)] if eligible else []
             item[key]=dict(trajectories=eligible,n=len(eligible),mean_curve=curve,
                 first=curve[0] if curve else None,last=curve[-1] if curve else None,
                 sequence=sequence(range(start,1000),curve))
         cohorts.append(item)
-    return dict(paths=paths,summary=summary,per_step=means,fixed_cohorts=cohorts)
+    windows=[]
+    for start,end in ((0,249),(250,499),(500,749),(750,899),(900,999)):
+        item=dict(start=start,end=end)
+        for key in KEYS:
+            selected=[r for r in rows if start<=r['step']<=end]
+            values=[r[key] for r in selected if r.get(key) is not None]
+            stats=[sequence([r['step'] for r in by[i] if start<=r['step']<=end],
+                [r.get(key) for r in by[i] if start<=r['step']<=end]) for i in ids]
+            item[key]=dict(values=distribution(values),possible_points=len(selected),
+                adjacent_pairs=sum(r['adjacent_pairs'] for r in stats),
+                drops={str(t):sum(r['drops'][str(t)] for r in stats) for t in (0.,.01,.05)},
+                paths_with_drop005=sum(r['drops']['0.05']>0 for r in stats))
+        windows.append(item)
+    return dict(paths=paths,summary=summary,per_step=means,fixed_cohorts=cohorts,windows=windows)

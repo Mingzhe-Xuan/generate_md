@@ -31,5 +31,12 @@ class MetricsTest(unittest.TestCase):
         self.assertEqual(r['paths'][1]['cos_score_force']['blocks25']['adjacent_pairs'],37)
         self.assertEqual(r['summary']['cos_drift_force']['drops']['0.0'],0)
 
+    def test_sparse_rows_keep_true_step_indices(self):
+        rows=[dict(trajectory=0,system='Si',batch=0,stage='predictor',step=s,
+            cos_score_force=s/1000,cos_drift_force=s/1000) for s in range(800,1000)]
+        r=analyze(rows)
+        self.assertEqual(r['fixed_cohorts'][0]['cos_score_force']['first'],.8)
+        self.assertEqual(r['windows'][-1]['cos_score_force']['adjacent_pairs'],99)
+
 
 if __name__=='__main__':unittest.main()

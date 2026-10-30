@@ -114,6 +114,7 @@ def main(root):
         statuses=dict(Counter(r['status'] for r in rows.values())),
         exclusions=dict(Counter(reason for r in rows.values() for reason in r['reasons'])),
         elapsed_seconds=result['elapsed_seconds'],force_controls=controls,
+        analysis_code_sha256={name:sha(Path(__file__).with_name(name)) for name in ('report.py','metrics.py','controls.py')},
         input_sha256={name:sha(root/name) for name in ('complete.json','plan.json','composition_plan.json','physics/ledger.jsonl','force-controls.json')})
     (root/'report.json').write_text(json.dumps(analysis,indent=2,allow_nan=False)+'\n')
     fig,axes=plt.subplots(2,2,figsize=(13,9),constrained_layout=True)
@@ -175,6 +176,12 @@ def main(root):
         for key,label in zip(KEYS,labels):
             c=cohort[key]
             lines.append(f'| {cohort["start"]}–999 | {label} | {c["n"]} | {c["first"]} | {c["last"]} | {c["sequence"]["drops"]["0.01"]} |')
+    lines+=['','| Predictor window | Direction | Defined points / possible | Mean cosine | Downward adjacent pairs | Drops >0.05 |',
+        '|---|---|---:|---:|---:|---:|']
+    for window in analysis['windows']:
+        for key,label in zip(KEYS,labels):
+            w=window[key]
+            lines.append(f'| {window["start"]}–{window["end"]} | {label} | {w["values"]["n"]}/{w["possible_points"]} | {w["values"]["mean"]} | {w["drops"]["0.0"]}/{w["adjacent_pairs"]} | {w["drops"]["0.05"]} |')
     lines+=['','The Cartesian score is a transformed covector, `s_frac @ inv(cell).T`; the coordinate deterministic '
         'denoising direction is `s_frac @ cell`. Both are centered, as is the physical force. Only coordinate alignment is measured; '
         'the lattice/stress direction is not included. Native stochastic corrector and predictor noise remain active.','',
