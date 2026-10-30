@@ -37,3 +37,36 @@ Evidence: `results/mattergen/csp-trajectory-20261030` on Guqq2; verified local c
 `results/mattergen/evidence/csp-trajectory-20261030` includes REPORT.md,
 report.json, dense NPZ states, single-point ledgers and PNG/SVG figures.
 Archive SHA256: `c6b5bd56db6ca83c0437f5469da7072b6a474ed1ff34514dc51f3fc8f5b72167`.
+
+## Energy trajectory follow-up
+
+The same original dense trajectories contain21,963 predictor-input energies,
+2,037 unknown predictor states and22 separate prior energies, for21,985 original
+MatterSim single points. No new inference or relaxation was needed. The energy
+plotter source is committed as0b0f4ed, independently matched to its runtime hash.
+Output: `results/mattergen/evidence/csp-energy-trajectory-20261030`.
+
+All24paths have a lower median E/atom at900–999 than at0–99. All24correlations
+between step and25-step block-median energy are negative (Spearman range
+-0.9697 to-0.5279). However,12/24have higher median energy at200–299 than at0–99:
+the early shape is not shared by every path. Of20,352 genuinely adjacent valid
+pairs,10,001increase (49.14%); in the last100steps,1098/2376increase (46.21%).
+Thus the common pattern is an overall late energy decrease with substantial
+stochastic fluctuations, rather than monotone energy minimization at each step.
+
+One15-panel figure shows the available-path relative median/IQR, a fixed22-path
+late cohort, coverage, and absolute E/atom for all12systems with two paths each.
+Faint traces retain all evaluated states;25-step medians require20/25values and
+missing blocks remain gaps. Symmetric-log axes retain negative energies and
+large early spikes. The relative zero is the last observed predictor input999,
+not a relaxed minimum or the native returned mean1000. Composition-specific
+absolute energies are not ranked across systems. This original dense cohort is
+not mixed with the numerically different later800/1000paired replay. Early noisy
+state energies are ML-potential predictions and do not establish barrier heights.
+
+All11unit tests, raw NPZ/geometry/energy/ledger/hash checks and independent
+CSV/window/change-count audit pass; canonical PNG equals the visually inspected
+preview byte-for-byte. Artifacts: `energy-trajectories.png/svg/pdf`, `energies.csv`,
+`summary.json`, `REPORT.md` and `local-audit.json`.
+PNG SHA256: `732b4129e9c65d3a98b44c287443ed79e674bce1e63f36e3db06e74a782ed654`.
+CSV SHA256: `00edbea4cfc6354797cc6e15093f3b665519903673cbce63780a81b141e5ebe4`.
