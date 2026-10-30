@@ -27,6 +27,8 @@ def main(root):
     from pymatgen.core import Structure
     base=json.loads((root/'report.json').read_text());data=json.loads((root/'complete.json').read_text())
     if not base['audit']['passed'] or 'endpoint_support' not in base:raise ValueError('Requires completed geometry-aware audit.')
+    from cost_plot import draw
+    draw(root,base,data)
     points={(r['trajectory'],r['arm']):r['result'] for r in data['relaxations']}
     summaries={}
     for arm in ('mean800','sample800'):
@@ -45,7 +47,8 @@ def main(root):
             energy_within_1meV=sum(abs(c['delta_energy_eV_atom'])<=.001 for c in valid),
             simulation_cell_strict_match=sum(c['strict_match'] for c in valid),cases=cases)
     result=dict(passed=True,profile=dict(ltol=.02,stol=.05,angle_tol=1,primitive_cell=True,scale=False,attempt_supercell=True),
-        source_sha256={n:sha(root/n) for n in ('report.json','complete.json')},pairs=summaries)
+        source_sha256={n:sha(root/n) for n in ('report.json','complete.json')},
+        code_sha256={name:sha(Path(__file__).with_name(name)) for name in ('physical.py','cost_plot.py')},pairs=summaries)
     (root/'physical-matches.json').write_text(json.dumps(result,indent=2)+'\n')
     lines=['# Physical crystal comparison after paired relaxation','',
         'This adds a strict physical-crystal comparison to the existing force/geometry/cost audit. '
