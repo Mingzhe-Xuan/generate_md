@@ -1,0 +1,71 @@
+from types import SimpleNamespace
+import unittest
+import torch
+from boundary import Boundary
+from comparison import eligible,classify
+
+
+class CoreTests(unittest.TestCase):
+    def test_boundary_exact_indices_values_and_rng(self):
+        def native(x):return x+torch.randn_like(x),x.clone()
+        module=SimpleNamespace(_mask_replace=native);captures=[]
+        torch.manual_seed(123);expected=[native(torch.tensor([float(i)])) for i in range(2000)]
+        torch.manual_seed(123)
+        with Boundary(module,torch,lambda i,s,m:captures.append((i,s.clone(),m.clone()))) as obs:
+            actual=[module._mask_replace(torch.tensor([float(i)])) for i in range(2000)]
+        self.assertEqual(obs.calls,2000);self.assertEqual([c[0] for c in captures],[800,1000])
+        self.assertEqual(float(captures[0][2]),1599.)
+        for pair,reference in zip(actual,expected):
+            for a,b in zip(pair,reference):torch.testing.assert_close(a,b)
+        self.assertIs(module._mask_replace,native)
+
+    def test_capture_rng_mutation_rejected_and_restored(self):
+        native=lambda:(torch.zeros(1),torch.zeros(1));module=SimpleNamespace(_mask_replace=native)
+        with self.assertRaisesRegex(RuntimeError,'RNG'):
+            with Boundary(module,torch,lambda *args:torch.randn(1)):
+                for i in range(1600):module._mask_replace()
+        self.assertIs(module._mask_replace,native)
+
+    def test_both_force_criteria(self):
+        row=dict(status='converged',converged=True,max_raw_force=.009,max_filter_force=.009)
+        self.assertTrue(eligible(row));self.assertFalse(eligible(dict(row,max_raw_force=.02)))
+        self.assertFalse(eligible(dict(row,max_filter_force=float('nan'))))
+        self.assertFalse(eligible(dict(row,status='unconverged')))
+
+    def test_energy_and_geometry_are_separate(self):
+        self.assertFalse(classify(0.,False,True)['consistent_endpoint'])
+        self.assertFalse(classify(.002,True,True)['consistent_endpoint'])
+        self.assertTrue(classify(.0001,True,True)['consistent_endpoint'])
+        self.assertEqual(classify(-.02,False,False)['energy_winner'],'early')
+
+    def test_geometry_translation_permutation_and_distortion(self):
+        from pymatgen.core import Structure,Lattice
+        from geometry import compare
+        a=Structure(Lattice.cubic(5.64),['Na','Cl'],[[0,0,0],[.5,.5,.5]])
+        b=Structure(a.lattice,['Cl','Na'],[[1.7,.8,-.1],[1.2,.3,-.6]])
+        result=compare(a,b)
+        self.assertTrue(result['strict_match']);self.assertLess(result['aligned_internal_RMS_A'],1e-8)
+        self.assertIsNone(result['ordered'])
+        b=Structure(a.lattice,['Na','Cl'],[[0,0,0],[.25,.25,.25]])
+        self.assertFalse(compare(a,b)['strict_match'])
+        b=Structure(Lattice.cubic(6.3),['Na','Cl'],a.frac_coords)
+        self.assertFalse(compare(a,b)['strict_match'])
+
+    def test_filter_force_reconstruction_at_changed_cell(self):
+        import numpy as np
+        from ase import Atoms
+        from ase.filters import ExpCellFilter
+        from ase.calculators.singlepoint import SinglePointCalculator
+        atoms=Atoms('NaCl',cell=np.eye(3)*5.64,scaled_positions=[[0,0,0],[.5,.5,.5]],pbc=True)
+        first=ExpCellFilter(atoms)
+        atoms.set_cell(np.diag([5.8,5.4,5.7]),scale_atoms=True)
+        forces=np.array([[.02,.03,.01],[-.02,-.03,-.01]])
+        stress=np.arange(6)*.001
+        atoms.calc=SinglePointCalculator(atoms,energy=-5.,forces=forces,stress=stress)
+        expected=first.get_forces()
+        clone=atoms.copy();clone.calc=SinglePointCalculator(clone,energy=-5.,forces=forces,stress=stress)
+        rebuilt=ExpCellFilter(clone);rebuilt.orig_cell=np.eye(3)*5.64
+        np.testing.assert_allclose(rebuilt.get_forces(),expected,atol=1e-12,rtol=0)
+
+
+if __name__=='__main__':unittest.main()

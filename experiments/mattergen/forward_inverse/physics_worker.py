@@ -72,16 +72,21 @@ def main():
                 with redirect_stdout(sys.stderr):
                     initial = float(atoms.get_potential_energy())
                     if task['action'] == 'relax':
+                        initial_force = float(np.linalg.norm(atoms.get_forces(apply_constraint=False), axis=1).max())
                         folder = Path(task['output'])
                         folder.mkdir(parents=True, exist_ok=False)
                         (folder/'input.json').write_text(json.dumps(task, indent=2)+'\n')
                         filtered = ExpCellFilter(atoms) if task.get('cell_relax', True) else atoms
-                        optimizer = BFGS(filtered, logfile=None, maxstep=.05)
+                        optimizer = BFGS(filtered, logfile=str(folder/'optimizer.log'),
+                                         trajectory=str(folder/'optimizer.traj'), maxstep=.05)
                         converged = bool(optimizer.run(fmax=task['fmax'], steps=task['max_steps']))
                         write(folder/'relaxed.vasp', atoms, format='vasp', direct=True, sort=False)
                         result.update(status='converged' if converged else 'unconverged', converged=converged,
                             steps=optimizer.get_number_of_steps(), preserve_symmetry=False, cell_relax=task.get('cell_relax', True),
-                            fmax=task['fmax'], max_steps=task['max_steps'], initial_energy_eV=initial)
+                            max_filter_force=float(np.linalg.norm(filtered.get_forces(), axis=1).max()),
+                            stress_eV_A3=atoms.get_stress().tolist(),
+                            fmax=task['fmax'], max_steps=task['max_steps'], initial_energy_eV=initial,
+                            initial_max_raw_force=initial_force)
                     elif task['action'] == 'point':
                         result['status'] = 'completed'
                     else:
