@@ -1,5 +1,7 @@
 # Pure CSP denoising / force trajectories
 
+Completed experiment and provenance: [RESULTS.md](RESULTS.md).
+
 Observational mechanism study on the 12 GSS fixed-composition systems, two paths
 per system. This is not a held-out CSP structure-recovery benchmark: checkpoint
 training overlap is unknown. `prepare.py` reuses property-blind hash selection of
