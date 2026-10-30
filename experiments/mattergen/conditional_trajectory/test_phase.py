@@ -21,5 +21,12 @@ class PhaseTests(unittest.TestCase):
         self.assertEqual((result['target_error_increase_pairs'], result['fixed_species_error_increase_pairs']), (1, 0))
         self.assertFalse(result['first_vs_terminal_same_species'])
 
+    def test_force_reduction_does_not_imply_property_improvement(self):
+        rr = [dict(gap=None, target=2.5, force_rms=None), dict(gap=2., target=2.5, force_rms=3.),
+              dict(gap=1., target=2.5, force_rms=.1)]
+        result = events(np.array([[101], [8], [8]]), [0, 950, 1000], ['prior', 'predictor', 'terminal'], rr)
+        self.assertEqual(result['terminal_minus_first_error'], 1.)
+        self.assertAlmostEqual(result['terminal_minus_first_force_rms'], -2.9)
+
 
 if __name__ == '__main__': unittest.main()

@@ -29,6 +29,9 @@ def events(numbers, steps, stages, rows):
         result.update(first_error=abs(first['gap']-first['target']), terminal_error=abs(last['gap']-last['target']),
             terminal_minus_first_error=abs(last['gap']-last['target'])-abs(first['gap']-first['target']),
             first_vs_terminal_same_species=bool(np.array_equal(numbers[eligible[0]], final)))
+        if first.get('force_rms') is not None and last.get('force_rms') is not None:
+            result.update(first_force_rms=first['force_rms'], terminal_force_rms=last['force_rms'],
+                terminal_minus_first_force_rms=last['force_rms']-first['force_rms'])
     return result
 
 
@@ -56,8 +59,10 @@ def main(root):
     for arm in ('cfg2', 'cfg0'):
         subset = [p for p in all_events if p['arm'] == arm]
         output['arms'][arm] = {key: describe([p[key] for p in subset if p.get(key) is not None]) for key in
-            ('first_types_known', 'first_evaluable', 'final_composition_sustained_from', 'terminal_minus_first_error')}
+            ('first_types_known', 'first_evaluable', 'final_composition_sustained_from', 'first_error', 'terminal_error',
+             'terminal_minus_first_error', 'first_force_rms', 'terminal_force_rms', 'terminal_minus_first_force_rms')}
         output['arms'][arm]['first_to_terminal_improved'] = sum(p.get('terminal_minus_first_error', 0) < 0 for p in subset)
+        output['arms'][arm]['first_to_terminal_force_reduced'] = sum(p.get('terminal_minus_first_force_rms', 0) < 0 for p in subset)
         for key in ('adjacent_evaluable_pairs', 'fixed_species_adjacent_pairs', 'target_error_increase_pairs', 'fixed_species_error_increase_pairs'):
             output['arms'][arm][key] = sum(p[key] for p in subset)
     save(root/'phase-analysis.json', output)

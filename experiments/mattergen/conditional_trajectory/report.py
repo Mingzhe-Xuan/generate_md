@@ -64,33 +64,48 @@ def main(root):
         writer = csv.DictWriter(f, fieldnames=keys); writer.writeheader(); writer.writerows(rows)
     colors = {'cfg2': '#2467aa', 'cfg0': '#d66b20'}
     labels = {'cfg2': 'Gap-conditioned, CFG=2', 'cfg0': 'Unconditional, CFG=0'}
-    fig, axes = plt.subplots(3, 2, figsize=(14, 12), sharex=True)
+    fig, axes = plt.subplots(3, 2, figsize=(14, 12))
     for arm in ARMS:
         color = colors[arm]; rr = [r for r in stats if r['arm'] == arm and r['stage'] != 'prior']
         x = [r['step'] for r in rr]
         for ax, key in ((axes[0, 0], 'mae'), (axes[0, 1], 'paired_mae')):
             ax.plot(x, [np.nan if r[key] is None else r[key] for r in rr], color=color, label=labels[arm])
         axes[1, 0].plot(x, [r['n'] for r in rr], color=color, label='Evaluable '+arm)
-        axes[1, 0].plot(x, [r['known'] for r in rr], color=color, ls=':', label='Types known '+arm)
         axes[1, 1].plot(x, [r['mask_fraction'] for r in rr], color=color, label=labels[arm])
+        first_errors = []; final_errors = []
         for parent in range(12):
             path = [r for r in rows if r['arm'] == arm and r['parent'] == parent and r['stage'] != 'prior']
             axes[2, 0].plot([r['step'] for r in path], [abs(r['gap']-r['target']) if r['gap'] is not None else np.nan for r in path], color=color, alpha=.24, lw=.7)
-        cohort = cohorts['750']
-        if cohort:
-            for ax, key in ((axes[2, 1], 'gap'),):
-                selected = [r for r in rows if r['arm'] == arm and r['parent'] in cohort and r['step'] >= 750 and r['stage'] != 'prior']
-                xx = sorted({r['step'] for r in selected})
-                ax.plot(xx, [np.mean([abs(r[key]-r['target']) for r in selected if r['step'] == step]) for step in xx], color=color, label=f'{arm}, fixed n={len(cohort)}')
+            valid = sorted([r for r in path if r['gap'] is not None], key=lambda r: r['frame'])
+            terminal = [r for r in path if r['stage'] == 'terminal' and r['gap'] is not None]
+            if valid and terminal:
+                first_errors.append(abs(valid[0]['gap']-valid[0]['target']))
+                final_errors.append(abs(terminal[0]['gap']-terminal[0]['target']))
+        axes[2, 1].scatter(first_errors, final_errors, color=color, alpha=.75, s=27, label=f'{arm}, n={len(first_errors)}')
+        if first_errors:
+            axes[2, 1].scatter(np.mean(first_errors), np.mean(final_errors), color=color, marker='X', s=110, edgecolor='black', linewidth=.7)
+    paired = [r for r in stats if r['arm'] == 'cfg2' and r['stage'] != 'prior']
+    axes[1, 0].plot([r['step'] for r in paired], [r['paired_n'] for r in paired], color='gray', ls='--', label='Paired evaluable')
     titles = ['ALIGNN target MAE: available states', 'ALIGNN target MAE: matched parents at each step',
               'Coverage out of 12 paths per arm', 'Mean fraction of MASK atom types',
-              'Individual target-error trajectories', 'Fixed paired cohort, every state from step 750']
+              'Individual target-error trajectories', 'Same paths: first evaluable vs terminal (X = mean)']
     for ax, title in zip(axes.flat, titles):
-        ax.set_title(title, fontsize=11); ax.grid(alpha=.22); ax.set_xlim(0, 1000)
+        ax.set_title(title, fontsize=11); ax.grid(alpha=.22)
     for ax in (axes[0, 0], axes[0, 1], axes[2, 0], axes[2, 1]): ax.set_ylabel('Absolute gap error (eV)')
     axes[1, 0].set_ylabel('Structures'); axes[1, 1].set_ylabel('MASK fraction')
     axes[1, 0].set_ylim(-.3, 12.5); axes[1, 1].set_ylim(-.02, 1.02)
-    for ax in axes[-1]: ax.set_xlabel('Native PC rounds (terminal mean at 1000)')
+    for ax in (axes[0, 0], axes[0, 1], axes[1, 0], axes[1, 1], axes[2, 0]):
+        ax.set_xlim(0, 1000); ax.set_xlabel('Native PC rounds (terminal mean at 1000)')
+    for ax in (axes[0, 0], axes[2, 0]):
+        valid_steps = [r['step'] for r in rows if r['gap'] is not None and r['stage'] != 'prior']
+        if valid_steps: ax.set_xlim(max(0, min(valid_steps)-15), 1000)
+    matched_steps = [r['step'] for r in stats if r['paired_n'] > 0 and r['stage'] != 'prior']
+    if matched_steps: axes[0, 1].set_xlim(max(0, min(matched_steps)-5), 1000)
+    limit = max(abs(r['gap']-r['target']) for r in rows if r['gap'] is not None)*1.06
+    axes[2, 1].plot([0, limit], [0, limit], color='gray', ls=':', lw=1)
+    axes[2, 1].set_xlim(0, limit); axes[2, 1].set_ylim(0, limit)
+    axes[2, 1].set_xlabel('First evaluable absolute error (eV)')
+    axes[2, 1].set_ylabel('Terminal absolute error (eV)')
     for ax in (axes[0, 0], axes[1, 0], axes[2, 1]):
         if ax.get_legend_handles_labels()[0]: ax.legend(fontsize=8)
     fig.suptitle('MatterGen native joint generation, target 2.5 eV | ALIGNN proxy\n12 paired paths per arm; 3 coupled batches; no relaxation; early MASK states excluded', fontsize=13)

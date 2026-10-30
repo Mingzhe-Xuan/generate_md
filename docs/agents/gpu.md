@@ -19,3 +19,5 @@
 - 2026-10-30T16:25:26: Pre-submission synchronization authorization: local tested source will be committed/pushed and copied as verified Git bundle, remote mandatory pull then Slurm GPU sampling/ALIGNN/MatterSim single points and dependent CPU audit/archive only. No login-node model compute or internet required.
 
 - 2026-10-30T16:29:45: Authorize source-bundle update for phase analysis only, mandatory verified pull, submit new CPU phase job depending afterok506. Existing native GPU experiment505 remains unchanged.
+
+- 2026-10-30T16:40:45: Authorize reporting-only source synchronization and mandatory verified pull, CPU Slurm rerender/phase summary with existing505rawdata; preserve complete.json and alltrajectory hashes, no GPU compute.

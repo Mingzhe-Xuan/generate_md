@@ -26,6 +26,9 @@ physical boundaries. ALIGNN target MAE measures adherence to 2.5 eV, not DFT
 prediction error. Noisy-state ALIGNN is uncalibrated; changing composition also
 confounds comparisons of absolute MatterSim energy per atom. Three coupled
 sampling batches per arm do not support treating 12 paths as independent replicates.
+The gap panels zoom to observed coverage; the mask/coverage panels show all rounds.
+The first-evaluable versus terminal scatter keeps the same parents, but their
+first evaluation times differ. Empty fixed-cutoff cohorts remain explicit in JSON.
 
 Run from repository root, after local tests and code synchronization:
 
