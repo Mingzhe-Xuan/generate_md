@@ -1,5 +1,7 @@
 # Paired 800-step cutoff versus full 1000-step CSP relaxation
 
+Completed results and provenance: [RESULTS.md](RESULTS.md).
+
 This module replays the same GSS12 compositions, seeds and three native batches
 as `csp_trajectory`. It preserves the original1000-step time grid and captures
 after800 completed corrector+predictor rounds, rather than changing N to800.
