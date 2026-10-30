@@ -59,3 +59,9 @@ check because integer basis shear does not change the physical lattice. Collapse
 endpoints remain failed geometries in all24-parent denominators and total cost;
 they do not enter ordinary energy/structure comparisons. The initial force-only
 report/archive is copied to a sibling backup before this geometry-aware audit.
+
+`physical.py` / `physical.sbatch` add strict primitive-crystal matching without
+volume rescaling after the geometry-aware report. They distinguish equivalent
+supercell representations from actual crystal differences and preserve the
+fixed-cell matcher separately. Outputs are `physical-matches.json`,
+`PHYSICAL_COMPARISON.md`, and a separately hashable `verified-evidence.tar.gz`.

@@ -76,6 +76,17 @@ class CoreTests(unittest.TestCase):
         self.assertIn('density_guard_volume_per_atom_below_2A3',support(numbers,np.eye(3),frac)['reasons'])
         self.assertIn('collision_below_0.5A',support(numbers,cell,[[0,0,0],[.01,0,0]])['reasons'])
 
+    def test_same_crystal_in_different_eight_atom_supercells(self):
+        from pymatgen.core import Lattice,Structure
+        from physical import match
+        base=Structure.from_spacegroup('Fm-3m',Lattice.cubic(4.),['Al'],[[0,0,0]])
+        first=base.copy();first.make_supercell([2,1,1])
+        second=base.copy();second.make_supercell([[1,1,0],[-1,1,0],[0,0,1]])
+        self.assertEqual(len(first),8);self.assertEqual(len(second),8)
+        self.assertTrue(match(first,second)['physical_strict_match'])
+        second.scale_lattice(second.volume*1.1**3)
+        self.assertFalse(match(first,second)['physical_strict_match'])
+
     def test_filter_force_reconstruction_at_changed_cell(self):
         import numpy as np
         from ase import Atoms
