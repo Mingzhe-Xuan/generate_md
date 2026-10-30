@@ -2,11 +2,11 @@
 
 ## 当前状态
 
-Bandgap-conditioned trajectory task COMPLETE: 12pairedpathsperarm, native1000steps, target2.5eV CFG2 versus same-checkpoint CFG0, ALIGNN/MatterSim posthoc. Final evidence results/mattergen/evidence/conditional-gap-20261030-final. GPU505 and CPU510 passed; raw4872states/356evaluations, six exact native controls, ten module and five observer tests, both artifact manifests/figures/documents verified. No relaxation, DFT or SUN.
+Bandgap+CSP public checkpoint search COMPLETE: no verified matching downloadable MatterGen weight found in official catalog, GSS release, or12publicHFmattergenrepositories. Existing dft_band_gap is joint species/geometry generation; cached GSS CSP lacks property embeddings. No server connection, new large weight, training or inference. Earlier conditioned-trajectory evidence remains complete and unchanged.
 
 ## 当前计划
 
-Requested plots and stage interpretation completed. Final MAE CFG2=1.918878eV versus CFG0=2.159906eV; conditional late gap error often rises despite force falling. Early MASK states remain unscored; no final-species backfill. Source/results committed and final archive SHAf9121d84643aa44577782d1e915835ae47289cd88b0b16f31895a2e3ebeb1eb1 verified. Await further research direction; no active experiment or owned proxy.
+No verified direct-download target available from this search. Report scoped availability with official config/catalog links, preserve uncertain weight-only releases as unverified. Further property-conditioned CSP fine-tuning or joint-model species clamping requires a separate experimental scope; do not silently replace requested checkpoint.
 
 ## 变更记录
 
@@ -28,3 +28,5 @@ Requested plots and stage interpretation completed. Final MAE CFG2=1.918878eV ve
 - 2026-10-30T16:47:30: Final artifact QA exposed a stale prior-stage SVG checksum; raw trajectories and predictions unchanged. Ownership regression now passes ten tests. Reenter CPU artifact integration; no GPU rerun needed.
 
 - 2026-10-30T16:52:08: Conditional trajectory task COMPLETE. GPU505 sampling/evaluation and all required CPU audits complete; final CPU510 fixed manifest ownership and passed. Local final archive/raw/model hashes/figures/numeric documentation verified. No active jobs submitted by this task remain; no proxy holder was started. Deliver figures, data and stage explanation.
+
+- 2026-10-30T17:03:27: Public checkpoint availability verification COMPLETE; requested direct download has no verified matching public target. No global nonexistence claim: weight-only opaque repositories unverified. Documented exact scope/evidence; retain existing cached weights. Further CSP property fine-tuning or clamped joint-model sampling would be separate work, not silently substituted.

@@ -69,3 +69,30 @@ independent checks verified source blobs, all24 saved states, ordered species,
 geometry hashes, energies, force thresholds and full physical NFE accounting.
 Ignored artifacts are under `results/mattergen/evidence/csp-smoke-20261029`.
 This is runtime validation, with no property-throughput or SUN claim.
+
+## Public bandgap-conditioned CSP checkpoint availability
+
+Checked on 2026-10-30 following a request to download a fixed-composition,
+bandgap-conditioned checkpoint. No verified matching MatterGen release was found
+in the official catalog, the GSS release, or the public Hugging Face model search
+for `mattergen`. This is a scoped search result, not proof that no such model exists.
+
+The [Microsoft checkpoint catalog](https://huggingface.co/microsoft/mattergen/tree/main/checkpoints)
+contains `dft_band_gap`, but its
+[configuration](https://huggingface.co/microsoft/mattergen/raw/main/checkpoints/dft_band_gap/config.yaml)
+includes atomic-number corruption and atomic-number loss: it jointly generates
+species and geometry. The already cached GSS CSP configuration has no species
+corruption/loss and has empty property embeddings, so it has no trained bandgap
+condition. Downloading either again does not supply the combined capability.
+
+The Hugging Face API returned 12 repositories matching `mattergen` during this
+check. Public alternate configurations did not establish a matching release:
+OneScience's gap model also corrupts species; the electride-named CSP config has
+empty property embeddings; XPANCEO condition keys describe other objectives;
+MP40 is described as unconditional. Opaque weight-only releases remain unverified.
+Search metadata and small candidate configs are retained under ignored `tmp/`.
+No new large weights, server connection, training or inference were needed.
+
+A trained property adapter on a CSP backbone is a possible subsequent project.
+Applying the joint bandgap model while clamping species would be a distinct
+sampling intervention requiring validation, not a downloaded CSP checkpoint.
