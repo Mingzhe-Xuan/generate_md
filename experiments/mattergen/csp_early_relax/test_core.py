@@ -2,7 +2,7 @@ from types import SimpleNamespace
 import unittest
 import torch
 from boundary import Boundary
-from comparison import eligible,classify
+from comparison import eligible,classify,native_force_norm
 
 
 class CoreTests(unittest.TestCase):
@@ -31,6 +31,14 @@ class CoreTests(unittest.TestCase):
         self.assertTrue(eligible(row));self.assertFalse(eligible(dict(row,max_raw_force=.02)))
         self.assertFalse(eligible(dict(row,max_filter_force=float('nan'))))
         self.assertFalse(eligible(dict(row,status='unconverged')))
+
+    def test_serialized_force_norm_keeps_native_float32_arithmetic(self):
+        import numpy as np
+        forces=np.array([[.003,.004,.007]],dtype=np.float32)
+        native=float(np.linalg.norm(forces,axis=1).max())
+        self.assertEqual(native_force_norm(forces.tolist()),native)
+        self.assertNotEqual(float(np.linalg.norm(np.array(forces.tolist()),axis=1).max()),native)
+        with self.assertRaises(ValueError):native_force_norm([[.1,.2,.3]])
 
     def test_energy_and_geometry_are_separate(self):
         self.assertFalse(classify(0.,False,True)['consistent_endpoint'])

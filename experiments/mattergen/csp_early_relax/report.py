@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 import tarfile
 import numpy as np
-from comparison import classify,eligible,stats
+from comparison import classify,eligible,stats,native_force_norm
 from geometry import compare
 
 ARMS=('mean800','sample800','mean1000')
@@ -70,7 +70,7 @@ def main(root):
         if point['numbers']!=numbers.tolist() or point['preserve_symmetry'] is not False or point['cell_relax'] is not True:
             raise ValueError('Ordered species/profile changed.')
         atoms=Atoms(numbers=point['numbers'],cell=point['cell'],scaled_positions=point['frac'],pbc=True)
-        forces=np.array(point['forces_eV_A']);raw=float(np.linalg.norm(forces,axis=1).max())
+        forces=np.array(point['forces_eV_A']);raw=native_force_norm(point['forces_eV_A'])
         if abs(raw-point['max_raw_force'])>1e-12:raise ValueError('Raw force audit failed.')
         atoms.calc=SinglePointCalculator(atoms,energy=point['energy_eV'],forces=forces,stress=np.array(point['stress_eV_A3']))
         filtered=ExpCellFilter(atoms);filtered.orig_cell=cell.copy()

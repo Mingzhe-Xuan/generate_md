@@ -2,6 +2,15 @@
 import numpy as np
 
 
+def native_force_norm(forces):
+    values=np.asarray(forces,dtype=float)
+    native=values.astype(np.float32)
+    # JSON preserves component values but not the force array's float32 dtype.
+    if not np.array_equal(values,native):
+        raise ValueError('Pinned MatterSim force components are not exact float32 values.')
+    return float(np.linalg.norm(native,axis=1).max())
+
+
 def eligible(row,fmax=.01):
     return bool(row.get('status')=='converged' and row.get('converged') is True and
         all(row.get(k) is not None and np.isfinite(row[k]) and row[k]<=fmax+1e-10 for k in ('max_raw_force','max_filter_force')))
