@@ -70,3 +70,29 @@ preview byte-for-byte. Artifacts: `energy-trajectories.png/svg/pdf`, `energies.c
 `summary.json`, `REPORT.md` and `local-audit.json`.
 PNG SHA256: `732b4129e9c65d3a98b44c287443ed79e674bce1e63f36e3db06e74a782ed654`.
 CSV SHA256: `00edbea4cfc6354797cc6e15093f3b665519903673cbce63780a81b141e5ebe4`.
+
+### Gaps and apparent midpoint discontinuity
+
+Of960path/block combinations,107lack20/25valid points and have no solid median
+segment;104ofthese are beforestep600. Raw missing predictor energies number2037.
+The original symmetric-log energy axis visually emphasizes crossings nearzero;
+zero absolute predicted energy is not a phase boundary. Block medians can also
+switch rapidly when a block's high/low-energy population balance changes.
+
+There is nevertheless a genuine broad decrease:21/24path medians decrease from
+steps450–499 to550–599, with median paired change-5.2661eV/atom. The median
+across path-window nearest-pair medians increases from0.9124 to1.1358 A, while
+volume/atom medians remain about14 A^3. This is consistent with relief of close
+contacts as noise decreases; it does not isolate coordinate/lattice/noise
+contributions or establish a phase transition.
+
+All seven reviewed native sampler/noise/corrector source hashes and the CSP
+configuration hash match the actual run. There is no fixedstep500switch in
+these sampler paths. For an8-atom cell, the smooth forward fractional positional
+standard deviation is0.1125004/0.1118034/0.1111107 atsteps499/500/501; these are
+not adaptive corrector step sizes. The largest adjacent50-step median-window
+drop centers range70–655; they are window statistics, not exact transition times.
+
+Diagnostic figure/JSON: `results/mattergen/evidence/csp-energy-diagnostic-20261030-final`.
+Four panels show linear energy, closest distance, forward noise and display-gap
+frequency. All14unit tests and raw/source/window arithmetic checks pass.

@@ -68,3 +68,17 @@ python experiments/mattergen/csp_trajectory/energy_trajectory.py \
 
 Cached local analysis is lightweight. If running this batch analysis remotely,
 submit it through Slurm using an existing postprocess environment.
+
+`energy_diagnostic.py` explains gaps and apparent midpoint changes using the
+same immutable data: linear relative-energy view, closest-pair distances,
+SHA-verified smooth forward-noise schedule, and omitted-block fractions. It
+keeps the distinction between forward marginal noise and actual adaptive sampler
+step size. Its50-step median-drop locations are descriptive window statistics,
+not phase-transition or barrier estimates. Example:
+
+```bash
+python experiments/mattergen/csp_trajectory/energy_diagnostic.py \
+  --source results/mattergen/evidence/csp-trajectory-20261030 \
+  --native-source results/mattergen/evidence/mattergen-source-review/source \
+  --output results/mattergen/evidence/csp-energy-diagnostic-20261030-final
+```
