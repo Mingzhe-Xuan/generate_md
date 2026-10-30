@@ -16,3 +16,5 @@
 - 2026-10-30T16:29:45: Stage-analysis unit PASS: seven conditional_trajectory tests including two synthetic event/species-change/nonmonotonicity tests; compileall and phase.sbatch bash -n. Primary GPU505 is running; no outcomes inferred yet.
 
 - 2026-10-30T16:40:45: Presentation/force-summary revision PASS: eight unit tests, compileall, bash -n and diff check. Original GPU505+CPU506/507 exit0;4872rawstate audit,356ALIGNN+356MatterSim points, six native ALIGNN controls exactzero error, native score conversion exactzero, downloaded archive SHA9c925ebf07a682198c6d65791c91ce1cb12a41b8e25bfa82ee61df943c4e1169 verified and artifact/raw hashes verified locally. Source revision changes reporting only; next full CPU rerender and visual QA.
+
+- 2026-10-30T16:47:30: Manifest ownership fix PASS: ten tests, including later-stage overwrite isolation and missing-owned-output rejection; compileall/bash -n/diff checks pass. Full raw audit508/phase509 exit0 and all raw/prediction bytes unchanged. Prior artifact hash failure traced to renderer ownership and fixed before this commit; next CPU integration verifies both final manifests.

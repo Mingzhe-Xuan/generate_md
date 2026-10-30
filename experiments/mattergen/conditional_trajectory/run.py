@@ -20,6 +20,11 @@ def save(path, data):
     tmp.replace(path)
 
 
+def owned_artifacts(root, prefix, extra=()):
+    names = [f'{prefix}.{ext}' for ext in ('png', 'svg', 'pdf')] + list(extra)
+    return {name: sha(root/name) for name in names}
+
+
 def main(root):
     import torch
     from hydra.utils import instantiate

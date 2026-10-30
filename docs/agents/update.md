@@ -10,3 +10,5 @@
 - 2026-10-30T16:29:45: Added posthoc phase.py/phase.sbatch: event timing and same-path error changes, event-aligned gap curves, force/separation/formation-energy probes. Uses existing raw observations only, no change to running generation/evaluation505 or primary audit506.
 
 - 2026-10-30T16:40:45: Completed native paired trajectory experiment: target2.5eV; terminal ALIGNN MAE CFG2=1.918877612 versus CFG0=2.159905745. Conditional first-evaluable-to-terminal error mean increases0.116983906; only2/12improve despite11/12force reductions. Early states predominantly MASK; first known median970conditional/957.5unconditional. Empty fixed750/900cohorts prompted figure replacement with all-parent first-versus-terminal scatter and coverage-aware zoom, preserving raw predictions.
+
+- 2026-10-30T16:47:30: Fixed stale artifact manifests after sequential rerenders: primary report owns only its gap plots/CSV, phase owns its plots/JSON with own final manifest. Single phase Slurm job now refreshes primary audit first. No sampling/inference logic or cached results changed.

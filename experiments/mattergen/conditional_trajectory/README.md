@@ -51,3 +51,7 @@ conditioning is active throughout sampling, including stages where an external
 bandgap prediction is undefined. Every-five-round observations limit event timing
 resolution. `phase.sbatch` can depend on the completed primary audit job; it never
 changes or reruns generation/inference.
+It refreshes the primary audit before rendering phase plots. Each renderer hashes
+only the files it owns (`audit.json` and `phase-audit.json` respectively), after
+writing those files. SVG/PDF metadata can change on rerender; a later stage must
+not invalidate an earlier manifest by replacing files that earlier stage claimed.

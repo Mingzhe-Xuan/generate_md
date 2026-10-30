@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 import numpy as np
 from metrics import ARMS, summary, fixed_cohort, geometry
-from run import save, sha
+from run import save, sha, owned_artifacts
 
 
 def main(root):
@@ -124,7 +124,8 @@ def main(root):
     (root/'REPORT.md').write_text('\n'.join(text)+'\n')
     save(root/'audit.json', dict(passed=True, raw_states=raw_checked, exact_shared_priors=True,
         native_controls=len(complete['controls']), max_native_errors=[c['max_errors'] for c in complete['controls']],
-        artifacts={p.name: sha(p) for p in root.iterdir() if p.suffix in ('.png', '.svg', '.pdf', '.csv')}))
+        complete_sha256=sha(root/'complete.json'), report_code_sha256=sha(Path(__file__)),
+        artifacts=owned_artifacts(root, 'bandgap-trajectory', ('states.csv',))))
     print(json.dumps(report['terminal']), flush=True)
 
 

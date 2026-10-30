@@ -4,7 +4,7 @@ import json
 import os
 from pathlib import Path
 import numpy as np
-from run import save, sha
+from run import save, sha, owned_artifacts
 
 
 def events(numbers, steps, stages, rows):
@@ -98,6 +98,9 @@ def main(root):
     fig.tight_layout(rect=(0, 0, 1, .93))
     for ext in ('png', 'svg', 'pdf'): fig.savefig(root/f'stage-probes.{ext}', dpi=180)
     plt.close(fig)
+    save(root/'phase-audit.json', dict(passed=True, complete_sha256=sha(root/'complete.json'),
+        phase_code_sha256=sha(Path(__file__)),
+        artifacts=owned_artifacts(root, 'stage-probes', ('phase-analysis.json',))))
     print(json.dumps(output['arms']), flush=True)
 
 
