@@ -2,11 +2,11 @@
 
 ## 当前状态
 
-Guqq2（node42）检测到 1 张 NVIDIA GeForce RTX 5090；显存总量 32607 MiB、已用 184 MiB、GPU 利用率 0%。Slurm 仅列出 node42，Gres=gpu:1，分区 compute，State=IDLE，squeue 无作业。
+Bandgap-conditioned trajectory task COMPLETE: 12pairedpathsperarm, native1000steps, target2.5eV CFG2 versus same-checkpoint CFG0, ALIGNN/MatterSim posthoc. Final evidence results/mattergen/evidence/conditional-gap-20261030-final. GPU505 and CPU510 passed; raw4872states/356evaluations, six exact native controls, ten module and five observer tests, both artifact manifests/figures/documents verified. No relaxation, DFT or SUN.
 
 ## 当前计划
 
-本次 GPU 数量与占用核实已完成。
+Requested plots and stage interpretation completed. Final MAE CFG2=1.918878eV versus CFG0=2.159906eV; conditional late gap error often rises despite force falling. Early MASK states remain unscored; no final-species backfill. Source/results committed and final archive SHAf9121d84643aa44577782d1e915835ae47289cd88b0b16f31895a2e3ebeb1eb1 verified. Await further research direction; no active experiment or owned proxy.
 
 ## 变更记录
 
@@ -26,3 +26,5 @@ Guqq2（node42）检测到 1 张 NVIDIA GeForce RTX 5090；显存总量 32607 Mi
 - 2026-10-30T16:40:45: GPU/primary audit/phase jobs505/506/507 complete successfully. Enter final reporting QA: revise empty fixed-cohort panel and persist same-path force summary; rerun CPU only, verify raw hashes unchanged, then download final figures and document interpretation. No inference, training or relaxation rerun.
 
 - 2026-10-30T16:47:30: Final artifact QA exposed a stale prior-stage SVG checksum; raw trajectories and predictions unchanged. Ownership regression now passes ten tests. Reenter CPU artifact integration; no GPU rerun needed.
+
+- 2026-10-30T16:52:08: Conditional trajectory task COMPLETE. GPU505 sampling/evaluation and all required CPU audits complete; final CPU510 fixed manifest ownership and passed. Local final archive/raw/model hashes/figures/numeric documentation verified. No active jobs submitted by this task remain; no proxy holder was started. Deliver figures, data and stage explanation.

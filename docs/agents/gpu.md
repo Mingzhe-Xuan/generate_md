@@ -23,3 +23,5 @@
 - 2026-10-30T16:40:45: Authorize reporting-only source synchronization and mandatory verified pull, CPU Slurm rerender/phase summary with existing505rawdata; preserve complete.json and alltrajectory hashes, no GPU compute.
 
 - 2026-10-30T16:47:30: Authorize tested manifest-only source synchronization, mandatory verified pull and one CPU phase/audit job on existing raw results. No remote source editing, GPU load, or model recomputation.
+
+- 2026-10-30T16:52:08: Remote work complete: successful GPU505 and CPU506-510; final verified archive downloaded. All compute used Slurm. Ordinary SSH/SCP processes exited; no task-owned dedicated proxy holder was started or left running. No further connection needed for model work.
