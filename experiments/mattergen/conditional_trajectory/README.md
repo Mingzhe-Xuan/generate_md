@@ -38,3 +38,13 @@ sbatch --dependency=afterok:$job --export=ALL experiments/mattergen/conditional_
 Tests: `python -m unittest discover -s experiments/mattergen/conditional_trajectory -p 'test_*.py'`.
 Native observation regression tests live in `random_score_probe/test_trajectory.py`.
 All remote compute, including audit and archive creation, must use Slurm.
+
+`phase.py` adds event descriptions from the existing observations: first fully
+known composition, first eligible property prediction, final composition sustained
+through the terminal, same-path first-to-terminal errors and nonmonotonic changes.
+Its second figure aligns errors to type completion and shows nearest separation,
+MatterSim force and ALIGNN formation energy. These are descriptive probes; native
+conditioning is active throughout sampling, including stages where an external
+bandgap prediction is undefined. Every-five-round observations limit event timing
+resolution. `phase.sbatch` can depend on the completed primary audit job; it never
+changes or reruns generation/inference.

@@ -6,3 +6,5 @@
 - 2026-10-22 12:23:59 +08:00：Guqq2（node42）检测到 1 张 NVIDIA GeForce RTX 5090；显存总量 32607 MiB、已用 184 MiB、GPU 利用率 0%。Slurm 仅列出 node42，Gres=gpu:1，分区 compute，State=IDLE，squeue 无作业。 首次连接被跳板机断开，第二次查询成功，退出码 0。
 
 - 2026-10-30T16:25:26: Implemented conditional_trajectory module: native joint bandgap CFG2/CFG0 paired sampling, RNG-neutral stride5 capture, actual terminal output, separate ALIGNN/MatterSim posthoc inference, support/mask/geometry coverage, paired and fixed-cohort target MAE, raw audit and plot exports. Local tests pass; next synchronize and submit Slurm GPU plus dependent CPU audit.
+
+- 2026-10-30T16:29:45: Added posthoc phase.py/phase.sbatch: event timing and same-path error changes, event-aligned gap curves, force/separation/formation-energy probes. Uses existing raw observations only, no change to running generation/evaluation505 or primary audit506.
