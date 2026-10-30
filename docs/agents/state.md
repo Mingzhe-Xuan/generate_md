@@ -2,11 +2,11 @@
 
 ## 当前状态
 
-Bandgap-conditioned CSP training-design task COMPLETE. Proposal experiments/mattergen/csp/TRAINING_PLAN.md source-verified: existing GSS CSP, species-fixed native denoising, DFT gap condition, adapter-first freezing, CFG dropout, polymorph coverage and split-provenance gates, explicit property-loader forwarding, matched post-relaxation evaluation. No training/server job/data preprocessing launched.
+CSP training proposal and conditional-adapter architecture clarification COMPLETE. Correct default: numeric bandgap uses fixed512dim sine/cosine encoding; trainable new modules are per-block1024->512->512MLP plus zero-initialized512x512mix,4.1984Mparamsfor4blocks. Source/AST checks passed. No model training/inference/server job launched; prior results unchanged.
 
 ## 当前计划
 
-Proposed next implementation order: labeled dataset/polymorph/pretraining overlap audit; local adapter and property-loader implementation plus invariance/gradient/config tests;200optimizer-stepSlurmGPUprofile;2000-5000step feasibility pilot with attainable within-composition targets and relaxed evaluation. Hyperparameters and compute cost are unverified proposals. Await training implementation direction; existing results preserved.
+Future implementation retains prior data/polymorph audit, species-fixed CSP loss, target forwarding and relaxed evaluation plan. Train only new control modules initially; fixed scalar encoding has no trainable parameters. Gradient tests must account for zero-init mix gating. Further experimental work awaits user direction.
 
 ## 变更记录
 
@@ -32,3 +32,5 @@ Proposed next implementation order: labeled dataset/polymorph/pretraining overla
 - 2026-10-30T17:03:27: Public checkpoint availability verification COMPLETE; requested direct download has no verified matching public target. No global nonexistence claim: weight-only opaque repositories unverified. Documented exact scope/evidence; retain existing cached weights. Further CSP property fine-tuning or clamped joint-model sampling would be separate work, not silently substituted.
 
 - 2026-10-30T17:13:10: Training-design task COMPLETE. Concrete protocol and implementation/test boundaries recorded and source-checked. Next experimental unit would audit labeled polymorph coverage, then implement adapter/loader flow and200optimizer-stepSlurmGPUprofile before5000-step-scale pilot; these have not been run.
+
+- 2026-10-30T17:49:38: Conditional-adapter explanation/documentation correction COMPLETE. Source/AST/dimension/parameter checks passed. Existing training proposal remains unlaunched; no new compute or experimental result changes.
