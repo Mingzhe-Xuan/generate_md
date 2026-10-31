@@ -47,3 +47,41 @@ Local contracts: `python -m unittest discover -s experiments/mattergen/grpo -p '
 
 The training budget, actual selected cohort and usable GPU throughput are
 reported from artifacts after their checks, not inferred from planned settings.
+
+## Explicit experimental policy
+
+The native PC corrector chooses step sizes using realized Gaussian noise norms
+and batch-averaged score norms. Treating its transition as an ordinary Gaussian
+is incorrect. This implementation instead defines a per-crystal corrector with
+the expected noise squared norm and retains native ancestral predictor
+coefficients and native1000-level D3PM posteriors. Gaussian standard deviations
+have a0.001 floor (fractional positions; Angstrom lattice entries), including
+the otherwise deterministic final step. Six independent symmetric-lattice
+entries are the cell action. Position wrapping and cell absolute-eigenvalue
+projection (minimum0.01Angstrom) are parameter-independent environment maps.
+The unwrapped, preprojection actions are stored and scored; marginal densities
+of the projected geometries are not substituted for those action densities.
+
+LoRA rank4 adapts linear maps with zero-initialized output factors; pretrained
+weights stay frozen. GRPO uses per-step joint action probabilities, group-wise
+standardized terminal reward, PPO clipping0.2 and dimension-normalized analytic
+KL to the frozen base policy. Reward is `exp(-0.5*((ALIGNN_gap-2.5)/0.5)^2)`;
+unsupported/invalid structures receive-1 and remain in the group/denominator.
+No true labels are assigned to generated structures by copying reference gaps.
+
+The smoke must complete all1000noise levels, replay saved actions under the
+unchanged policy (maximum absolute per-crystal logprob error0.01), obtain real
+within-group reward variation, backpropagate a finite nonzero gradient, change
+LoRA weights and preserve frozen parameter hashes. Passing this smoke does not
+establish a property improvement.
+
+## Exact base recovery audit
+
+The complete official base checkpoint was downloaded locally and verified against
+SHA81668ee12afc1ee1b037f362420730de3460bfd2d36e547585fdcb911a3dfdef.
+An ignored manifest records all281state-tensor hashes, dtypes and shapes plus
+the canonical config hash. `recover_base.py` can select those tensors from the
+cached conditional checkpoint only if every entry is bitwise identical. It
+excludes all adapter-only weights, writes a separately hashed base state and
+strictly loads the official base architecture. Any mismatch fails the stage;
+the conditional/unconditional branch is never silently relabeled as base.
