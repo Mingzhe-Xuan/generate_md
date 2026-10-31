@@ -63,3 +63,9 @@
 - 2026-11-01T00:49:13.839968: Read-only collect CPU528 real checkpoint audit and current525 progress; pull verified source bundle first. CPU log parsing only; no login inference.
 
 - 2026-11-01T00:51:26.190396: Goal continuation: previous turn made progress (actual updates/checkpoint acceptance). Read-only revalidate live Slurm525/526, latest iteration, validation and error log; pull verified runtime bundle first. No new jobs or training restart.
+
+- 2026-11-01T00:54:35.827082: SCP verified source-only eval-integrity bundle a90117b; no model/data transfer or network proxy required.
+
+- 2026-11-01T00:54:45.958195: SSH verify source bundle SHA and git pull before bounded CPU Slurm comparison-contract tests; inspect live525/526 without restart.
+
+- 2026-11-01T00:55:15.405031: Read-only verify Slurm529 comparison gate tests via logs and scontrol exit status; mandatory eval-integrity source pull. Revalidate525/526 and preserve evidence.

@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-ACTIVE MatterGen GRPO goal. Training525 is running on node42: 4/200 iterations complete (128 generated candidates), rollout5 in progress. Full GPU smoke524 and server checkpoint tests527/528 passed. Initial fixed validation: 64/64 evaluable, 0/64 gap passes, MAE1.9062167414eV. Comparison526 awaits afterok525. No learned-policy efficacy conclusion yet; DFT/SUN remain paused.
+ACTIVE MatterGen GRPO goal. Training525 is running on node42: 5/200 iterations complete (160 generated candidates), rollout6 in progress. Full GPU smoke524 and server checkpoint tests527/528 passed. Initial fixed validation: 64/64 evaluable, 0/64 gap passes, MAE1.9062167414eV. Comparison526 awaits afterok525. No learned-policy efficacy conclusion yet; DFT/SUN remain paused.
 
 ## 当前计划
 
@@ -78,3 +78,5 @@ Keep existing525 running; inspect fixed-seed validation at iteration25 and later
 - 2026-11-01T00:52:52.145258: Training525 verified running at29:24, iteration5 rollout after128 candidates/4 completed updates. Enter queued-evaluation response-integrity fix: worker cuda_out_of_memory has infrastructure_failure=true but comparison only checked cuda_context_error. Fix caller gate and test it before526, preserving all training files and original running job. Next verify/sync then continue monitoring fixed validation.
 
 - 2026-11-01T00:53:55.523076: Evaluation response integrity implemented and25 local contracts passed; queued526 will use corrected caller after source sync. Training525 remains live, last verified rollout5, with128 candidates counted. No efficacy inference from varying training minibatches; next verify remote response tests then monitor fixed-seed validation.
+
+- 2026-11-01T00:55:56.465832: Evaluation integrity stage complete: sourcea90117b synced, Slurm529 passed7 response contracts, running525 unchanged. Last authoritative status:5/200 iterations completed,160 candidates; iteration6 sampling,526 remains pending dependency. Next fixed-seed validation25, full training and final comparison remain required; goal active.
