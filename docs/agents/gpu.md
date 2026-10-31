@@ -47,3 +47,5 @@
 - 2026-10-31T22:58:35: Authorize CPUexactbasetensoraudit then dependentGPUfull1000levelsmoke after verifiedsourcepull. Usesexisting.venv-mattergen (serverTorch2.7.1cu128) andfrozenALIGNN; noenvironmentinstall. Vlabproxyholder endedPID42860, remote1080unboundconfirmed; bothfailedlarge transferspreserved. No furthernetwork needed ifexacttensorrecovery succeeds.
 
 - 2026-10-31T23:25:40: Snapshot: data518PASS437eligible(351/47/39),519baseauditcorrectFAIL105of281,520cancelledneverstarted. No activeGPUjob. Assettransfer unifiedsession66840live,28/126acknowledged1MiBchunks, nofinalmanifestorserverhashyet; previoussessions87318/12641/48832/48786terminalandpreserved. ProxyPID42860goneand1080unboundconfirmed. All model/datasetcomputeonSlurm; directstreamdiagnosticsfollowprevioususerexplicitauthorization, boundedfailedroutesnotrepeated.
+
+- 2026-11-01T00:05:18: Authorize smallsourcefixbundle SCP, SSH mandatoryverifiedpull and singleGPUrerun after522terminal.521CPUproofcomplete; sourcepatchpath-only, no modelweight/data/environment modifications or externalnetwork.

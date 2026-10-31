@@ -33,6 +33,7 @@ class Model:
         sys.path.insert(0, str(HERE.parent/'denoised_tto'))
         from adapter import verify_source
         files = verify_source(assets, spec)
+        sys.path.insert(0, str(assets/'source'))
         provenance = None
         if kind == 'base':
             path = root/'assets/base'; expected = BASE_SHA
