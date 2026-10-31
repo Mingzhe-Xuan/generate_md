@@ -72,5 +72,12 @@ class Contracts(unittest.TestCase):
         self.assertEqual(discrepancy_ids(['a','b'],[1.,2.1],{'a':1.001,'b':2.}),['b'])
         with self.assertRaises(ValueError):discrepancy_ids(['a'],[],{'a':1.})
 
+    def test_coordinate_roundtrip_is_not_exact_input(self):
+        cell=np.array([[3.1,.2,.3],[.5,4.2,.1],[.2,.1,5.3]])
+        frac=np.array([[.123,.456,.789]])
+        roundtrip=(frac@cell)@np.linalg.inv(cell)
+        self.assertFalse(np.array_equal(frac,roundtrip))
+        self.assertLess(np.abs(frac-roundtrip).max(),1e-12)
+
 
 if __name__=='__main__':unittest.main()
