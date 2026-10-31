@@ -2,11 +2,11 @@
 
 ## 当前状态
 
-ALIGNN reliability pilot COMPLETE: three error thresholds0.1/0.2/0.5eV, nine heads, immutable4239-ID test, verified local deployment package and risk/calibration plots. Overall discrimination useful; nonzero-gap reliability substantially weaker. No active training/inference jobs; no new DFT or GRPO.
+ACTIVE: Audit actual60000training labels of frozen MP gap ALIGNN for exact/rounded bandgap mode and positive-gap distribution to inform MatterGen-GRPO target. Prior reliability pilot complete and preserved.
 
 ## 当前计划
 
-Completed local implementation, Slurm prepare/features/heads, independent audit and exact-input versus coordinate-roundtrip diagnosis. Deliver RESULTS.md and package; no additional experiments pending for this request. Optional next study needs matched-label nonzero-gap/generated structures and independent calibration.
+Add independently tested training-distribution module under existing alignn_reliability, synchronize locally committed source, CPU Slurm only, retrieve audited counts. Report zero-gap concentration separately from positive-gap peak; no MatterGen or GRPO training in this request.
 
 ## 变更记录
 
@@ -46,3 +46,5 @@ Completed local implementation, Slurm prepare/features/heads, independent audit 
 - 2026-10-31T16:33:41: Classifier scientific results complete, final predictor diagnostic follow-up pending.11localchecks pass; same-input threshold retained after identifying coordinate-path confound. Do not claim original published predictions exactly reproduced.
 
 - 2026-10-31T16:41:56: COMPLETE ALIGNN reliability pilot for0.1/0.2/0.5eV. Data511/GPU512/heads513/diagnostic515exit0; nine frozen-backbone heads and verified local package delivered. Overall MLP AUC0.8273/0.7790/0.7951; nonzero-gap0.6079/0.6225/0.7062 prevents strong GRPO gate claim. Preserve514failed mixed-input check and separate roundtrip sensitivity. No active compute, DFT or RL jobs started. Next research optional in-domain labels/calibration, outside completed pilot.
+
+- 2026-10-31T22:11:34: START requested ALIGNN training-bandgap mode audit for choosing MatterGen-GRPO target. Use exact current checkpoint60000trainingIDs and cached MEGNet DFT labels, not validation/test features. Compute all/positive exact modes, rounded/bin peaks and fractions; no GRPO training authorized or launched. Next local tested statistics module, commit/sync, CPU Slurm, retrieve evidence.

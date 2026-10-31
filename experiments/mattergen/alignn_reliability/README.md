@@ -60,3 +60,17 @@ overall results, which can be dominated by easily identified zero-gap materials.
 
 See [RESULTS.md](RESULTS.md) for the first completed run, held-out metrics,
 deployment package location and coordinate/graph sensitivity caveat.
+
+`distribution.py` audits the frozen predictor's original60000 training DFT gap
+labels from the same cached dataset/checkpoint. It reports exact and rounded
+modes, fixed-width histogram peaks, zero/positive partitions and target-window
+counts. This is separate from reliability fitting, which excludes these IDs.
+Run from the repository root:
+
+```bash
+export GAPMODE_ROOT=results/mattergen/alignn-training-gap-mode-20261031
+sbatch --export=ALL experiments/mattergen/alignn_reliability/distribution.sbatch
+```
+
+The ignored run directory contains `distribution.json`, `REPORT.md` and a
+compressed ID/label table; no model inference or GRPO training is performed.

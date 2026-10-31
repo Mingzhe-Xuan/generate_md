@@ -40,3 +40,7 @@
 - 2026-10-31T16:40:56: Final documentation QA plan: check RESULTS tables against saved metrics, local artifact links/hashes, frozen-head package inference, and diagnostic515 consistency/representation caveats. Documentation-only changes; rerun existing11unit tests and diff checks before commit.
 
 - 2026-10-31T16:41:56: Final PASS:11unit tests, README relative results link, all overall AUROC/p90 table cells match archivedCSV; artifact+deployment+diagnostic SHA verified. GPU515exit0 exact-input max batch/single6.66e-16, architecture control0; preserve514failure and mvc-9126roundtrip topology sensitivity0.01570eV. Deployment9heads first8maxdelta8.502e-8. Risk/calibration PNGs visually inspected. No new model retuning.
+
+- 2026-10-31T22:11:34: Plan training-gap statistics tests: exact modes/ties, zero/positive partition and invalid labels, fixed-width bins/boundaries, window counts; input audit enforces60000unique original trainingIDs, disjoint original splits, checkpointSHA and complete finite nonnegative labels. Compare embedded published training targets if available. Existing reliability tests must continue passing. All dataset loading/statistics remote via CPU Slurm.
+
+- 2026-10-31T22:16:59: Local PASS15tests (existing11 plus four distribution tests); py_compile and bash-n passed, module diff check clean. Labels/ties/bin-boundaries/positive-only/invalid-values and tolerance-window counts covered. Prepared CPU-only64G Slurm script; actual dataset/checkpoint audits pending server job.
