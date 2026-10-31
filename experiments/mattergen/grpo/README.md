@@ -114,14 +114,16 @@ training is not claimed until the GPU gate and Slurm artifacts prove it.
 ## Independent checkpoint comparison
 
 `compare.py`/`compare.sbatch` require completed GRPO and evaluate256new structures
-per arm under the same heldout atom-count contexts and test seeds: base,
-validation-selected GRPO, final GRPO, conditionalcheckpoint under the matched
-explicit kernel, and conditionalcheckpoint under official native PC/CFG2 with
-its terminalmean. The extra native arm prevents a changed sampler from being
-misreported as a trained-model gain. Checkpoints are never selected on these
+per arm under the same heldout atom-count contexts and test seeds. Seven arms
+include base/validation-selectedGRPO/finalGRPO/conditionalcheckpoint under the
+explicit training kernel, plus base/validation-selectedGRPO/conditionalcheckpoint
+under official native PC with its terminalmean (CFG2 for conditional, CFG0 for
+base/GRPO). This separates checkpoint gains from sampler changes and directly
+compares GRPO with conditional generation under the same native inference.
+Checkpoints are never selected on these
 final samples. Real heldout geometries/compositions are not generation inputs.
 
-All five arms then receive the same pinned canonical MatterSim5M B profile,
+All seven arms then receive the same pinned canonical MatterSim5M B profile,
 with raw atomic force convergence reported separately from constrained-filter
 convergence. DFT and SUN remain paused. Invalid and unsupported candidates remain
 in full requested denominators; valid-only MAE must be read alongside coverage.

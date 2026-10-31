@@ -1,8 +1,14 @@
 import unittest
-from compare import counts_for_test, paired_cluster_interval, composition_summary, audit_arm
+from compare import counts_for_test, paired_cluster_interval, composition_summary, audit_arm, checkpoint_for_arm
 
 
 class ComparisonContracts(unittest.TestCase):
+    def test_native_grpo_control_uses_validation_selected_checkpoint(self):
+        self.assertEqual(checkpoint_for_arm('grpo_best_native'), 'best.pt')
+        self.assertEqual(checkpoint_for_arm('grpo_last'), 'latest.pt')
+        self.assertIsNone(checkpoint_for_arm('conditional_native'))
+        with self.assertRaises(ValueError): checkpoint_for_arm('unplanned_arm')
+
     def test_missing_candidates_cannot_silently_shrink_the_benchmark(self):
         events = [dict(index=i, batch=0) for i in range(8)]
         poses = [dict(index=i, numbers=[1]*2) for i in range(8)]

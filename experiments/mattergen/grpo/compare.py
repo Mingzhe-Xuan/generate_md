@@ -18,7 +18,14 @@ from rollout import generate, structures, Evaluator
 from train import property_metrics
 from smoke import write
 
-ARMS = ('base', 'grpo_best', 'grpo_last', 'conditional_matched', 'conditional_native')
+ARMS = ('base', 'base_native', 'grpo_best', 'grpo_best_native', 'grpo_last', 'conditional_matched', 'conditional_native')
+
+
+def checkpoint_for_arm(arm):
+    if arm not in ARMS: raise ValueError('Unknown comparison arm.')
+    if arm.startswith('grpo_best'): return 'best.pt'
+    if arm == 'grpo_last': return 'latest.pt'
+    return None
 
 
 def composition_summary(poses, valid_ids):
@@ -82,7 +89,7 @@ def native_generate(model, counts, seed):
     started = time.perf_counter()
     with torch.no_grad(): _, terminal_mean = model.sampler.sample(model.batch(counts), mask={})
     return dict(terminal=model.state(terminal_mean), seconds=time.perf_counter()-started,
-                sampler='Official1000-step PC, native adaptive corrector and final mean, CFG2')
+                sampler=f'Official1000-step PC, native adaptive corrector and final mean, CFG{model.metadata["guidance"]}')
 
 
 def generation_comparison(root, out, count, evaluator):
@@ -112,7 +119,7 @@ def generation_comparison(root, out, count, evaluator):
         checkpoint_iteration = None
         if arm.startswith('grpo'):
             model.lora(4)
-            path = root/('training/best.pt' if arm == 'grpo_best' else 'training/latest.pt')
+            path = root/'training'/checkpoint_for_arm(arm)
             saved = torch.load(path, map_location='cpu', weights_only=True)
             if saved['identity'] != training['identity']: raise ValueError('Wrong GRPO checkpoint.')
             model.load_adaptation(saved['adaptation']); checkpoint_iteration = saved['iteration']
@@ -237,13 +244,19 @@ def report(out):
         for baseline in ('base', 'conditional_matched', 'conditional_native'):
             right = json.loads((out/baseline/name).read_text())['events']
             deltas[stage+'-GRPO-minus-'+baseline] = paired_cluster_interval(left, right)
+        left_native = json.loads((out/'grpo_best_native'/name).read_text())['events']
+        for baseline in ('base_native', 'conditional_native'):
+            right = json.loads((out/baseline/name).read_text())['events']
+            deltas[stage+'-GRPO-native-minus-'+baseline] = paired_cluster_interval(left_native, right)
     summary = dict(passed=True, rows=rows, success_rate_differences=deltas,
         plan_sha256=sha(out/'plan.json'),
         limitations='One training seed; native PC batch coupling handled by cluster resampling. Invalid/unsupported/unconverged cases retained. '
                      'ALIGNN is reward and evaluator, no DFT/SUN/independent accuracy claim. Real target structures supply atom-count distribution only.')
     write(out/'comparison.json', summary)
     lines += ['', 'grpo_best is selected only on validation; grpo_last reports the final trained checkpoint. '
-              'conditional_matched uses the same explicit GRPO sampler; conditional_native uses the official native PC sampler.', '',
+              'conditional_matched uses the same explicit GRPO sampler. base_native, grpo_best_native and conditional_native '
+              'all use official native PC with their respective checkpoint, isolating weight gains under native inference. '
+              'The GRPO checkpoint for native inference is still selected only by the prespecified training-kernel validation, not final native tests.', '',
               'All gap-pass denominators are the full requested generation count. MAE is conditional on evaluable structures; read alongside validity. '
               'Force pass requires canonical relaxation convergence and raw atomic force <=0.01eV/Angstrom. Formation energy/phonons/DFT stability not certified.', '']
     lines += ['Evaluability checks use model support, finite geometry, volume1..200Angstrom^3/atom and periodic separation>=0.6Angstrom; '

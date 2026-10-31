@@ -2,11 +2,11 @@
 
 ## 当前状态
 
-ACTIVE MatterGen GRPO goal: exact2.5+/-0.1eV target-data context cohort437(351train/47val/39test), directpretrainedonlineGRPO,noSFT. Local16testsPASS; stochasticpolicy/trainer implemented, actualGPUsmoke/training/comparison pending. Officialbaseavailablelocally, Vlablargefiletransferunstable; serialverifiedchunktransfer session66840live at28/126.519cachedbackboneauditfailed176mismatches;520dependentGPUjobcancelledbeforestart. Goal remainsactive, no result superiority claimed.
+ACTIVE MatterGen GRPO goal. TargetDFTcohort437<=20atomstructures(351/47/39); directpretrainedGRPO,noSFT, realdata suppliesatomcountcontexts. Policy/trainer/sevenarmcomparison implemented;21localtestsPASS. NoGPUsmoke/training/results yet. Officialbase localSHAverified; exact176tensordelta inserialtransfer session66840,106/126acknowledged, failures76/88/89to retryafterterminal. Prior519identityfailure retained,520neverstartedcancelled.
 
 ## 当前计划
 
-Finish lossless176tensor/126chunktransfer and serverhash/281tensorreconstruction, synchronizelatestcommittedsourcebundle, CPUaudit then full1000levelCUDArealreward/replay/GRPOupdate smoke. Diagnosefailureswithoutweakeninglikelihoodgates. Afterpass train200iterationsx32=6400candidates (resumeverifiedcheckpoints), commonALIGNNcompareagainstbase/officialconditionalcheckpoint, matchingcounts/budgets plus nativeconditionalbaseline and commonMatterSimpostprocessing. Independentfinalrollouts; DFT/SUNpaused. Do notmarkgoalcompletebefore realtraining+comparisonverified.
+Finishmissingverifiedchunks+manifest, synchronize latestce123d3..HEADbundle, SlurmCPU281tensorreconstruction and full1000levelG8N12CUDArealreward/microbatchGRPOsmoke. Source/hashgatesretain0.01replaytolerance andfrozenparameter+bufferproof. Then200iterationsx32=6400candidates withresume; comparebase/bestGRPO/lastGRPO/conditionalunderexplicitkernel plusbase/bestGRPO/conditionalunderofficialnativePC,256eachindependentfinalcontexts, commonALIGNN/rawandcanonicalMatterSimrelaxedmetrics. DFT/SUNpaused; nofinishclaimbeforeactualverifiedtraining+comparison.
 
 ## 变更记录
 
@@ -62,3 +62,5 @@ Finish lossless176tensor/126chunktransfer and serverhash/281tensorreconstruction
 - 2026-10-31T23:25:40: Progress: implement resumableonlineGRPO trainer6400newcandidates(200x4x8), 2innerupdates, heldoutvalidationcheckpointselection, source/data/smokehashgates, correctmicrobatchactionalignment, checkpoint/contextRNGresume, fullfrozenparameter+bufferhash. All16localtestsPASS.519baseauditfailed105/281match (realbase176tensordelta needed);520neverstartedDependencyNeverSatisfied andpreciselycancelled. Fullbaseofficialdownload verifiedlocally; compressed176tensordelta131348962B/126chunks. Currentserialtransfer session66840live,28/126SCPacknowledged; finalremotehashpending. No GPUtrainingresult yet.
 
 - 2026-10-31T23:46:50: Complete localcomparison implementation: fivearms(base,bestGRPO,lastGRPO,conditionalmatchedkernel,conditionalnativePC),256independenttestrollouts/arm, fixedheldoutcontexts/seeds, commonALIGNN andcanonicalMatterSimB; compositiondiversity, all-denominator audits and pairedbatchbootstrap. GPUinfrastructureerrorspropagateinstead of being scored as badmaterials.20localtestsPASS; noGPUresults yet. Smoke now testsactualG8group,N12context and commonmicrobatchpolicy_update routine beforetraining; hashgateincludestrainer. Serialupload66840stilllive95/126acknowledged, knownmissedchunks76/88/89willneedtargetedretryafterterminal; nofullmanifestyet.
+
+- 2026-10-31T23:50:17: Finalcomparison fidelity extendedbeforeanytestgeneration: base and selectedGRPO now also use officialnativePC, in addition to conditionalnative, so nativeinference weights canbecomparedwithoutkernelconfounding. Sevenarms total256each, frozencheckpointselection unchanged. Local21testsPASS. Assettransfer66840live106/126acknowledged, knownfailedchunks76/88/89pendingtargetedretryaftercurrentbatchterminal. No actualmodeltraining/inference yet; fullobjectiveactive.
