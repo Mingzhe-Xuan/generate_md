@@ -50,3 +50,10 @@ sbatch --dependency=afterok:$feat --export=ALL experiments/mattergen/alignn_reli
 
 All remote preparation, model inference, head training and reporting use Slurm.
 Tests: `python -m unittest discover -s experiments/mattergen/alignn_reliability -p 'test_*.py'`.
+
+`diagnose.py`/`diagnose.sbatch` optionally check posthoc current-versus-published
+prediction discrepancies using native architecture/original graph and single
+versus batched evaluation. They do not retune heads. Three independently trained
+tolerance heads are not a jointly monotonic error CDF; report this limitation.
+Interpret confidence within the intended nonzero-gap domain separately from
+overall results, which can be dominated by easily identified zero-gap materials.

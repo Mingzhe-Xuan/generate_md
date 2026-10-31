@@ -67,5 +67,10 @@ class Contracts(unittest.TestCase):
         self.assertEqual(auc_check(np.array([1,0,1,0]),np.array([.9,.8,.8,.1])),.875)
         self.assertIsNone(auc_check(np.ones(2),np.array([0.,1.])))
 
+    def test_discrepancy_diagnostic_selection(self):
+        from diagnose import discrepancy_ids
+        self.assertEqual(discrepancy_ids(['a','b'],[1.,2.1],{'a':1.001,'b':2.}),['b'])
+        with self.assertRaises(ValueError):discrepancy_ids(['a'],[],{'a':1.})
+
 
 if __name__=='__main__':unittest.main()
