@@ -1,8 +1,30 @@
 import unittest
-from compare import counts_for_test, paired_cluster_interval, composition_summary, audit_arm, checkpoint_for_arm
+from compare import (counts_for_test, paired_cluster_interval, composition_summary,
+                     audit_arm, checkpoint_for_arm, audit_relaxation_response)
 
 
 class ComparisonContracts(unittest.TestCase):
+    def test_physics_infrastructure_errors_cannot_be_scored_as_material_failures(self):
+        selected = [dict(candidate_id='a')]
+        for error in (dict(error_type='cuda_out_of_memory', infrastructure_failure=True),
+                      dict(error_type='cuda_out_of_memory'),
+                      dict(error_type='cuda_context_error'),
+                      dict(error_type='other', infrastructure_failure=True),
+                      dict(error='Poisoned CUDA context after earlier case')):
+            with self.subTest(error=error), self.assertRaises(RuntimeError):
+                audit_relaxation_response(dict(results=[dict(candidate_id='a', **error)]), selected)
+        for status in ('unsupported_species', 'relaxation_error', 'symmetry_guard'):
+            audit_relaxation_response(dict(results=[dict(candidate_id='a', error_type=status,
+                                                         infrastructure_failure=False)]), selected)
+
+    def test_duplicate_worker_results_cannot_hide_missing_candidates(self):
+        selected = [dict(candidate_id='a'), dict(candidate_id='b')]
+        a, b = selected
+        audit_relaxation_response(dict(results=[b, a]), selected)
+        for rows in ([a], [a, a, b], [a, dict(candidate_id='c')]):
+            with self.subTest(rows=rows), self.assertRaises(ValueError):
+                audit_relaxation_response(dict(results=rows), selected)
+
     def test_native_grpo_control_uses_validation_selected_checkpoint(self):
         self.assertEqual(checkpoint_for_arm('grpo_best_native'), 'best.pt')
         self.assertEqual(checkpoint_for_arm('grpo_last'), 'latest.pt')

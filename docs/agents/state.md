@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-ACTIVE MatterGen GRPO goal. Training525 is running on node42: 3/200 iterations complete (96 generated candidates), rollout4 in progress. Full GPU smoke524 and server checkpoint tests527/528 passed. Initial fixed validation: 64/64 evaluable, 0/64 gap passes, MAE1.9062167414eV. Comparison526 awaits afterok525. No learned-policy efficacy conclusion yet; DFT/SUN remain paused.
+ACTIVE MatterGen GRPO goal. Training525 is running on node42: 4/200 iterations complete (128 generated candidates), rollout5 in progress. Full GPU smoke524 and server checkpoint tests527/528 passed. Initial fixed validation: 64/64 evaluable, 0/64 gap passes, MAE1.9062167414eV. Comparison526 awaits afterok525. No learned-policy efficacy conclusion yet; DFT/SUN remain paused.
 
 ## 当前计划
 
@@ -74,3 +74,7 @@ Keep existing525 running; inspect fixed-seed validation at iteration25 and later
 - 2026-11-01T00:41:26: Continuegoal after priorprogress;525confirmedR9:27,node42,initialvalidation40/64,526Dependency. Readonlyreview reproduced a real IO bug: scheduledLR is np.float64, defaultweights_only loaderrejectsitsglobals. AddscopedNumPy64safe reader+resumelauncher andcomparisonuse; active train.py/policy.py/models.py/rollout.py unchanged bytewise versus524proof. Nojobrestart/lostrollouts. Local23testsPASS; nextserverCPUtestunderactualTorch2.7 while525continues.
 
 - 2026-11-01T00:50:14.760496: Entered real online parameter-update stage: latest checkpoint iteration3 accepted by Slurm528, next rollout4 live in525; 96 candidates counted, finite nonzero LoRA updates and replay errors below0.01. Initial fixed validation64/64 evaluable,0/64 target passes, MAE1.9062167414eV. IO compatibility server tests527 PASS. No efficacy claim until repeat validation25 and final independent seven-arm comparison526. Next monitor original jobs, preserve checkpoint/data/source identity, and retrieve comparison after completion.
+
+- 2026-11-01T00:52:52.145258: Training525 verified running at29:24, iteration5 rollout after128 candidates/4 completed updates. Enter queued-evaluation response-integrity fix: worker cuda_out_of_memory has infrastructure_failure=true but comparison only checked cuda_context_error. Fix caller gate and test it before526, preserving all training files and original running job. Next verify/sync then continue monitoring fixed validation.
+
+- 2026-11-01T00:53:55.523076: Evaluation response integrity implemented and25 local contracts passed; queued526 will use corrected caller after source sync. Training525 remains live, last verified rollout5, with128 candidates counted. No efficacy inference from varying training minibatches; next verify remote response tests then monitor fixed-seed validation.

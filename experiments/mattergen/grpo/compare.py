@@ -63,6 +63,19 @@ def audit_arm(events, poses, counts):
             raise ValueError('Final atom counts differ from the matched context plan.')
 
 
+def audit_relaxation_response(response, selected):
+    wanted = [row['candidate_id'] for row in selected]
+    actual = [row['candidate_id'] for row in response['results']]
+    if len(set(actual)) != len(actual) or sorted(actual) != sorted(wanted):
+        raise ValueError('Relaxation response cohort differs.')
+    for row in response['results']:
+        if (row.get('infrastructure_failure')
+                or row.get('error_type') in ('cuda_context_error', 'cuda_out_of_memory')
+                or 'Poisoned CUDA context' in row.get('error', '')):
+            raise RuntimeError('Physics infrastructure failed; preserve results and repair before comparison: '
+                               f"{row['candidate_id']}: {row.get('error_type', row.get('error', 'unknown'))}")
+
+
 def paired_cluster_interval(left, right, seed=20261103, repeats=2000):
     if len(left) != len(right) or not left: raise ValueError('Paired rollout counts differ.')
     groups = sorted({r['batch'] for r in left})
@@ -189,11 +202,8 @@ def relaxation_comparison(root, out, evaluator):
             selected = tasks[offset:offset+8]
             worker.stdin.write(json.dumps(dict(tasks=selected))+'\n'); worker.stdin.flush()
             response = read_response(worker.stdout, out/'physics.stdout')
-            if {r['candidate_id'] for r in response['results']} != {r['candidate_id'] for r in selected}:
-                raise ValueError('Relaxation response cohort differs.')
+            audit_relaxation_response(response, selected)
             for row in response['results']:
-                if row.get('error_type') == 'cuda_context_error' or 'Poisoned CUDA context' in row.get('error', ''):
-                    raise RuntimeError('Physics CUDA infrastructure failed; preserve results and repair before comparison, do not score later cases as material failures.')
                 if row['input_sha256'] != task_by_id[row['candidate_id']]['expected_input_sha256']:
                     raise ValueError('Relaxation input geometry changed.')
                 results[row['candidate_id']] = row
