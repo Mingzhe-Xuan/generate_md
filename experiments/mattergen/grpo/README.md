@@ -140,3 +140,18 @@ allowlist permits only the NumPy scalar/dtype types needed for this value while
 keeping weights-only loading. Tensor bytes, optimizer values, context RNG,
 training algorithm and all four GPU-validated runtime source files are preserved.
 The already-running training allocation is not restarted for this IO-only fix.
+
+`plot_comparison.py` renders the completed `comparison/comparison.json` as PNG
+and SVG, with its source hash in a metadata sidecar. It plots full-denominator
+raw/relaxed gap passes, MAE with evaluability counts, and relaxed gap/force joint
+passes. Missing arms, inconsistent denominators and zero-filled undefined MAE
+are rejected. Run locally after retrieving the final JSON:
+
+```bash
+python experiments/mattergen/grpo/plot_comparison.py \
+  --comparison results/mattergen/grpo-gap25-20261031/comparison/comparison.json \
+  --output-prefix results/mattergen/grpo-gap25-20261031/comparison/metrics
+```
+
+Synthetic visual QA must use `--fixture`, which labels the figure as test data.
+The plotter does not start training, select checkpoints or change evaluation.

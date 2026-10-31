@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-ACTIVE MatterGen GRPO goal. Training525 is running on node42: 6/200 iterations complete (192 generated candidates), rollout7 in progress. Full GPU smoke524 and server checkpoint tests527/528 passed. Initial fixed validation: 64/64 evaluable, 0/64 gap passes, MAE1.9062167414eV. Comparison526 awaits afterok525. No learned-policy efficacy conclusion yet; DFT/SUN remain paused.
+ACTIVE MatterGen GRPO goal. Training525 is running on node42: 9/200 iterations complete (288 generated candidates), rollout10 in progress. Full GPU smoke524 and server checkpoint tests527/528 passed. Initial fixed validation: 64/64 evaluable, 0/64 gap passes, MAE1.9062167414eV. Comparison526 awaits afterok525. No learned-policy efficacy conclusion yet; DFT/SUN remain paused.
 
 ## 当前计划
 
@@ -84,3 +84,7 @@ Keep existing525 running; inspect fixed-seed validation at iteration25 and later
 - 2026-11-01T00:58:49.606941: VERIFIED WAIT turn: exact Slurm525 re-polled live on node42 at34:31, iteration6 step701/1000; last completed5 iterations/160 candidates.526 remains Dependency. Only validation0000 exists; fixed validation25 and final comparison are incomplete. No training restart, no new jobs, no parameter/code changes. Previous goal turn was progress (evaluation response gate implemented and server529 acceptance). Keep goal active while authorized compute advances.
 
 - 2026-11-01T01:01:51.238565: Live training525 verified at37:12: rollout7 step301/1000, completed6/200 iterations/192 candidates;526 pending dependency, only baseline validation0000 exists. Retrieved all6 iteration records/plan/baseline and audited all12 updates successfully. Mean completed-iteration duration after baseline221.752s; about11.95h remaining training compute plus about2h scheduled validation at this initial throughput. Completion still requires200 iterations and independent comparison; no restart or settings change.
+
+- 2026-11-01T01:14:22.447114: Enter local final-comparison visualization stage while existing525 computes: prepare plotter with denominator/coverage contracts; no fabricated final result or change to training/checkpoint selection. Next validate on labeled fixtures, then use actual final comparison.json after526 completes.
+
+- 2026-11-01T01:17:52.736157: Final-comparison plotter ready and visually verified on marked test data; source/checkpoint selection and live525/526 unchanged. Last authoritative check525 R52:11, rollout10 step1000,9 completed iterations/288 candidates. Waiting for actual fixed validation25, full200 training iterations and final comparison; render actual plots only after real comparison.json is available.
