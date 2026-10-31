@@ -36,3 +36,7 @@
 - 2026-10-31T16:17:52: Diagnostic addition local PASS:10tests including selected-ID discrepancy logic, compileall/bash-n/diff checks. Initial pipeline511/512/513all0; archive0cb6aee601237955a313596af78b6117b5165a8f0c36c0193237879566f9d77f verified; full test AUROCs featureMLP0.8273/0.7790/0.7951; native512controls and reconstruction0. Posthoc GPUdiagnostic next on7published-output deltas, classifiers untouched.
 
 - 2026-10-31T16:33:41: Diagnostic correction local PASS:11tests, including explicit float64 coordinate-roundtrip not bitwise-identical, plus compileall/bash-n/diff. Existing1e-5exact-input criterion retained.514failed comparison preserved; next rerun checks exact original frac separately and records graph/roundtrip sensitivity without changing any learned head or scored test subset.
+
+- 2026-10-31T16:40:56: Final documentation QA plan: check RESULTS tables against saved metrics, local artifact links/hashes, frozen-head package inference, and diagnostic515 consistency/representation caveats. Documentation-only changes; rerun existing11unit tests and diff checks before commit.
+
+- 2026-10-31T16:41:56: Final PASS:11unit tests, README relative results link, all overall AUROC/p90 table cells match archivedCSV; artifact+deployment+diagnostic SHA verified. GPU515exit0 exact-input max batch/single6.66e-16, architecture control0; preserve514failure and mvc-9126roundtrip topology sensitivity0.01570eV. Deployment9heads first8maxdelta8.502e-8. Risk/calibration PNGs visually inspected. No new model retuning.

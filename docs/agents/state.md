@@ -2,11 +2,11 @@
 
 ## 当前状态
 
-ALIGNN reliability classifier task ACTIVE. User requests lightweight classifier on final ALIGNN features and selected thresholds0.1/0.2/0.5eV. Freeze verified MP gap ALIGNN; extract256dim pre-fc pooled embeddings; construct correctness from DFT error. Plan train-meta data from original5000validation IDs, untouched4239test IDs, not original60000training errors. Check cached structures/labels on server before downloads. No new DFT.
+ALIGNN reliability pilot COMPLETE: three error thresholds0.1/0.2/0.5eV, nine heads, immutable4239-ID test, verified local deployment package and risk/calibration plots. Overall discrimination useful; nonzero-gap reliability substantially weaker. No active training/inference jobs; no new DFT or GRPO.
 
 ## 当前计划
 
-Implement experiments/mattergen/alignn_reliability/ module with README, dataset provenance/splits, frozen batch feature extraction, logistic and tiny MLP reliability heads, calibration and risk-coverage evaluation. Unit tests for labels/splits/features/reliability metrics; local tests+commit/push/bundle then SlurmGPUfeatures and CPUheads/audit. Explicit limits: original validation selection exposure, in-distribution equilibrium labels, no noisy/OOD correctness guarantee, no RL integration yet.
+Completed local implementation, Slurm prepare/features/heads, independent audit and exact-input versus coordinate-roundtrip diagnosis. Deliver RESULTS.md and package; no additional experiments pending for this request. Optional next study needs matched-label nonzero-gap/generated structures and independent calibration.
 
 ## 变更记录
 
@@ -44,3 +44,5 @@ Implement experiments/mattergen/alignn_reliability/ module with README, dataset 
 - 2026-10-31T16:17:52: Reliability final QA stage. Models trained and archive downloaded/verified; subset limits material and will be reported. Read-only diagnostic source/tests complete; next GPU7point consistency check then package learned heads and finish results.
 
 - 2026-10-31T16:33:41: Classifier scientific results complete, final predictor diagnostic follow-up pending.11localchecks pass; same-input threshold retained after identifying coordinate-path confound. Do not claim original published predictions exactly reproduced.
+
+- 2026-10-31T16:41:56: COMPLETE ALIGNN reliability pilot for0.1/0.2/0.5eV. Data511/GPU512/heads513/diagnostic515exit0; nine frozen-backbone heads and verified local package delivered. Overall MLP AUC0.8273/0.7790/0.7951; nonzero-gap0.6079/0.6225/0.7062 prevents strong GRPO gate claim. Preserve514failed mixed-input check and separate roundtrip sensitivity. No active compute, DFT or RL jobs started. Next research optional in-domain labels/calibration, outside completed pilot.

@@ -57,3 +57,6 @@ versus batched evaluation. They do not retune heads. Three independently trained
 tolerance heads are not a jointly monotonic error CDF; report this limitation.
 Interpret confidence within the intended nonzero-gap domain separately from
 overall results, which can be dominated by easily identified zero-gap materials.
+
+See [RESULTS.md](RESULTS.md) for the first completed run, held-out metrics,
+deployment package location and coordinate/graph sensitivity caveat.
