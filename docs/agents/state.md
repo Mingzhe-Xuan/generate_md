@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-ACTIVE MatterGen GRPO goal. Training525 is running on node42: 5/200 iterations complete (160 generated candidates), rollout6 in progress. Full GPU smoke524 and server checkpoint tests527/528 passed. Initial fixed validation: 64/64 evaluable, 0/64 gap passes, MAE1.9062167414eV. Comparison526 awaits afterok525. No learned-policy efficacy conclusion yet; DFT/SUN remain paused.
+ACTIVE MatterGen GRPO goal. Training525 is running on node42: 6/200 iterations complete (192 generated candidates), rollout7 in progress. Full GPU smoke524 and server checkpoint tests527/528 passed. Initial fixed validation: 64/64 evaluable, 0/64 gap passes, MAE1.9062167414eV. Comparison526 awaits afterok525. No learned-policy efficacy conclusion yet; DFT/SUN remain paused.
 
 ## 当前计划
 
@@ -80,3 +80,7 @@ Keep existing525 running; inspect fixed-seed validation at iteration25 and later
 - 2026-11-01T00:53:55.523076: Evaluation response integrity implemented and25 local contracts passed; queued526 will use corrected caller after source sync. Training525 remains live, last verified rollout5, with128 candidates counted. No efficacy inference from varying training minibatches; next verify remote response tests then monitor fixed-seed validation.
 
 - 2026-11-01T00:55:56.465832: Evaluation integrity stage complete: sourcea90117b synced, Slurm529 passed7 response contracts, running525 unchanged. Last authoritative status:5/200 iterations completed,160 candidates; iteration6 sampling,526 remains pending dependency. Next fixed-seed validation25, full training and final comparison remain required; goal active.
+
+- 2026-11-01T00:58:49.606941: VERIFIED WAIT turn: exact Slurm525 re-polled live on node42 at34:31, iteration6 step701/1000; last completed5 iterations/160 candidates.526 remains Dependency. Only validation0000 exists; fixed validation25 and final comparison are incomplete. No training restart, no new jobs, no parameter/code changes. Previous goal turn was progress (evaluation response gate implemented and server529 acceptance). Keep goal active while authorized compute advances.
+
+- 2026-11-01T01:01:51.238565: Live training525 verified at37:12: rollout7 step301/1000, completed6/200 iterations/192 candidates;526 pending dependency, only baseline validation0000 exists. Retrieved all6 iteration records/plan/baseline and audited all12 updates successfully. Mean completed-iteration duration after baseline221.752s; about11.95h remaining training compute plus about2h scheduled validation at this initial throughput. Completion still requires200 iterations and independent comparison; no restart or settings change.

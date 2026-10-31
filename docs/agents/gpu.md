@@ -69,3 +69,9 @@
 - 2026-11-01T00:54:45.958195: SSH verify source bundle SHA and git pull before bounded CPU Slurm comparison-contract tests; inspect live525/526 without restart.
 
 - 2026-11-01T00:55:15.405031: Read-only verify Slurm529 comparison gate tests via logs and scontrol exit status; mandatory eval-integrity source pull. Revalidate525/526 and preserve evidence.
+
+- 2026-11-01T00:56:32.965466: Goal continuation after verified progress (comparison integrity fix and server529 acceptance). Read-only poll exact live525/queued526, training progress/history and validation status; mandatory git pull of verified a90117b source bundle. No job submission/restart.
+
+- 2026-11-01T00:59:13.117505: Goal continuation, previous turn classified verified wait on live525. Read-only check exact525/526 and current iteration/fixed validation, verified source-bundle pull first. No new jobs or training changes.
+
+- 2026-11-01T01:00:15.068654: SCP small actual training history/plan and completed baseline validation after preceding source-first SSH poll. Read-only evidence retrieval; audit all completed iterations locally, no remote batch computation.
