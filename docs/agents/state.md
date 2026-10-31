@@ -2,11 +2,11 @@
 
 ## 当前状态
 
-Template-local MatterGen editing design COMPLETE. Proposal csp/TEMPLATE_EDITING.md: native low-noise geometry marginals, last50/100/200round suffix, exact species invariance, unified relaxation, constrained best-of-N and matched controls. Existing joint bandgap model is a proposed low-noise editor, not a downloaded/trained CSP. Source/grid/docs checks passed; no jobs/inference/training.
+ALIGNN reliability classifier task ACTIVE. User requests lightweight classifier on final ALIGNN features and selected thresholds0.1/0.2/0.5eV. Freeze verified MP gap ALIGNN; extract256dim pre-fc pooled embeddings; construct correctness from DFT error. Plan train-meta data from original5000validation IDs, untouched4239test IDs, not original60000training errors. Check cached structures/labels on server before downloads. No new DFT.
 
 ## 当前计划
 
-If user requests implementation: add explicit warm-start sampler bypassing prior reset, preserve1000-step discrete mapping, test native suffix and species/condition invariants, then small Slurm pilot versus direct relaxation/noise-only/CFG0/CFG2. Optimize relaxed objective within original-template distance/strain bounds and retain feasible baseline. No automatic experiment launch from this proposal.
+Implement experiments/mattergen/alignn_reliability/ module with README, dataset provenance/splits, frozen batch feature extraction, logistic and tiny MLP reliability heads, calibration and risk-coverage evaluation. Unit tests for labels/splits/features/reliability metrics; local tests+commit/push/bundle then SlurmGPUfeatures and CPUheads/audit. Explicit limits: original validation selection exposure, in-distribution equilibrium labels, no noisy/OOD correctness guarantee, no RL integration yet.
 
 ## 变更记录
 
@@ -36,3 +36,5 @@ If user requests implementation: add explicit warm-start sampler bypassing prior
 - 2026-10-30T17:49:38: Conditional-adapter explanation/documentation correction COMPLETE. Source/AST/dimension/parameter checks passed. Existing training proposal remains unlaunched; no new compute or experimental result changes.
 
 - 2026-10-30T19:14:57: Template-local MatterGen editing design COMPLETE, source/grid/document checks passed. Protocol is proposed only, no new model or measured improvement. Existing bandgap checkpoint can be investigated for low-noise editing before training a dedicated CSP; species/locality and relaxed property gains remain validation requirements.
+
+- 2026-10-31T15:57:25: Reliability implementation unit passed local8tests/staticchecks. Cached megnet ZIP and pinned ALIGNN weights found; serverGPU idle at preflight; reused Torch2.7.1cu128/sklearn1.7.2 environment verified. Enter source synchronization and CPUprepare->GPUfeatures. Report/CPUtraining integration follows; no DFT.
