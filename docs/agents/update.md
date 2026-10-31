@@ -34,3 +34,5 @@
 - 2026-10-31T16:41:56: Completed ALIGNN correctness classifiers:256dim pre-fc frozen features, thresholds0.1/0.2/0.5eV, three baselines each, heldout4239test. Verified deployment ZIP246531B SHA0972fe94a4b01d725305bfb3687f3a2a3bef2a9097410b35beb8f499b27e244d plus plots/report. Diagnostics prove exact-input batch agreement but identify graph sensitivity at floating roundtrip; no retuning. User-facing conclusion emphasizes nonzero-gap limitation over aggregate gains.
 
 - 2026-10-31T22:16:59: Implement exact-training-split bandgap statistics in existing alignn_reliability module: checkpoint-hash/split provenance,60000label selection, exact/rounded modes and bins, positive/zero partitions, target windows, compressed ID/label output. No predictor changes or GRPO training. Local15tests PASS; next sync verified source and submit CPU Slurm.
+
+- 2026-10-31T22:19:28: Fix observed ID-less trainingCSV handling, preserve516failure; new metadata makes unavailable IDalignment explicit. No reconstructed targetcount uses that CSV. All16tests PASS; rerun exact60000training-label audit in fresh retry02 directory.

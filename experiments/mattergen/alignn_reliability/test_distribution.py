@@ -1,9 +1,19 @@
 import unittest
 import numpy as np
-from distribution import summarize, ranked_counts, binned
+from distribution import summarize, ranked_counts, binned, training_reference
 
 
 class GapDistribution(unittest.TestCase):
+    def test_published_training_csv_requires_ids_for_join(self):
+        values, audit = training_reference('target,prediction\n0,0.18\n0.18,0\n')
+        self.assertIsNone(values)
+        self.assertTrue(audit['available'])
+        self.assertFalse(audit['comparable_by_id'])
+        self.assertEqual(audit['rows'], 2)
+        values, audit = training_reference('id,target,prediction\nmp-1,0.3,0.4\n')
+        self.assertEqual(values, {'mp-1': .3})
+        self.assertTrue(audit['comparable_by_id'])
+
     def test_exact_modes_and_ties(self):
         self.assertEqual(ranked_counts([0., 0., 1., 2., 2.]),
                          [dict(value_eV=0., count=2), dict(value_eV=2., count=2), dict(value_eV=1., count=1)])

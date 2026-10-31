@@ -74,3 +74,6 @@ sbatch --export=ALL experiments/mattergen/alignn_reliability/distribution.sbatch
 
 The ignored run directory contains `distribution.json`, `REPORT.md` and a
 compressed ID/label table; no model inference or GRPO training is performed.
+The archived training prediction CSV lacks structure IDs in the current ZIP;
+its row order is not used to reconstruct labels. The authoritative join is
+checkpoint `id_train` to the cached dataset's `id` and `gap pbe` fields.

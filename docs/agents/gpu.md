@@ -37,3 +37,5 @@
 - 2026-10-31T16:41:56: Task close:511/512/513/515exit0;514failure retained. Diagnostic SHA3d35ac675026822552d27c49c99821a6d200cd23bd3feb77cbe91f1eb8afa69e verified against SSHread. No activeSlurmjobs; no dedicated proxy launched or left open in this task. All noticeable computations ran viaSlurm; local source and verified bundle pulls preserved.
 
 - 2026-10-31T22:11:34: Authorize next connections for current ALIGNN training-label statistics only. SCP verified same-task source bundle, SSH mandatory verified bundle pull first, inspect repository/cache metadata, submit CPU Slurm and read status/results. No models/DFT/GRPO jobs or network downloads; no dedicated proxy required.
+
+- 2026-10-31T22:19:28: Authorize one corrected CPUretry in new results/mattergen/alignn-training-gap-mode-20261031-retry02; source local commit/sync, no training/inference or alteration of516evidence.

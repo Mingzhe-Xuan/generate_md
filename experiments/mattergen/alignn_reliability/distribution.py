@@ -15,6 +15,22 @@ import numpy as np
 from core import GAP_SHA, sha, save
 
 
+def training_reference(text):
+    reader = csv.DictReader(io.StringIO(text))
+    fields = reader.fieldnames or []
+    if not {'target', 'prediction'} <= set(fields):
+        raise ValueError('Unknown published training CSV schema.')
+    rows = list(reader)
+    if 'id' not in fields:
+        return None, dict(available=True, comparable_by_id=False, fields=fields, rows=len(rows),
+            reason='Published training CSV has no IDs; do not infer correspondence from row order.')
+    ids = [row['id'] for row in rows]
+    if len(set(ids)) != len(ids):
+        raise ValueError('Duplicate published training IDs.')
+    return {row['id']: float(row['target']) for row in rows}, dict(available=True, comparable_by_id=True,
+        fields=fields, rows=len(rows))
+
+
 def ranked_counts(values, limit=10):
     counts = Counter(float(v) for v in values)
     return [dict(value_eV=value, count=count) for value, count in
@@ -75,9 +91,9 @@ def main(root, dataset, model_zip):
             raise ValueError('Original splits overlap.')
         train_predictions = [n for n in names if n.endswith('prediction_results_train_set.csv')]
         published = None
+        comparison = dict(available=False, comparable_by_id=False)
         if train_predictions:
-            published = {r['id']: float(r['target']) for r in
-                         csv.DictReader(io.StringIO(archive.read(train_predictions[0]).decode()))}
+            published, comparison = training_reference(archive.read(train_predictions[0]).decode())
     with zipfile.ZipFile(dataset) as archive:
         with archive.open('megnet.json') as f:
             data = json.load(f)
@@ -92,7 +108,6 @@ def main(root, dataset, model_zip):
         raise ValueError('Not all training IDs found.')
     gaps = np.array([found[key] for key in ids['id_train']])
     stats = summarize(gaps)
-    comparison = dict(available=published is not None)
     if published is not None:
         if set(published) != train:
             raise ValueError('Published training target IDs differ.')
