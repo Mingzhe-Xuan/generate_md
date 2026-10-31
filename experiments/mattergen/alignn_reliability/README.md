@@ -25,7 +25,8 @@ meta-validation AP for the bad class, followed by BCE. Separate calibration fits
 a positive-slope Platt map. Each threshold is trained and reported separately.
 `head.py` stores only NumPy arrays and supports pickle-free NumPy inference.
 `core.py` defines labels, splits, scaling, calibration and selective metrics.
-The report/audit stage exports AUROC, AP_bad, Brier and coverage/error curves,
+`report.py` independently checks original ID exclusion, head/scaler/probability
+serialization and rank-statistic AUC, then exports AUROC, AP_bad, Brier and coverage/error curves,
 including unseen-meta-composition and nonmetal/predicted-semiconductor subsets.
 
 This estimates empirical error risk on reference equilibrium crystals. It does
@@ -43,7 +44,8 @@ scikit-learn1.7.2, DGL1.1.3cu121, jarvis-tools2026.6.12), with no package change
 ```bash
 export RELIABILITY_ROOT=results/mattergen/alignn-reliability-20261031
 prep=$(sbatch --parsable --export=ALL experiments/mattergen/alignn_reliability/prepare.sbatch)
-sbatch --dependency=afterok:$prep --export=ALL experiments/mattergen/alignn_reliability/features.sbatch
+feat=$(sbatch --parsable --dependency=afterok:$prep --export=ALL experiments/mattergen/alignn_reliability/features.sbatch)
+sbatch --dependency=afterok:$feat --export=ALL experiments/mattergen/alignn_reliability/heads.sbatch
 ```
 
 All remote preparation, model inference, head training and reporting use Slurm.

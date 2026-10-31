@@ -62,5 +62,10 @@ class Contracts(unittest.TestCase):
         with self.assertRaises(ValueError):raw.predict_proba([[1.]])
         self.assertEqual(raw.logits([[1.]],raw_prediction=[2.])[0],2.)
 
+    def test_independent_auc_ties(self):
+        from report import auc_check
+        self.assertEqual(auc_check(np.array([1,0,1,0]),np.array([.9,.8,.8,.1])),.875)
+        self.assertIsNone(auc_check(np.ones(2),np.array([0.,1.])))
+
 
 if __name__=='__main__':unittest.main()

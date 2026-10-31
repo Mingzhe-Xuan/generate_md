@@ -38,3 +38,5 @@ Implement experiments/mattergen/alignn_reliability/ module with README, dataset 
 - 2026-10-30T19:14:57: Template-local MatterGen editing design COMPLETE, source/grid/document checks passed. Protocol is proposed only, no new model or measured improvement. Existing bandgap checkpoint can be investigated for low-noise editing before training a dedicated CSP; species/locality and relaxed property gains remain validation requirements.
 
 - 2026-10-31T15:57:25: Reliability implementation unit passed local8tests/staticchecks. Cached megnet ZIP and pinned ALIGNN weights found; serverGPU idle at preflight; reused Torch2.7.1cu128/sklearn1.7.2 environment verified. Enter source synchronization and CPUprepare->GPUfeatures. Report/CPUtraining integration follows; no DFT.
+
+- 2026-10-31T16:03:46: Enter classifier training/report stage.511prepared3540/760/700/4239 partitions successfully;512GPUfeatures healthy. Reporting module tests passed. Next synchronize report source and submit dependent CPUheads/audit, then verify and download learned heads/results.
