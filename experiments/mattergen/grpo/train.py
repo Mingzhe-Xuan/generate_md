@@ -116,7 +116,7 @@ def main(args):
     if not smoke['passed'] or not smoke['frozen_base_unchanged'] or smoke['full_rollout_steps'] != 1000:
         raise ValueError('Passing complete CUDA/likelihood/real-reward smoke required before training.')
     code = {name: sha(Path(__file__).with_name(name)) for name in ('policy.py', 'models.py', 'rollout.py', 'train.py')}
-    if any(smoke['code_sha256'][name] != code[name] for name in ('policy.py', 'models.py', 'rollout.py')):
+    if any(smoke['code_sha256'][name] != code[name] for name in code):
         raise ValueError('Policy code differs from the passing smoke.')
     cohort = json.loads((root/'data/cohort-audit.json').read_text())
     if not cohort['passed'] or sha(root/'data/cohort.jsonl') != cohort['cohort_sha256']:
@@ -197,6 +197,8 @@ def main(args):
         with (out/'history.jsonl').open('a') as f: f.write(json.dumps(event, allow_nan=False)+'\n')
         print(json.dumps(event), flush=True)
     if tensor_state_hash(model.module, frozen_only=True) != frozen: raise ValueError('Frozen base changed at training end.')
+    if not any(bool((value != 0).any()) for name, value in model.adaptation_state().items() if name.endswith('.b')):
+        raise ValueError('No effective LoRA policy update; online GRPO training is not complete.')
     write(out/'complete.json', dict(passed=True, iterations=args.iterations,
         generated_training_candidates=args.iterations*args.groups*args.group_size, best=best,
         best_checkpoint_sha256=sha(out/'best.pt'), latest_checkpoint_sha256=sha(latest), frozen_base_unchanged=True,

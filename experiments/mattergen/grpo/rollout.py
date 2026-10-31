@@ -84,6 +84,6 @@ class Evaluator:
             if not np.isfinite([gap, eform]).all(): raise ValueError('Nonfinite property output.')
             event.update(valid=True, gap_eV=gap, eform_eV_atom=eform, reward=reward_value(gap),
                 error_eV=abs(gap-2.5), pass_gap=abs(gap-2.5) <= .1+1e-12, volume_A3_atom=volume)
-        except (ValueError, RuntimeError, ZeroDivisionError, np.linalg.LinAlgError) as error:
+        except (ValueError, ZeroDivisionError, np.linalg.LinAlgError) as error:
             event['error'] = str(error)
         return event

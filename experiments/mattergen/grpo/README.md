@@ -110,3 +110,23 @@ seeds and never select checkpoints. State/optimizer/context-RNG checkpoints and
 saved old-policy actions support a verified resume without silently replacing
 partially completed work. These are implementation/proposed budgets; actual
 training is not claimed until the GPU gate and Slurm artifacts prove it.
+
+## Independent checkpoint comparison
+
+`compare.py`/`compare.sbatch` require completed GRPO and evaluate256new structures
+per arm under the same heldout atom-count contexts and test seeds: base,
+validation-selected GRPO, final GRPO, conditionalcheckpoint under the matched
+explicit kernel, and conditionalcheckpoint under official native PC/CFG2 with
+its terminalmean. The extra native arm prevents a changed sampler from being
+misreported as a trained-model gain. Checkpoints are never selected on these
+final samples. Real heldout geometries/compositions are not generation inputs.
+
+All five arms then receive the same pinned canonical MatterSim5M B profile,
+with raw atomic force convergence reported separately from constrained-filter
+convergence. DFT and SUN remain paused. Invalid and unsupported candidates remain
+in full requested denominators; valid-only MAE must be read alongside coverage.
+Same-seed comparisons resample sampling batches (native corrector is coupled
+within a batch). Degenerate empirical bootstrap intervals are marked uninformative.
+The generated report records raw and relaxed gap success/MAE, force passes and
+joint gap/force passes. CUDA/OOM infrastructure errors abort the stage instead
+of being disguised as poor material quality.
