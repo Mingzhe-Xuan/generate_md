@@ -16,8 +16,9 @@ HERE = Path(__file__).resolve().parent
 def tensor_state_hash(module, frozen_only=False):
     import hashlib
     digest = hashlib.sha256()
-    for name, value in module.named_parameters():
-        if frozen_only and value.requires_grad: continue
+    trainable = {name for name, value in module.named_parameters() if value.requires_grad}
+    for name, value in module.state_dict().items():
+        if frozen_only and name in trainable: continue
         digest.update(name.encode()); digest.update(value.detach().cpu().numpy().tobytes())
     return digest.hexdigest()
 

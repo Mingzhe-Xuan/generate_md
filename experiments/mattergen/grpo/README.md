@@ -85,3 +85,28 @@ cached conditional checkpoint only if every entry is bitwise identical. It
 excludes all adapter-only weights, writes a separately hashed base state and
 strictly loads the official base architecture. Any mismatch fails the stage;
 the conditional/unconditional branch is never silently relabeled as base.
+
+The first audit (Slurm519) found only105/281matching tensors; its failed report
+is retained. The remaining176official tensors are supplied as a lossless NumPy
+delta, checked against the same original-base manifest after assembly. Partial
+transfers use1MiBchunks with individual and whole-payload hashes. Recovery
+success still requires all281exact matches; partial matches are not accepted.
+
+## Planned online training budget
+
+`train.py` is gated on the completed full-length GPU smoke, matching policy-code
+hashes and the unchanged audited cohort. It proposes200rollout iterations,
+fourgroups of eightcandidates (6400new candidates), twoinnerupdates per rollout,
+rank4LoRA AdamW2e-6 with cosine decay to2e-7, and eightuniformly sampled noise
+levels per rollout for likelihood updates. Microbatches contain at most four
+crystals/64atoms; advantages are computed over complete groups before slicing.
+The reference is the frozen official base. No raw geometry gradient is taken
+through ALIGNN. Invalid rewards remain in groups and reported denominators.
+
+Validation uses64independently generated structures at fixed validation seeds
+every25iterations. Checkpoint selection uses target-window success rate,
+validity, then valid-only MAE, in that order. Final test rollouts use separate
+seeds and never select checkpoints. State/optimizer/context-RNG checkpoints and
+saved old-policy actions support a verified resume without silently replacing
+partially completed work. These are implementation/proposed budgets; actual
+training is not claimed until the GPU gate and Slurm artifacts prove it.

@@ -61,6 +61,8 @@ def main(root):
         max_unchanged_policy_logp_error=max(r['max_old_logp_error'] for r in replay), replay=replay,
         gradient_norm=float(norm), max_adaptation_change=changed, frozen_base_unchanged=True,
         trainable=policy.metadata, reference=reference.metadata, property=evaluator.properties.metadata,
+        sampler=rollout['sampler'],
+        code_sha256={name: sha(Path(__file__).with_name(name)) for name in ('policy.py', 'models.py', 'rollout.py')},
         native_property_controls=evaluator.properties.predictor.native_controls,
         seconds=time.perf_counter()-started, rollout_sha256=sha(out/'rollout.pt'),
         peak_cuda_allocated_bytes=torch.cuda.max_memory_allocated(), losses=losses,

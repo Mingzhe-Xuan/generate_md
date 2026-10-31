@@ -5,6 +5,8 @@ import json
 import os
 from pathlib import Path
 import shutil
+import re
+import numpy as np
 import torch
 from prepare import BASE_SHA, sha
 
@@ -25,6 +27,25 @@ def matching_tensors(state, manifest):
     return selected, mismatches
 
 
+def assemble_delta(directory, out):
+    manifest = json.loads((directory/'manifest.json').read_text())
+    if manifest['origin_base_sha256'] != BASE_SHA:
+        raise ValueError('Delta targets another base checkpoint.')
+    temp = out.with_suffix('.tmp')
+    with temp.open('wb') as f:
+        for index, item in enumerate(manifest['chunks']):
+            if item['name'] != f'part-{index:04d}.bin' or not re.fullmatch(r'part-\d{4}\.bin', item['name']):
+                raise ValueError('Invalid/noncontiguous chunk path.')
+            p = directory/item['name']
+            if p.stat().st_size != item['size'] or sha(p) != item['sha256']:
+                raise ValueError('Delta chunk incomplete or corrupted: '+item['name'])
+            f.write(p.read_bytes())
+    if sha(temp) != manifest['delta_sha256']:
+        raise ValueError('Assembled delta payload hash differs.')
+    temp.replace(out)
+    return manifest
+
+
 def main(root):
     manifest_path = root/'assets/base-tensor-manifest.json'
     if sha(manifest_path) != MANIFEST_SHA: raise ValueError('Official-base tensor manifest changed.')
@@ -35,10 +56,21 @@ def main(root):
     conditional = Path('results/mattergen/checkpoints/dft_band_gap/checkpoints/last.ckpt')
     if sha(conditional) != CONDITIONAL_SHA: raise ValueError('Cached conditional checkpoint identity differs.')
     checkpoint = torch.load(conditional, map_location='cpu', weights_only=False)
+    delta_manifest = None
+    if (root/'assets/base-delta-parts/manifest.json').exists():
+        delta_manifest = assemble_delta(root/'assets/base-delta-parts', root/'assets/base-delta.npz')
+        with np.load(root/'assets/base-delta.npz', allow_pickle=False) as z:
+            if set(z.files) - set(manifest['tensors']):
+                raise ValueError('Unexpected tensors in official-base delta.')
+            for name in z.files:
+                checkpoint['state_dict'][name] = torch.from_numpy(z[name].copy())
     selected, mismatches = matching_tensors(checkpoint['state_dict'], manifest)
     event = dict(passed=not mismatches, matched=len(selected), total=len(manifest['tensors']), mismatches=mismatches,
         official_base_full_checkpoint_sha256=BASE_SHA, manifest_sha256=MANIFEST_SHA,
         cached_adapter_checkpoint_sha256=CONDITIONAL_SHA, slurm_job_id=os.environ['SLURM_JOB_ID'])
+    if delta_manifest is not None:
+        event['delta_transfer'] = dict(tensors=delta_manifest['tensors'], chunks=len(delta_manifest['chunks']),
+                                      sha256=delta_manifest['delta_sha256'])
     if not mismatches:
         out = root/'assets/base-verified'; (out/'checkpoints').mkdir(parents=True, exist_ok=False)
         shutil.copyfile(config, out/'config.yaml')
@@ -46,7 +78,12 @@ def main(root):
         event.update(derived_checkpoint='assets/base-verified/checkpoints/last.ckpt',
             derived_checkpoint_sha256=sha(out/'checkpoints/last.ckpt'),
             config_sha256=sha(out/'config.yaml'),
-            interpretation='Every base state tensor is bitwise identical to the fully downloaded, SHA-verified official base checkpoint; adapter-only tensors excluded.')
+            interpretation='Every base state tensor is bitwise identical to the fully downloaded, SHA-verified official base checkpoint; cached matching tensors and verified official delta only, adapter-only tensors excluded.')
+    previous = root/'assets/base-recovery.json'
+    if previous.exists():
+        old = json.loads(previous.read_text())
+        saved = root/f'assets/base-recovery-{old["slurm_job_id"]}.json'
+        if not saved.exists(): shutil.copyfile(previous, saved)
     (root/'assets/base-recovery.json').write_text(json.dumps(event, indent=2)+'\n')
     print(json.dumps(event), flush=True)
     if mismatches: raise ValueError('Cached backbone differs from official base: transfer exact missing tensors or full base, never relabel it.')

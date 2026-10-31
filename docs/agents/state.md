@@ -2,11 +2,11 @@
 
 ## 当前状态
 
-ACTIVE user goal: target2.5+/-0.1eV structures, MatterGen GRPO fine-tuning, compare conditionedcheckpoint using sameALIGNN evaluator. Datasetroleclarificationpending; independentcohort/model/sampler audits underway. Earlier reliability and trainmode results preserved.
+ACTIVE MatterGen GRPO goal: exact2.5+/-0.1eV target-data context cohort437(351train/47val/39test), directpretrainedonlineGRPO,noSFT. Local16testsPASS; stochasticpolicy/trainer implemented, actualGPUsmoke/training/comparison pending. Officialbaseavailablelocally, Vlablargefiletransferunstable; serialverifiedchunktransfer session66840live at28/126.519cachedbackboneauditfailed176mismatches;520dependentGPUjobcancelledbeforestart. Goal remainsactive, no result superiority claimed.
 
 ## 当前计划
 
-Module experiments/mattergen/grpo: dataset/provenance audit, explicit stochastic policy/logprobs, rollout/reward, GRPOtraining/checkpoints, commonbaselineevaluation/report. First verify<=20atomtargetlabels and exactweight/sourceavailability. Implement actual group-relative policy optimization with frozenreference and testable likelihoods; no implicit replacement by bestofN or rewardweightedSFT. Trainingprotocol depends on user clarification. All remote computeSlurm, initialsmoke then pilot then fullcomparison; DFT remains paused.
+Finish lossless176tensor/126chunktransfer and serverhash/281tensorreconstruction, synchronizelatestcommittedsourcebundle, CPUaudit then full1000levelCUDArealreward/replay/GRPOupdate smoke. Diagnosefailureswithoutweakeninglikelihoodgates. Afterpass train200iterationsx32=6400candidates (resumeverifiedcheckpoints), commonALIGNNcompareagainstbase/officialconditionalcheckpoint, matchingcounts/budgets plus nativeconditionalbaseline and commonMatterSimpostprocessing. Independentfinalrollouts; DFT/SUNpaused. Do notmarkgoalcompletebefore realtraining+comparisonverified.
 
 ## 变更记录
 
@@ -58,3 +58,5 @@ Module experiments/mattergen/grpo: dataset/provenance audit, explicit stochastic
 - 2026-10-31T22:37:21: User clarified directGRPO from pretrainedcheckpoint; no SFTwarmup. Treat target-range realtrainingcohort as atom-count context distribution for online de-novo generation; allspecies/geometry generated. Firstmodulecohort contracts3testsPASS. Native sampler corrector has noise-dependent adaptivevariance and polarprojection; cannot label a naive Gaussianlogprob as exactnativeGRPO. Next implement explicit augmented-action stochastic kernel and matched-checkpoint comparison, recording deviations/nativebaseline.
 
 - 2026-10-31T22:58:35: Dataset518PASS:1548targettrain labels,437<=20atom eligible (351train/47val/39test byformula), noMatterSimunsupported. Officialbase locallycomplete461370350B SHAverified. Longproxy/SCPbothVlabclosed; localpublicdownloadworks andproxyreleased. PrepareCPUexacttensorrecovery fromcachedconditional via canonical281tensorhashmanifest; anymismatch fails. Implement explicitlatentpolicy+LoRA+full1000levelGPU/reward/GRPOupdate smoke; realmodelgate pending.
+
+- 2026-10-31T23:25:40: Progress: implement resumableonlineGRPO trainer6400newcandidates(200x4x8), 2innerupdates, heldoutvalidationcheckpointselection, source/data/smokehashgates, correctmicrobatchactionalignment, checkpoint/contextRNGresume, fullfrozenparameter+bufferhash. All16localtestsPASS.519baseauditfailed105/281match (realbase176tensordelta needed);520neverstartedDependencyNeverSatisfied andpreciselycancelled. Fullbaseofficialdownload verifiedlocally; compressed176tensordelta131348962B/126chunks. Currentserialtransfer session66840live,28/126SCPacknowledged; finalremotehashpending. No GPUtrainingresult yet.

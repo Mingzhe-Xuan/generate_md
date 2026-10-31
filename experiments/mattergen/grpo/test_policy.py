@@ -1,12 +1,29 @@
 import unittest
 import torch
 import hashlib
-from recover_base import matching_tensors
+import tempfile
+import json
+from pathlib import Path
+from prepare import BASE_SHA
+from recover_base import matching_tensors, assemble_delta
 from policy import (normal_logp, normal_kl, categorical_logp, categorical_kl,
                     matrix6, sym6, project_cell, advantages, grpo_loss, add_lora)
 
 
 class PolicyContracts(unittest.TestCase):
+    def test_chunked_delta_identity_and_corruption_gate(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); payload = b'correct-official-weight-bytes'
+            parts = [payload[:10], payload[10:]]; chunks = []
+            for i, data in enumerate(parts):
+                name = f'part-{i:04d}.bin'; (root/name).write_bytes(data)
+                chunks.append(dict(name=name, size=len(data), sha256=hashlib.sha256(data).hexdigest()))
+            m = dict(origin_base_sha256=BASE_SHA, chunks=chunks, delta_sha256=hashlib.sha256(payload).hexdigest())
+            (root/'manifest.json').write_text(json.dumps(m)); assemble_delta(root, root/'out.npz')
+            self.assertEqual((root/'out.npz').read_bytes(), payload)
+            (root/'part-0001.bin').write_bytes(b'wrong')
+            with self.assertRaises(ValueError): assemble_delta(root, root/'corrupt.npz')
+
     def test_backbone_recovery_requires_every_exact_official_tensor(self):
         v = torch.tensor([1., 2.]); expected = dict(shape=[2], dtype=str(v.dtype), sha256=hashlib.sha256(v.numpy().tobytes()).hexdigest())
         manifest = dict(tensors={'base': expected})
