@@ -52,3 +52,5 @@
 - 2026-11-01T00:05:18: Resourcebottleneck resolved with exactofficialdelta; sourcebase nowbitwiseverified, notconditionalbranch. Fixmodels.py verifiedsource importpath omittedwhile reusing verify_source helper. Preserve522failure; nextsubmitnewGPUonegroupfull1000levelsmoke only, thenauthorizedtraining afterpass.
 
 - 2026-11-01T00:18:28: Resourceidentityall281andGPUmechanicsbothverified; policy nowhasactualonegroupGRPOevidence, notjustlocalcontracts. Alignsmokewithtwoinnerupdates andfixoraclecallcounter withoutchangingrewards/samplingmath. Plan autoafterok pipeline to keepfullobjective moving: strict2-updateGPUgate ->200x32onlinecandidates ->sevenarm256each independentcomparison/commonMatterSim. No benchmark superiority claimedfromsmoke.
+
+- 2026-11-01T00:29:35: Officialbase/data/21unitcontracts/fullGPU2-updategate complete. Durablepipeline524->525->526submitted;525liveRTX5090trainingjob (initialvalidation16/64),526dependencyqueuedforsevenarms256eachpluscanonicalMatterSim. Formalbudget6400newrollouts and independentfinalevaluationremainpending; do not infermodelimprovementfromsmoke. Activeusergoalpreservedunmodified.

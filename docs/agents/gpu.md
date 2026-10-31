@@ -51,3 +51,5 @@
 - 2026-11-01T00:05:18: Authorize smallsourcefixbundle SCP, SSH mandatoryverifiedpull and singleGPUrerun after522terminal.521CPUproofcomplete; sourcepatchpath-only, no modelweight/data/environment modifications or externalnetwork.
 
 - 2026-11-01T00:18:28: Authorize syncfinal2-updategate source, mandatorypull, submitGPUfinalsmoke then afteroktrain6400candidates andafteroksevenarmcomparison. Slurmcompute timelimitinfinite; use48hjobcap withcheckpointresume ratherthanunsafe walltimeclaim. Existingofficialbaseexactproof reused; no downloads/proxy/envinstalls. Training conditionalon passing source-matched2-update/full1000levelgate.
+
+- 2026-11-01T00:29:35: Latestauthoritativestatus SSHsourcepull0d5c6b3,525RUNNINGnode42/526Dependency; initialvalidation16/64. Alllocalassettransferprocessesterminal, no proxyholder/listenerleft; SlurmGPUworkonly. PipelineIDs durable inresults/mattergen/grpo-gap25-20261031/pipeline-0d5c6b3.txt. Do notduplicate/restartonobservationtimeout. NoDFT/SUN.

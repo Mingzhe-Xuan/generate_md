@@ -2,11 +2,11 @@
 
 ## 当前状态
 
-ACTIVE MatterGen GRPO goal.437targetcontexts(351/47/39); officialbase281/281tensorproof521PASS. GPU523full1000levelG8N12realrewardoneupdatePASS (logpreplay3.03e-5,frozenbaseunchanged,107s,1.8GB). Finalsmoke beingalignedwithactual2innerupdates andfixedoraclecallcounter; local21testsPASS. No formaltraining or effectcomparison yet. Prior failures and allresourceproofs preserved.
+ACTIVE fullMatterGenGRPOgoal. Targetrealcohort437(351/47/39); exactofficialbase281tensorproof521PASS;21localtestsPASS; full1000levelG8N12GPUtwo-update524PASS (oldlogprob6.16e-5, frozenbaseunchanged,110s,1.8GB). TRAIN525confirmedRUNNINGnode42, latestinitialvalidation16/64; COMPARE526afterok525pending. No learned-policy efficacy comparison yet. Pipeline/data/failedstages preserved; DFT/SUNpaused.
 
 ## 当前计划
 
-Sync finalsource; Slurmstrict2updateGPUgate -> afterok200x32=6400onlineGRPO -> afteroksevenarm256each matched/nativePC/frozenALIGNN/commonMatterSimcomparison. Monitoractualspecificjobs, source-gatedresume ifneeded. Independenttestrollouts/checkpointselectionrules unchanged. Do notclaimqualityimprovementfromsmoke. DFT/SUNpaused; fullgoalremainsactiveuntiltrainedresultsandcomparisonverified.
+Monitor existing525specificjob andinitialvalidation/firstmixedbatchGRPOiteration; do notrestartwhilelive. Finish6400newcandidates(200x4x8), validation-onlycheckpointselection andsource-checkedresumeifneeded.526autoexecutessevenarm256each raw/commonMatterSimcomparison under matched/new and officialnativePC, sameALIGNN evaluator/heldoutseeds, fullfailuredenominators, compositiondiversity andbatch-awareuncertainty. Retrieveandverifyfinalartifactsandreportwhichmethodperformsbetter. Goalnotcompleteuntilactualtrainingandfullcomparisonproven.
 
 ## 变更记录
 
@@ -68,3 +68,5 @@ Sync finalsource; Slurmstrict2updateGPUgate -> afterok200x32=6400onlineGRPO -> a
 - 2026-11-01T00:05:18: Slurm521PASS all126chunkhashes and281/281officialbase tensorchecks; derivedSHA2726d5072e0169868e1cb0a765ef5f41e89389a0a64f7749fbf2fdc6c0c9d998, originalbaseSHA81668ee1... preserved.522GPUsmoke exitedbeforemodelimport: missing assets/source in sys.path after sourceverification. Addverifiedupstreampath locally, keep522failureandrerunfullgate; no sampling/training outcome yet.
 
 - 2026-11-01T00:18:28: GPU523actualPASS:8N12crystals/full1000steps, all8ALIGNNevaluable, realgrouprewardvariation, oneGRPOupdate; maxunchangedlogprob3.0285e-5, gradientnorm3.63588, LoRAchange1e-5, frozenfullstateunchanged,107.18s,1.787GBallocated. Single-update proofsavedlocalSHA68ab667ca885a8eb88c1d4c23f08d0741e33b4a00ad451334692487ea6fbb9fd. Strengthen finalsmoke to2innerupdates to matchtrainer and fixdirectpredictorcallcountmetadata. Local21testsPASS; submitstrictfinalsmoke with afterok6400training andcomparison chain. No efficacy result yet.
+
+- 2026-11-01T00:29:35: FINALGATE524actualPASS2realGRPOupdates, full1000levels/G8N12, replaymax6.15885e-5, grad3.363285/3.348901, adaptationchange2.00136e-5, referenceKL~7.77e-7afterupdate, frozenfullstateunchanged,110.393s,1.785GBallocated. Source-matchedproofb1113312d640d884906aa9190f5a8557fee44f43632c71abeace0b3b69bac13b verifiedlocally; oraclelogicalcalls8. TRAIN525confirmedRUNNINGnode42 at3:53, initialvalidation16/64; COMPARE526pendingafterok525. No fulltraining/efficacyresults yet. Next monitor525, actualfirstmixedbatchupdate, resumeonlyfromverifiedcheckpointifneeded;526autoexecutesfullcomparisonaftertraining.
