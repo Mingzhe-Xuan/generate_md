@@ -2,11 +2,11 @@
 
 ## 当前状态
 
-COMPLETE: Exact60000-ID ALIGNN training gap audit; mode0eV21090(35.15%), positive38910. SuccessfulCPU517; independent downloaded-label counts/provenance verified. Prior reliability pilot preserved; no RL/training jobs launched.
+ACTIVE user goal: target2.5+/-0.1eV structures, MatterGen GRPO fine-tuning, compare conditionedcheckpoint using sameALIGNN evaluator. Datasetroleclarificationpending; independentcohort/model/sampler audits underway. Earlier reliability and trainmode results preserved.
 
 ## 当前计划
 
-Deliver DISTRIBUTION_RESULTS.md and audited evidence. Explain zero-mode versus positive-gap targets and reward tie caveat. No further work pending for requested statistics; MatterGen-GRPO training requires a subsequent user instruction.
+Module experiments/mattergen/grpo: dataset/provenance audit, explicit stochastic policy/logprobs, rollout/reward, GRPOtraining/checkpoints, commonbaselineevaluation/report. First verify<=20atomtargetlabels and exactweight/sourceavailability. Implement actual group-relative policy optimization with frozenreference and testable likelihoods; no implicit replacement by bestofN or rewardweightedSFT. Trainingprotocol depends on user clarification. All remote computeSlurm, initialsmoke then pilot then fullcomparison; DFT remains paused.
 
 ## 变更记录
 
@@ -52,3 +52,7 @@ Deliver DISTRIBUTION_RESULTS.md and audited evidence. Explain zero-mode versus p
 - 2026-10-31T22:19:28: CPU516failed on archive trainCSV missing id column. Light ZIPheader confirms target,prediction only (paired reversed-looking rows). Correct parser records unjoinable archive metadata instead of guessing order; authoritative id_train-to-cached-label join unchanged. Preserve failed output, rerun fresh retry02 after local16tests.
 
 - 2026-10-31T22:23:35: COMPLETE requested ALIGNN training gap-mode audit.517exit0, exact60000trainingIDs, mode0eV21090(35.15%), positive38910. Verified downloaded TSV independent counts/21windows and matching prior dataset/modelSHA.516failure retained; publishedtrainCSV ID-less/9984rows explicitly unusable for IDcomparison. Delivered distribution report; no GRPO or MatterGen training started.
+
+- 2026-10-31T22:31:33: START active user goal MatterGen GRPO targeted2.5+/-0.1eV with target-range training structures, compare existing property-conditioned checkpoint under commonALIGNN. Asked necessary roleofrealdata (SFTwarmup/de-novoRL vs templateediting vs compositionCSP); continue independent dataset/model/sampler audit pending reply. Preserve full objective; no training substitution by weightedSFTalone.
+
+- 2026-10-31T22:37:21: User clarified directGRPO from pretrainedcheckpoint; no SFTwarmup. Treat target-range realtrainingcohort as atom-count context distribution for online de-novo generation; allspecies/geometry generated. Firstmodulecohort contracts3testsPASS. Native sampler corrector has noise-dependent adaptivevariance and polarprojection; cannot label a naive Gaussianlogprob as exactnativeGRPO. Next implement explicit augmented-action stochastic kernel and matched-checkpoint comparison, recording deviations/nativebaseline.

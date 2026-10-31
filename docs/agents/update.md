@@ -38,3 +38,5 @@
 - 2026-10-31T22:19:28: Fix observed ID-less trainingCSV handling, preserve516failure; new metadata makes unavailable IDalignment explicit. No reconstructed targetcount uses that CSV. All16tests PASS; rerun exact60000training-label audit in fresh retry02 directory.
 
 - 2026-10-31T22:23:35: Training-gap distribution measured and reported: exactmode0eV35.15%; allmedian0.665eV, positivemedian1.88285eV; 2.5+/-0.2eV3194(5.32%). Positiveexactmode~0.0023eV only20repeats, not a useful representative target. Document tentative GRPO implications and zero-clipped reward ties without launching RL. Evidence local results/mattergen/evidence/alignn-training-gap-mode-20261031.
+
+- 2026-10-31T22:37:21: Add grpo module README/interfaces and audited targetcohortprepare (realDFT2.4-2.6, original60000trainIDs, <=20atoms, groupedroles/rejections/provenance). DirectpretrainedonlineGRPO clarified. All3cohorttestsPASS. Initialsafe nextstep CPUcohort audit and base/checkpoint/cacheinventory; no RL results claimed.
