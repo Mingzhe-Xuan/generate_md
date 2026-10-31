@@ -491,3 +491,227 @@
 - 2026-11-01T04:17:11.861639: SSH mandatoryad0c45a source-bundle pull, then submit bounded CPU Slurm audit of first selected nonzero GRPO best50 checkpoint; no GPU allocation or training restart.
 
 - 2026-11-01T04:18:27.536043: SSH mandatoryad0c45a bundle pull then read CPU530 selected-best50 acceptance logs/scontrol terminal status; inspect existing525/526, no new jobs here.
+
+- 2026-10-23T08:11:50.153128+08:00: Start new dedicated proxy and ClearAllForwardings work session for authorized OpenMX alternative reproduction: end-to-end health, repository pull first, inspect only installation inputs/source output formatting on login; compute and inventory/evaluation through Slurm. No remote managed source edits.
+
+- 2026-10-24T01:34:23.8379206+08:00: NextSCPfull128-pred-evidence.tar.gz only, remoteSHA022ce54fffffa6351e18399736d9cf103fabfe92806f08dde0d35310b3a73f12verified. Containsall128poses/nativeBrecords/properties/controlmetadata,no modelweights. Downloadlocalevidenceauditwhile322SUNrunning.
+
+- 2026-10-25T00:36:33.5315154+08:00: Poll361first65Brecordcount andcurrenttailafter3e8e263pull; allA200preserved.
+
+- 2026-10-26T02:36:42.2924531+08:00: SCP403 provisionalinterim JSON from own394confirmationroot intoignoredevidence after403exit0. CPUreportbeam5materialchanged/4CFimproved/negativeCFMAECI, notfinalverification.394stilllivefullMD/evaluation,397/399/402remainafterok. Read-only transfer no newinference/sourcechanges/proxy.
+
+- 2026-10-26T09:57:09.3796083+08:00: Sourcea1e3cb3pushed; SCPfirstapprovalreviewdeadlineexpired beforeexecution, permittedsingleexactretrySUCCEEDED(session35120exit0). OwnedSSH17474emptyreadretryafteronestatusreviewtimeoutSUCCEEDED, nodeconnectionneverterminated. BundleSHA3e7d80531fc23e0958e912edcf936dff939fd265d06ad0acba32f6a34db7ac16verifiedremotelyandmandatorygitpull fast-forwarda1e3cb3successful. NowSlurmsubmissionrequestedfresh directed-tto-20261026-a1e3cb3; no scientificjobwasrestartedbecauseofobservation/approvaltimeouts.
+
+- 2026-10-30T09:17:19.699692: Before controlsbundle SCP/ordinary SSH: f0b4622 SHA356c2acc86aa82bb72e6bdd04b6127e9770fb8e8ddae4a88d58221ed53189e17 firstHEADpull; inspect493/494. Submit one GPU force-controls afterok493 and update only pending494 dependency to it; preserve493 process/results. Cached resources, no network/proxy/model compute onlogin.
+
+- 2026-11-01T04:20:36.891830: SCP source-only validation50 documentation bundle6f8f93c for verified milestone sync; no model/data transfer or proxy required.
+
+- 2026-11-01T04:20:44.296301: SSH verify validation50 bundleSHA and git pull first, then inspect exact525/526 before one read-only watcher to0075. No compute submission or training restart.
+
+- 2026-11-01T04:21:21.300749: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:22:17.548741: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:23:13.711804: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:24:09.820712: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:25:05.906788: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:26:02.038683: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:26:58.103871: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:27:54.344634: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:28:50.563151: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:29:46.537754: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:30:42.657907: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:31:39.303223: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:32:35.408193: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:33:31.334370: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:34:27.985677: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:35:23.283897: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:36:19.821467: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:37:17.243782: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:38:13.767250: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:39:11.764789: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:40:08.727936: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:41:06.638549: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:42:09.812711: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:43:06.137248: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:44:02.240325: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:44:58.557336: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:45:55.143031: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:46:51.385501: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:47:47.898680: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:48:44.028499: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:49:43.100064: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:50:40.452463: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:51:38.368976: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:52:45.659326: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:53:47.244096: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:54:47.020957: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:55:42.864013: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:56:39.088777: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:57:35.153972: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:58:31.760229: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T04:59:28.085566: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:00:24.194603: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:01:20.775163: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:02:16.997049: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:03:12.999932: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:04:09.336850: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:05:05.497349: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:06:01.417937: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:06:57.780389: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:07:53.868482: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:08:49.908429: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:09:46.150645: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:10:42.223536: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:11:38.227313: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:12:34.490867: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:13:30.564612: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:14:26.558487: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:15:22.916199: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:16:19.203616: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:17:15.244409: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:18:11.267910: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:19:07.213709: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:20:03.284670: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:20:59.284609: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:21:55.626967: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:22:51.667260: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:23:47.650732: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:24:43.658001: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:25:40.087290: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:26:36.179247: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:27:32.217829: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:28:28.412583: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:29:24.901239: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:30:31.983698: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:31:29.571778: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:32:25.662120: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:33:22.085500: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:34:21.050554: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:35:22.420668: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:36:15.342043: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:37:11.465632: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:38:07.743459: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:39:09.484328: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:40:09.955434: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:41:06.217439: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:42:03.959242: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:42:59.962613: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:43:56.792639: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:44:57.320715: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:46:13.157428: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:47:09.562334: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:48:05.755875: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:49:03.210701: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:49:59.465195: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:50:55.775150: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:51:55.720923: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:52:52.137712: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:53:48.404961: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:54:45.092584: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified6f8f93c bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T05:55:55.449751: SCP closed validation0075 / training-history snapshot after source-first watcher poll; preserve actual75-round evidence, read-only no remote edits.
+
+- 2026-11-01T05:56:03.736326: SCP closed validation0075 / training-history snapshot after source-first watcher poll; preserve actual75-round evidence, read-only no remote edits.
+
+- 2026-11-01T05:56:26.171978: SSH mandatory verified6f8f93c source-bundle pull then hash closed validation0075 and revalidate exact525/526/latest history; no new remote compute here.
+
+- 2026-11-01T05:57:59.276994: SSH mandatory6f8f93c source-bundle pull, then bounded CPU Slurm best75 checkpoint acceptance: tied2/64 pass and lowerMAE should replacebest50; no GPU allocation or training restart.
+
+- 2026-11-01T05:58:52.805402: SSH mandatory6f8f93c source pull then read CPU531 selected-best75 logs/scontrol terminal state; inspect existing525/526, no new jobs here.

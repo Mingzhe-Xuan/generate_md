@@ -2,11 +2,11 @@
 
 ## 当前状态
 
-ACTIVE MatterGen GRPO goal. Training525 is running on node42: 51/200 iterations recorded in retrieved history (1632 training candidates); main525 continues after validation50; validation50 has2/64 gap passes and MAE2.08402337eV. Full GPU smoke524 and server checkpoint tests527/528 passed. Initial fixed validation: 64/64 evaluable, 0/64 gap passes, MAE1.9062167414eV. Comparison526 awaits afterok525. No learned-policy efficacy conclusion yet; DFT/SUN remain paused.
+ACTIVE MatterGen GRPO goal. Training525 is running on node42: 75/200 iterations recorded in retrieved history (2400 training candidates); main525 continues after validation75; validation75 has2/64 gap passes and MAE1.96291084eV. Full GPU smoke524 and server checkpoint tests527/528 passed. Initial fixed validation: 64/64 evaluable, 0/64 gap passes, MAE1.9062167414eV. Comparison526 awaits afterok525. No learned-policy efficacy conclusion yet; DFT/SUN remain paused.
 
 ## 当前计划
 
-Keep existing525 running; next fixed validation75. Validation50 has more target hits but worse MAE; preserve the predeclared budget and pass-first selection rule. Complete200 iterations/6400 candidates, then automatically run526: seven arms of256 fresh structures with matched and native sampling, same ALIGNN and canonical MatterSim relaxation. Retrieve full-denominator metrics and compare validation-selected GRPO with official conditional generation. Resume only if necessary from validated checkpoints; never select on final test outputs.
+Keep existing525 running; next fixed validation100. Validation75 ties50 at2/64 hits and lowers MAE, still aboveinitial MAE; preserve the predeclared budget and pass-first selection rule. Complete200 iterations/6400 candidates, then automatically run526: seven arms of256 fresh structures with matched and native sampling, same ALIGNN and canonical MatterSim relaxation. Retrieve full-denominator metrics and compare validation-selected GRPO with official conditional generation. Resume only if necessary from validated checkpoints; never select on final test outputs.
 
 ## 变更记录
 
@@ -196,3 +196,53 @@ Keep existing525 running; next fixed validation75. Validation50 has more target 
 - 2026-11-01T04:02:23.286008: ENTER fixed validation50: existing watcher49438 confirms525 live R3:38:45->3:39:41, validation0050 progressed8/64 after full1000-step rollout50. Training history/latest remain49 until validation/checkpoint completes; do not claim50 completed early.526 remains Dependency; no source/settings/jobs changed. Next wait64/64, retrieve/hash-check closed0050 JSON and paired seeds/counts/metrics versus0000/0025; full200 training and independent final comparison remain required.
 
 - 2026-11-01T04:19:59.866662: COMPLETE fixed validation50 stage, not goal: watcher49438 exited0 as intended on0050 complete.525 remains R3:56:23; retrieved history through51/200 (1632 training candidates). Validation hits0/64->2/64, MAE1.90621674->2.08402337eV, mean reward0.127714->0.098467; this tradeoff is not established overall improvement.530 verified best50 checkpoint selected by predeclared pass-first rule.526 remains Dependency. Next observe0075 with one new read-only watcher after closing49438; complete full200 iterations and independent seven-arm raw/relaxed conditional comparison.
+
+- 2026-10-23T08:11:50.153128+08:00: 开始用户批准的OpenMX替代复现阶段。先固定独立模块experiments/smoacs/openmx（资源清单/输入与解析/Slurm运行/汇总，各接口在README），从既有MatterSim收敛结构进行两次变胞弛豫+静态带隙，与VASP4个成功样本交叉验证；补齐可公开获取资源，缺失与失败保留128分母。并准备MP公开快照参考相，稳定性仍沿用论文MatterSim口径。OpenMX替代不得冒充VASP严格数值复现。
+
+- 2026-10-24T18:16:56.6796531+08:00: Phasechange347propertyevidenceauditedPASS128/200updates/102conv6unconv20failed/26unknown/19unsupported; NO SUN computed. Fixed351nativeGPUinitializationA25PASS65+63,exactonehot/3geometrynonzero/last2zerogradconfirmed,600cosine. Nextfollow351A600/B/frozenpropertyreportandcompareallfourmethods; noSUNstageauthorized.
+
+- 2026-10-26T03:02:21.2425312+08:00：目标工具确认status=complete；累计elapsed8125秒（约2小时15分钟），无token预算。科学验收、结果回收、图像与文件核验、作业/SSH收尾均已完成，结束本目标。
+
+- 2026-11-01T04:21:58.245494: Verified6f8f93c documentation bundle synced. Existing525 authoritatively R3:59:17, completed52 iterations/1664 candidates, rollout53 step801;526 Dependency. Previous watcher49438 confirmed terminal exit0 at0050; new local read-only watcher56067 LIVE to0075 (resume via write_stdin, no duplicate watcher). Journal watch-until-validation75.jsonl and metadata tmp/grpo-watch-session.json identify current handle. CPU530 best50 acceptance and paired50 audit are complete; no overall efficacy claim, full200 training/final independent comparison still required. No algorithm/settings/new GPU jobs changed.
+
+- 2026-11-01T04:23:40.186624: VERIFIED WAIT via existing live56067:525 R4:00:13->4:01:10, completed53 iterations/1696 candidates, rollout54 step201. Latest numerical checks pass;526 Dependency, next0075 pending, validation50 unchanged and no terminal records. No source/settings/new-job changes; full200 training and independent final comparison remain incomplete.
+
+- 2026-11-01T04:26:35.709350: VERIFIED WAIT via live56067:525 R4:02:06->4:03:58, completed54 iterations/1728 candidates, rollout55 step101. Latest numerical checks pass;526 Dependency, next0075 pending, no terminal records. No source/settings/new-job changes; full200 training and independent final comparison still required.
+
+- 2026-11-01T04:30:45.925050: VERIFIED WAIT via live56067:525 R4:04:54->4:07:42, completed55 iterations/1760 candidates, rollout56 step1. Latest numerical checks pass;526 Dependency, next0075 pending, no terminal records. No source/settings/new-job changes; full200 training and independent final comparison remain incomplete.
+
+- 2026-11-01T04:33:51.202723: VERIFIED WAIT via live56067:525 R4:08:39->4:11:27, completed56 iterations/1792 candidates, rollout57 step101. Latest numerical checks pass;526 Dependency, next0075 pending, no terminal records. No source/settings/new-job changes; full200 training and independent final comparison remain incomplete.
+
+- 2026-11-01T04:37:53.885241: VERIFIED WAIT via live56067: transient SSH close recovered on same watcher; authoritative525 R4:13:20->4:15:14, completed57 iterations/1824 candidates, rollout58 step401. Latest numerical checks pass;526 Dependency, next0075 pending, no terminal records. No restart/new jobs/source/settings changes; full200 training and final independent comparison remain required.
+
+- 2026-11-01T04:41:12.220995: VERIFIED WAIT via live56067:525 R4:16:11->4:18:06, completed58 iterations/1856 candidates, rollout59 step101. Latest numerical checks pass;526 Dependency, next0075 pending, no terminal records. No source/settings/new-job changes; full200 training and independent final comparison remain incomplete.
+
+- 2026-11-01T04:45:36.739854: VERIFIED WAIT via live56067:525 R4:19:09->4:22:54, completed59 iterations/1888 candidates, rollout60 step301. Latest numerical checks pass;526 Dependency, next0075 pending, no terminal records. No source/settings/new-job changes; full200 training and independent final comparison remain incomplete.
+
+- 2026-11-01T04:48:44.435732: VERIFIED WAIT via live56067:525 R4:23:51->4:25:44, completed60 iterations/1920 candidates, rollout61 step201. Latest numerical checks pass;526 Dependency, next0075 pending, no terminal records. No source/settings/new-job changes; full200 training and independent final comparison remain required.
+
+- 2026-11-01T04:51:37.913861: VERIFIED WAIT via live56067:525 R4:26:43->4:28:38, completed61 iterations/1952 candidates, rollout62 step1. Latest numerical checks pass;526 Dependency, next0075 pending, no terminal records. No source/settings/new-job changes; full200 training and independent final comparison remain incomplete.
+
+- 2026-11-01T04:56:05.234845: VERIFIED WAIT via live56067:525 R4:29:45->4:33:39, completed62 iterations/1984 candidates, rollout63 step301. Latest numerical checks pass;526 Dependency, next0075 pending, no terminal records. No source/settings/new-job changes; full200 training and independent final comparison remain incomplete.
+
+- 2026-11-01T05:00:28.939497: VERIFIED WAIT via live56067:525 R4:34:35->4:37:24, completed63 iterations/2016 candidates, rollout64 step201. Latest numerical checks pass;526 Dependency, next0075 pending, no terminal records. No source/settings/new-job changes; full200 training and independent final comparison remain incomplete.
+
+- 2026-11-01T05:03:42.189477: VERIFIED WAIT via live56067:525 R4:38:20->4:41:09, completed64 iterations/2048 candidates, rollout65 step301. Latest numerical checks pass;526 Dependency, next0075 pending, no terminal records. No source/settings/new-job changes; full200 training and independent final comparison remain required.
+
+- 2026-11-01T05:06:42.178573: VERIFIED WAIT via live56067:525 R4:42:05->4:43:57, completed65 iterations/2080 candidates, rollout66 step101. Latest numerical checks pass;526 Dependency, next0075 pending, no terminal records. No source/settings/new-job changes; full200 training and independent final comparison remain incomplete.
+
+- 2026-11-01T05:09:58.052473: VERIFIED WAIT via live56067:525 R4:44:54->4:46:46, completed66 iterations/2112 candidates, rollout67 step1. Latest numerical checks pass;526 Dependency, next0075 pending, no terminal records. No source/settings/new-job changes; full200 training and independent final comparison remain incomplete.
+
+- 2026-11-01T05:16:00.522636: VERIFIED WAIT via live56067:525 R4:47:42->4:53:19, completed67 iterations/2144 candidates, rollout68 step801. Latest numerical checks pass;526 Dependency, next0075 pending, no terminal records. No source/settings/new-job changes; full200 training and independent final comparison remain incomplete.
+
+- 2026-11-01T05:17:57.078689: VERIFIED WAIT via live56067:525 R4:54:15->4:55:11, completed68 iterations/2176 candidates, rollout69 step301. Latest numerical checks pass;526 Dependency, next0075 pending, no terminal records. No source/settings/new-job changes; full200 training and independent final comparison remain incomplete.
+
+- 2026-11-01T05:21:19.278464: VERIFIED WAIT via live56067:525 R4:56:07->4:58:55, completed69 iterations/2208 candidates, rollout70 step601. Latest numerical checks pass;526 Dependency, next0075 pending, no terminal records. No source/settings/new-job changes; full200 training and independent final comparison remain incomplete.
+
+- 2026-11-01T05:23:15.390153: VERIFIED WAIT via live56067:525 R4:59:51->5:00:47, completed70 iterations/2240 candidates, rollout71 step1. Latest numerical checks pass;526 Dependency, next0075 pending, no terminal records. No source/settings/new-job changes; full200 training and independent final comparison remain incomplete.
+
+- 2026-11-01T05:29:01.445706: VERIFIED WAIT via live56067:525 R5:01:43->5:06:24, completed71 iterations/2272 candidates, rollout72 step601. Latest numerical checks pass;526 Dependency, next0075 pending, no terminal records. No source/settings/new-job changes; full200 training and independent final comparison remain incomplete.
+
+- 2026-11-01T05:43:16.718738: ENTER fixed validation75: live56067 confirms525 R5:20:00, full1000-step rollout75 and updates followed by0075 validation8/64. History/latest remain74 until validation/checkpoint completes, so do not claim75 completed early.526 remains Dependency, no jobs/settings/source changes. Next wait64/64 and retrieve/hash-check closed0075 JSON against fixed0000/0025/0050; full200 training and independent final comparison remain required.
+
+- 2026-11-01T06:00:05.131153: COMPLETE fixed validation75 stage, not goal: watcher56067 exited0 normally on0075 completion.525 remains R5:36:49; retrieved history75/200 (2400 training candidates/150 updates). Validation75 has2/64 passes and MAE1.96291084eV, lower than50 but aboveinitial1.90621674; no stable overall gain claim. CPU531 verified actual best75 selection via predeclared MAE tiebreak.526 Dependency. Next one read-only watcher to0100, preserve full200 training and independent seven-arm raw/common-relaxed conditional comparison.
