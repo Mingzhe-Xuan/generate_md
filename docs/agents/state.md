@@ -2,11 +2,11 @@
 
 ## 当前状态
 
-ACTIVE fullMatterGenGRPOgoal. Targetrealcohort437(351/47/39); exactofficialbase281tensorproof521PASS;21localtestsPASS; full1000levelG8N12GPUtwo-update524PASS (oldlogprob6.16e-5, frozenbaseunchanged,110s,1.8GB). TRAIN525confirmedRUNNINGnode42, latestinitialvalidation16/64; COMPARE526afterok525pending. No learned-policy efficacy comparison yet. Pipeline/data/failedstages preserved; DFT/SUNpaused.
+ACTIVE MatterGen GRPO goal. Training525 is running on node42: 3/200 iterations complete (96 generated candidates), rollout4 in progress. Full GPU smoke524 and server checkpoint tests527/528 passed. Initial fixed validation: 64/64 evaluable, 0/64 gap passes, MAE1.9062167414eV. Comparison526 awaits afterok525. No learned-policy efficacy conclusion yet; DFT/SUN remain paused.
 
 ## 当前计划
 
-Monitor existing525specificjob andinitialvalidation/firstmixedbatchGRPOiteration; do notrestartwhilelive. Finish6400newcandidates(200x4x8), validation-onlycheckpointselection andsource-checkedresumeifneeded.526autoexecutessevenarm256each raw/commonMatterSimcomparison under matched/new and officialnativePC, sameALIGNN evaluator/heldoutseeds, fullfailuredenominators, compositiondiversity andbatch-awareuncertainty. Retrieveandverifyfinalartifactsandreportwhichmethodperformsbetter. Goalnotcompleteuntilactualtrainingandfullcomparisonproven.
+Keep existing525 running; inspect fixed-seed validation at iteration25 and later checkpoints. Complete200 iterations/6400 candidates, then automatically run526: seven arms of256 fresh structures with matched and native sampling, same ALIGNN and canonical MatterSim relaxation. Retrieve full-denominator metrics and compare validation-selected GRPO with official conditional generation. Resume only if necessary from validated checkpoints; never select on final test outputs.
 
 ## 变更记录
 
@@ -72,3 +72,5 @@ Monitor existing525specificjob andinitialvalidation/firstmixedbatchGRPOiteration
 - 2026-11-01T00:29:35: FINALGATE524actualPASS2realGRPOupdates, full1000levels/G8N12, replaymax6.15885e-5, grad3.363285/3.348901, adaptationchange2.00136e-5, referenceKL~7.77e-7afterupdate, frozenfullstateunchanged,110.393s,1.785GBallocated. Source-matchedproofb1113312d640d884906aa9190f5a8557fee44f43632c71abeace0b3b69bac13b verifiedlocally; oraclelogicalcalls8. TRAIN525confirmedRUNNINGnode42 at3:53, initialvalidation16/64; COMPARE526pendingafterok525. No fulltraining/efficacyresults yet. Next monitor525, actualfirstmixedbatchupdate, resumeonlyfromverifiedcheckpointifneeded;526autoexecutesfullcomparisonaftertraining.
 
 - 2026-11-01T00:41:26: Continuegoal after priorprogress;525confirmedR9:27,node42,initialvalidation40/64,526Dependency. Readonlyreview reproduced a real IO bug: scheduledLR is np.float64, defaultweights_only loaderrejectsitsglobals. AddscopedNumPy64safe reader+resumelauncher andcomparisonuse; active train.py/policy.py/models.py/rollout.py unchanged bytewise versus524proof. Nojobrestart/lostrollouts. Local23testsPASS; nextserverCPUtestunderactualTorch2.7 while525continues.
+
+- 2026-11-01T00:50:14.760496: Entered real online parameter-update stage: latest checkpoint iteration3 accepted by Slurm528, next rollout4 live in525; 96 candidates counted, finite nonzero LoRA updates and replay errors below0.01. Initial fixed validation64/64 evaluable,0/64 target passes, MAE1.9062167414eV. IO compatibility server tests527 PASS. No efficacy claim until repeat validation25 and final independent seven-arm comparison526. Next monitor original jobs, preserve checkpoint/data/source identity, and retrieve comparison after completion.

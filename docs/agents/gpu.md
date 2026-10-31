@@ -55,3 +55,9 @@
 - 2026-11-01T00:29:35: Latestauthoritativestatus SSHsourcepull0d5c6b3,525RUNNINGnode42/526Dependency; initialvalidation16/64. Alllocalassettransferprocessesterminal, no proxyholder/listenerleft; SlurmGPUworkonly. PipelineIDs durable inresults/mattergen/grpo-gap25-20261031/pipeline-0d5c6b3.txt. Do notduplicate/restartonobservationtimeout. NoDFT/SUN.
 
 - 2026-11-01T00:41:26: Authorize small IO-onlybundle sync/pull then CPUcheckpointunit Slurm and specific525/526status reads. Do notcancelorresubmitlive525/526; corefiles match524proof. No proxy/env/networkresourcechanges.
+
+- 2026-11-01T00:47:10.838257: Read-only verify checkpoint CPU job527 and training525 real updates/initial baseline; mandatory verified bundle pull first; no new jobs.
+
+- 2026-11-01T00:48:22.370413: Submit bounded CPU Slurm audit of real GRPO latest/best checkpoints using existing scoped reader; read-only checkpoint contents, no GPU allocation or competing generation; mandatory verified source-bundle pull.
+
+- 2026-11-01T00:49:13.839968: Read-only collect CPU528 real checkpoint audit and current525 progress; pull verified source bundle first. CPU log parsing only; no login inference.
