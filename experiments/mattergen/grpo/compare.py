@@ -17,6 +17,7 @@ from prepare import sha
 from rollout import generate, structures, Evaluator
 from train import property_metrics
 from smoke import write
+from checkpoint_io import load_checkpoint
 
 ARMS = ('base', 'base_native', 'grpo_best', 'grpo_best_native', 'grpo_last', 'conditional_matched', 'conditional_native')
 
@@ -105,7 +106,8 @@ def generation_comparison(root, out, count, evaluator):
         best_checkpoint_sha256=sha(root/'training/best.pt'), last_checkpoint_sha256=sha(root/'training/latest.pt'),
         cohort_sha256=cohort_audit['cohort_sha256'],
         policy_code_sha256={name: sha(Path(__file__).with_name(name)) for name in ('policy.py', 'models.py', 'rollout.py')},
-        comparison_code_sha256=sha(__file__), training_complete_sha256=sha(root/'training/complete.json'),
+        comparison_code_sha256=sha(__file__), checkpoint_reader_sha256=sha(Path(__file__).with_name('checkpoint_io.py')),
+        training_complete_sha256=sha(root/'training/complete.json'),
         limitations='Same ALIGNN used for training reward and evaluation; surrogate adherence only. '
                      'Real cohort supplies atom counts, not template geometry. Training/checkpoint selection never uses final test seeds.')
     if plan['policy_code_sha256'] != {name: training['identity']['code_sha256'][name] for name in plan['policy_code_sha256']}:
@@ -120,7 +122,7 @@ def generation_comparison(root, out, count, evaluator):
         if arm.startswith('grpo'):
             model.lora(4)
             path = root/'training'/checkpoint_for_arm(arm)
-            saved = torch.load(path, map_location='cpu', weights_only=True)
+            saved = load_checkpoint(path)
             if saved['identity'] != training['identity']: raise ValueError('Wrong GRPO checkpoint.')
             model.load_adaptation(saved['adaptation']); checkpoint_iteration = saved['iteration']
         model.module.requires_grad_(False); model.module.eval()

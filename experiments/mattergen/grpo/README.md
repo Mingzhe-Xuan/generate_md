@@ -132,3 +132,11 @@ within a batch). Degenerate empirical bootstrap intervals are marked uninformati
 The generated report records raw and relaxed gap success/MAE, force passes and
 joint gap/force passes. CUDA/OOM infrastructure errors abort the stage instead
 of being disguised as poor material quality.
+
+`checkpoint_io.py` is the resume launcher and comparison reader. The validated
+cosine schedule stores a NumPy64 learning-rate scalar in optimizer state;
+ordinary `torch.load(weights_only=True)` rejects that reconstruction. A scoped
+allowlist permits only the NumPy scalar/dtype types needed for this value while
+keeping weights-only loading. Tensor bytes, optimizer values, context RNG,
+training algorithm and all four GPU-validated runtime source files are preserved.
+The already-running training allocation is not restarted for this IO-only fix.

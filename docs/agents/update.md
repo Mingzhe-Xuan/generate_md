@@ -54,3 +54,5 @@
 - 2026-11-01T00:18:28: Resourceidentityall281andGPUmechanicsbothverified; policy nowhasactualonegroupGRPOevidence, notjustlocalcontracts. Alignsmokewithtwoinnerupdates andfixoraclecallcounter withoutchangingrewards/samplingmath. Plan autoafterok pipeline to keepfullobjective moving: strict2-updateGPUgate ->200x32onlinecandidates ->sevenarm256each independentcomparison/commonMatterSim. No benchmark superiority claimedfromsmoke.
 
 - 2026-11-01T00:29:35: Officialbase/data/21unitcontracts/fullGPU2-updategate complete. Durablepipeline524->525->526submitted;525liveRTX5090trainingjob (initialvalidation16/64),526dependencyqueuedforsevenarms256eachpluscanonicalMatterSim. Formalbudget6400newrollouts and independentfinalevaluationremainpending; do not infermodelimprovementfromsmoke. Activeusergoalpreservedunmodified.
+
+- 2026-11-01T00:41:26: Add checkpoint_io.py and CPUtestsbatch; comparison and futuretrainresume nowread NumPy64LR checkpts withoutdisablingweights_only or changingcorevalidatedsource. This prevents delayedcheckpointreadfailures afterlongtraining.525keptlive;526keptqueued. Local23testsPASS; actualserverroundtrip next.

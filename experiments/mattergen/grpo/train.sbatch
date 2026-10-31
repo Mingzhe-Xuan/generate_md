@@ -10,4 +10,4 @@ set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:?}"
 source experiments/smoacs/job_status.sh
 export OMP_NUM_THREADS=2 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=2
-.venv-mattergen/bin/python experiments/mattergen/grpo/train.py --run "${GRPO_ROOT:?}" --smoke "${GRPO_SMOKE:?}"
+.venv-mattergen/bin/python experiments/mattergen/grpo/checkpoint_io.py --run "${GRPO_ROOT:?}" --smoke "${GRPO_SMOKE:?}"
