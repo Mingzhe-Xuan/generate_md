@@ -36,14 +36,14 @@ def main(root):
     optimizer = torch.optim.AdamW(params, lr=1e-5, weight_decay=0.)
     before = {n: p.detach().clone() for n, p in policy.module.named_parameters() if p.requires_grad}
     from train import policy_update
-    losses = policy_update(policy, reference, rollout, a, optimizer, inner_updates=1)
+    losses = policy_update(policy, reference, rollout, a, optimizer, inner_updates=2)
     norm = losses[0]['gradient_norm']
     if not math.isfinite(norm) or norm <= 0: raise ValueError('No finite nonzero policy gradient.')
     changed = max(float((p.detach()-before[n]).abs().max()) for n, p in policy.module.named_parameters() if p.requires_grad)
     if changed <= 0 or tensor_state_hash(policy.module, frozen_only=True) != frozen:
         raise ValueError('No adaptation update or frozen pretrained parameters changed.')
     torch.save(dict(adaptation=policy.adaptation_state(), optimizer=optimizer.state_dict(), metadata=policy.metadata), out/'adaptation.pt')
-    result = dict(passed=True, full_rollout_steps=1000, generated=8, group_size=8, real_rewards=events,
+    result = dict(passed=True, full_rollout_steps=1000, generated=8, group_size=8, policy_updates=2, real_rewards=events,
         max_unchanged_policy_logp_error=losses[0]['max_replay_error'],
         gradient_norm=float(norm), max_adaptation_change=changed, frozen_base_unchanged=True,
         trainable=policy.metadata, reference=reference.metadata, property=evaluator.properties.metadata,

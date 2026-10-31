@@ -80,6 +80,7 @@ class Evaluator:
                 graphs = p.graphs(c, q, onehot, sizes)
                 output = p.predict(c, q, onehot, sizes, graphs=graphs, native_control=self.controls == 0)
             self.controls += 1
+            self.properties.metadata['calls'] = self.controls
             gap, eform = (float(v.item()) for v in output)
             if not np.isfinite([gap, eform]).all(): raise ValueError('Nonfinite property output.')
             event.update(valid=True, gap_eV=gap, eform_eV_atom=eform, reward=reward_value(gap),

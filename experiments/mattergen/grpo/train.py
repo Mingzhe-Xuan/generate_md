@@ -113,7 +113,7 @@ def policy_update(model, reference, rollout, a, optimizer, inner_updates=2):
 def main(args):
     root = args.run.resolve(); out = root/'training'; out.mkdir(parents=True, exist_ok=True)
     smoke = json.loads(args.smoke.read_text())
-    if not smoke['passed'] or not smoke['frozen_base_unchanged'] or smoke['full_rollout_steps'] != 1000:
+    if not smoke['passed'] or not smoke['frozen_base_unchanged'] or smoke['full_rollout_steps'] != 1000 or smoke.get('policy_updates', 0) != 2:
         raise ValueError('Passing complete CUDA/likelihood/real-reward smoke required before training.')
     code = {name: sha(Path(__file__).with_name(name)) for name in ('policy.py', 'models.py', 'rollout.py', 'train.py')}
     if any(smoke['code_sha256'][name] != code[name] for name in code):

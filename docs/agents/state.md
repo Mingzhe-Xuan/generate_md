@@ -2,11 +2,11 @@
 
 ## 当前状态
 
-ACTIVE MatterGen GRPO goal. TargetDFTcohort437<=20atomstructures(351/47/39); directpretrainedGRPO,noSFT, realdata suppliesatomcountcontexts. Policy/trainer/sevenarmcomparison implemented;21localtestsPASS. NoGPUsmoke/training/results yet. Officialbase localSHAverified; exact176tensordelta inserialtransfer session66840,106/126acknowledged, failures76/88/89to retryafterterminal. Prior519identityfailure retained,520neverstartedcancelled.
+ACTIVE MatterGen GRPO goal.437targetcontexts(351/47/39); officialbase281/281tensorproof521PASS. GPU523full1000levelG8N12realrewardoneupdatePASS (logpreplay3.03e-5,frozenbaseunchanged,107s,1.8GB). Finalsmoke beingalignedwithactual2innerupdates andfixedoraclecallcounter; local21testsPASS. No formaltraining or effectcomparison yet. Prior failures and allresourceproofs preserved.
 
 ## 当前计划
 
-Finishmissingverifiedchunks+manifest, synchronize latestce123d3..HEADbundle, SlurmCPU281tensorreconstruction and full1000levelG8N12CUDArealreward/microbatchGRPOsmoke. Source/hashgatesretain0.01replaytolerance andfrozenparameter+bufferproof. Then200iterationsx32=6400candidates withresume; comparebase/bestGRPO/lastGRPO/conditionalunderexplicitkernel plusbase/bestGRPO/conditionalunderofficialnativePC,256eachindependentfinalcontexts, commonALIGNN/rawandcanonicalMatterSimrelaxedmetrics. DFT/SUNpaused; nofinishclaimbeforeactualverifiedtraining+comparison.
+Sync finalsource; Slurmstrict2updateGPUgate -> afterok200x32=6400onlineGRPO -> afteroksevenarm256each matched/nativePC/frozenALIGNN/commonMatterSimcomparison. Monitoractualspecificjobs, source-gatedresume ifneeded. Independenttestrollouts/checkpointselectionrules unchanged. Do notclaimqualityimprovementfromsmoke. DFT/SUNpaused; fullgoalremainsactiveuntiltrainedresultsandcomparisonverified.
 
 ## 变更记录
 
@@ -66,3 +66,5 @@ Finishmissingverifiedchunks+manifest, synchronize latestce123d3..HEADbundle, Slu
 - 2026-10-31T23:50:17: Finalcomparison fidelity extendedbeforeanytestgeneration: base and selectedGRPO now also use officialnativePC, in addition to conditionalnative, so nativeinference weights canbecomparedwithoutkernelconfounding. Sevenarms total256each, frozencheckpointselection unchanged. Local21testsPASS. Assettransfer66840live106/126acknowledged, knownfailedchunks76/88/89pendingtargetedretryaftercurrentbatchterminal. No actualmodeltraining/inference yet; fullobjectiveactive.
 
 - 2026-11-01T00:05:18: Slurm521PASS all126chunkhashes and281/281officialbase tensorchecks; derivedSHA2726d5072e0169868e1cb0a765ef5f41e89389a0a64f7749fbf2fdc6c0c9d998, originalbaseSHA81668ee1... preserved.522GPUsmoke exitedbeforemodelimport: missing assets/source in sys.path after sourceverification. Addverifiedupstreampath locally, keep522failureandrerunfullgate; no sampling/training outcome yet.
+
+- 2026-11-01T00:18:28: GPU523actualPASS:8N12crystals/full1000steps, all8ALIGNNevaluable, realgrouprewardvariation, oneGRPOupdate; maxunchangedlogprob3.0285e-5, gradientnorm3.63588, LoRAchange1e-5, frozenfullstateunchanged,107.18s,1.787GBallocated. Single-update proofsavedlocalSHA68ab667ca885a8eb88c1d4c23f08d0741e33b4a00ad451334692487ea6fbb9fd. Strengthen finalsmoke to2innerupdates to matchtrainer and fixdirectpredictorcallcountmetadata. Local21testsPASS; submitstrictfinalsmoke with afterok6400training andcomparison chain. No efficacy result yet.

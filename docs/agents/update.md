@@ -50,3 +50,5 @@
 - 2026-10-31T23:50:17: Add nativePCbase andnativePCselectedGRPO controls to prevent sampler choice fromdetermining apparentcheckpoint superiority. Sevenarm plan256each includes raw/commonMatterSimpropertytests, compositiondiversity andbatch-awareuncertainty. NativeGRPOcheckpoint uses fixedtraining-kernelvalidationselection, never finaltestselection.21localtestsPASS; networkassettransfer is onlycurrentlyliveprocess.
 
 - 2026-11-01T00:05:18: Resourcebottleneck resolved with exactofficialdelta; sourcebase nowbitwiseverified, notconditionalbranch. Fixmodels.py verifiedsource importpath omittedwhile reusing verify_source helper. Preserve522failure; nextsubmitnewGPUonegroupfull1000levelsmoke only, thenauthorizedtraining afterpass.
+
+- 2026-11-01T00:18:28: Resourceidentityall281andGPUmechanicsbothverified; policy nowhasactualonegroupGRPOevidence, notjustlocalcontracts. Alignsmokewithtwoinnerupdates andfixoraclecallcounter withoutchangingrewards/samplingmath. Plan autoafterok pipeline to keepfullobjective moving: strict2-updateGPUgate ->200x32onlinecandidates ->sevenarm256each independentcomparison/commonMatterSim. No benchmark superiority claimedfromsmoke.

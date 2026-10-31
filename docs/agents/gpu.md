@@ -49,3 +49,5 @@
 - 2026-10-31T23:25:40: Snapshot: data518PASS437eligible(351/47/39),519baseauditcorrectFAIL105of281,520cancelledneverstarted. No activeGPUjob. Assettransfer unifiedsession66840live,28/126acknowledged1MiBchunks, nofinalmanifestorserverhashyet; previoussessions87318/12641/48832/48786terminalandpreserved. ProxyPID42860goneand1080unboundconfirmed. All model/datasetcomputeonSlurm; directstreamdiagnosticsfollowprevioususerexplicitauthorization, boundedfailedroutesnotrepeated.
 
 - 2026-11-01T00:05:18: Authorize smallsourcefixbundle SCP, SSH mandatoryverifiedpull and singleGPUrerun after522terminal.521CPUproofcomplete; sourcepatchpath-only, no modelweight/data/environment modifications or externalnetwork.
+
+- 2026-11-01T00:18:28: Authorize syncfinal2-updategate source, mandatorypull, submitGPUfinalsmoke then afteroktrain6400candidates andafteroksevenarmcomparison. Slurmcompute timelimitinfinite; use48hjobcap withcheckpointresume ratherthanunsafe walltimeclaim. Existingofficialbaseexactproof reused; no downloads/proxy/envinstalls. Training conditionalon passing source-matched2-update/full1000levelgate.
