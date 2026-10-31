@@ -77,3 +77,5 @@ compressed ID/label table; no model inference or GRPO training is performed.
 The archived training prediction CSV lacks structure IDs in the current ZIP;
 its row order is not used to reconstruct labels. The authoritative join is
 checkpoint `id_train` to the cached dataset's `id` and `gap pbe` fields.
+See [DISTRIBUTION_RESULTS.md](DISTRIBUTION_RESULTS.md) for the measured training
+mode, positive-gap distribution and candidate GRPO target-window counts.

@@ -39,3 +39,5 @@
 - 2026-10-31T22:11:34: Authorize next connections for current ALIGNN training-label statistics only. SCP verified same-task source bundle, SSH mandatory verified bundle pull first, inspect repository/cache metadata, submit CPU Slurm and read status/results. No models/DFT/GRPO jobs or network downloads; no dedicated proxy required.
 
 - 2026-10-31T22:19:28: Authorize one corrected CPUretry in new results/mattergen/alignn-training-gap-mode-20261031-retry02; source local commit/sync, no training/inference or alteration of516evidence.
+
+- 2026-10-31T22:23:35: Close training-gap audit:516failedCSVschema preserved,517success41.60sCPU, resultJSONSHAfa7a33bffa3b6b2c2c2f20a3e7a012c3d3cbb540ce0d78afd7dafce58953ad5f. Downloaded TSVhashverified and independently recounted. All meaningful remote processing viaSlurm, no source edits on server, no network downloads or dedicated proxy session used.

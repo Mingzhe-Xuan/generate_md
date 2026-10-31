@@ -36,3 +36,5 @@
 - 2026-10-31T22:16:59: Implement exact-training-split bandgap statistics in existing alignn_reliability module: checkpoint-hash/split provenance,60000label selection, exact/rounded modes and bins, positive/zero partitions, target windows, compressed ID/label output. No predictor changes or GRPO training. Local15tests PASS; next sync verified source and submit CPU Slurm.
 
 - 2026-10-31T22:19:28: Fix observed ID-less trainingCSV handling, preserve516failure; new metadata makes unavailable IDalignment explicit. No reconstructed targetcount uses that CSV. All16tests PASS; rerun exact60000training-label audit in fresh retry02 directory.
+
+- 2026-10-31T22:23:35: Training-gap distribution measured and reported: exactmode0eV35.15%; allmedian0.665eV, positivemedian1.88285eV; 2.5+/-0.2eV3194(5.32%). Positiveexactmode~0.0023eV only20repeats, not a useful representative target. Document tentative GRPO implications and zero-clipped reward ties without launching RL. Evidence local results/mattergen/evidence/alignn-training-gap-mode-20261031.

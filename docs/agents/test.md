@@ -46,3 +46,5 @@
 - 2026-10-31T22:16:59: Local PASS15tests (existing11 plus four distribution tests); py_compile and bash-n passed, module diff check clean. Labels/ties/bin-boundaries/positive-only/invalid-values and tolerance-window counts covered. Prepared CPU-only64G Slurm script; actual dataset/checkpoint audits pending server job.
 
 - 2026-10-31T22:19:28:516FAIL KeyError id in optional publishedtrainCSV join. Plan amended with observedschema: no ID means no positional targetcomparison; record fields/rowcount/reason. Regression enforces no invented ID join, normal ID CSV works. Local16tests PASS, compile/diff PASS, prior bash-n unchanged. Training-ID completeness/nonnegative labels/checkpointSHA and disjointsplit audits remain mandatory.
+
+- 2026-10-31T22:23:35: Final PASS16unit tests/compile/bash-n; CPU517exit0 with all60000unique trainingIDs found, splitsdisjoint and labels finite/nonnegative. DownloadedTSVSHA verified; independentCounter mode0=21090/60000, positive38910 and all21windowcounts agree. Dataset/checkpointSHA match prior reliability sources. Report tablecells/READMElink checked; no test weakening or guessed row-order join.

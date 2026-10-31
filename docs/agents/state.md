@@ -2,11 +2,11 @@
 
 ## 当前状态
 
-ACTIVE: Audit actual60000training labels of frozen MP gap ALIGNN for exact/rounded bandgap mode and positive-gap distribution to inform MatterGen-GRPO target. Prior reliability pilot complete and preserved.
+COMPLETE: Exact60000-ID ALIGNN training gap audit; mode0eV21090(35.15%), positive38910. SuccessfulCPU517; independent downloaded-label counts/provenance verified. Prior reliability pilot preserved; no RL/training jobs launched.
 
 ## 当前计划
 
-Add independently tested training-distribution module under existing alignn_reliability, synchronize locally committed source, CPU Slurm only, retrieve audited counts. Report zero-gap concentration separately from positive-gap peak; no MatterGen or GRPO training in this request.
+Deliver DISTRIBUTION_RESULTS.md and audited evidence. Explain zero-mode versus positive-gap targets and reward tie caveat. No further work pending for requested statistics; MatterGen-GRPO training requires a subsequent user instruction.
 
 ## 变更记录
 
@@ -50,3 +50,5 @@ Add independently tested training-distribution module under existing alignn_reli
 - 2026-10-31T22:11:34: START requested ALIGNN training-bandgap mode audit for choosing MatterGen-GRPO target. Use exact current checkpoint60000trainingIDs and cached MEGNet DFT labels, not validation/test features. Compute all/positive exact modes, rounded/bin peaks and fractions; no GRPO training authorized or launched. Next local tested statistics module, commit/sync, CPU Slurm, retrieve evidence.
 
 - 2026-10-31T22:19:28: CPU516failed on archive trainCSV missing id column. Light ZIPheader confirms target,prediction only (paired reversed-looking rows). Correct parser records unjoinable archive metadata instead of guessing order; authoritative id_train-to-cached-label join unchanged. Preserve failed output, rerun fresh retry02 after local16tests.
+
+- 2026-10-31T22:23:35: COMPLETE requested ALIGNN training gap-mode audit.517exit0, exact60000trainingIDs, mode0eV21090(35.15%), positive38910. Verified downloaded TSV independent counts/21windows and matching prior dataset/modelSHA.516failure retained; publishedtrainCSV ID-less/9984rows explicitly unusable for IDcomparison. Delivered distribution report; no GRPO or MatterGen training started.
