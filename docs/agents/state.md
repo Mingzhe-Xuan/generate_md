@@ -2,11 +2,11 @@
 
 ## 当前状态
 
-ACTIVE MatterGen GRPO goal. Training525 is running on node42: 75/200 iterations recorded in retrieved history (2400 training candidates); main525 continues after validation75; validation75 has2/64 gap passes and MAE1.96291084eV. Full GPU smoke524 and server checkpoint tests527/528 passed. Initial fixed validation: 64/64 evaluable, 0/64 gap passes, MAE1.9062167414eV. Comparison526 awaits afterok525. No learned-policy efficacy conclusion yet; DFT/SUN remain paused.
+ACTIVE MatterGen GRPO goal. Training525 is running on node42: 123/200 committed iterations proven by CPU532 (3936 training candidates); main525 continues after validation100; validation100 has2/64 gap passes and MAE1.92689708eV. Full GPU smoke524 and server checkpoint tests527/528 passed. Initial fixed validation: 64/64 evaluable, 0/64 gap passes, MAE1.9062167414eV. Comparison526 awaits afterok525. No learned-policy efficacy conclusion yet; DFT/SUN remain paused.
 
 ## 当前计划
 
-Keep existing525 running; next fixed validation100. Validation75 ties50 at2/64 hits and lowers MAE, still aboveinitial MAE; preserve the predeclared budget and pass-first selection rule. Complete200 iterations/6400 candidates, then automatically run526: seven arms of256 fresh structures with matched and native sampling, same ALIGNN and canonical MatterSim relaxation. Retrieve full-denominator metrics and compare validation-selected GRPO with official conditional generation. Resume only if necessary from validated checkpoints; never select on final test outputs.
+Keep existing525 running; next fixed validation125. Validation100 has2/64 hits and MAE1.92689708eV, still aboveinitial; preserve the predeclared budget and pass-first selection rule. Complete200 iterations/6400 candidates, then automatically run526: seven arms of256 fresh structures with matched and native sampling, same ALIGNN and canonical MatterSim relaxation. Retrieve full-denominator metrics and compare validation-selected GRPO with official conditional generation. Resume only if necessary from validated checkpoints; never select on final test outputs.
 
 ## 变更记录
 
@@ -246,3 +246,23 @@ Keep existing525 running; next fixed validation100. Validation75 ties50 at2/64 h
 - 2026-11-01T05:43:16.718738: ENTER fixed validation75: live56067 confirms525 R5:20:00, full1000-step rollout75 and updates followed by0075 validation8/64. History/latest remain74 until validation/checkpoint completes, so do not claim75 completed early.526 remains Dependency, no jobs/settings/source changes. Next wait64/64 and retrieve/hash-check closed0075 JSON against fixed0000/0025/0050; full200 training and independent final comparison remain required.
 
 - 2026-11-01T06:00:05.131153: COMPLETE fixed validation75 stage, not goal: watcher56067 exited0 normally on0075 completion.525 remains R5:36:49; retrieved history75/200 (2400 training candidates/150 updates). Validation75 has2/64 passes and MAE1.96291084eV, lower than50 but aboveinitial1.90621674; no stable overall gain claim. CPU531 verified actual best75 selection via predeclared MAE tiebreak.526 Dependency. Next one read-only watcher to0100, preserve full200 training and independent seven-arm raw/common-relaxed conditional comparison.
+
+- 2026-10-26T10:44:32.4474439+08:00: 65dbde6source-onlycommit pushed/bundleSHA b43f6e1ae8fa0ca5a60cf098e87532c88e436f42826565cfdbf73755074db544 verified/pulled. Fresh Slurm409 nativegate and410 afterok scientificrun submitted, root results/mattergen/directed-tto-20261026-fdlimit. Same frozen16, no previousoperators reused. Next actual nativechecks then directionaloutcomes.
+
+- 2026-11-01T06:02:31.780998: Verified815ee97 documentation bundle synced. Original525 authoritatively R5:39:47, completed76 iterations/2432 candidates, rollout77 step901;526 Dependency. Previous56067 confirmed terminal exit0 at0075; new local read-only watcher53915 LIVE to0100 (resume via write_stdin, no duplicate watcher). Metadata tmp/grpo-watch-session.json/journal watch-until-validation100.jsonl identify current handle. Paired75 audit and CPU531 best75 acceptance complete; no robust overall efficacy claim. No algorithm/settings/new GPU jobs changed; full200 training and independent final comparison still required.
+
+- 2026-11-01T06:04:34.826901: VERIFIED WAIT via live53915: one observation SSH close recovered on same watcher; authoritative525 R5:41:36, completed77 iterations/2464 candidates, rollout78 step301. Latest numerical checks pass;526 Dependency, next0100 pending, no terminal records. No restart/new jobs/source/settings changes; full200 training and independent final comparison remain required.
+
+- 2026-11-01T06:07:47.393552: VERIFIED WAIT via live53915:525 R5:42:32->5:45:22, completed78 iterations/2496 candidates, rollout79 step501. Latest numerical checks pass;526 Dependency, next0100 pending, no terminal records. No source/settings/new-job changes; full200 training and independent final comparison remain incomplete.
+
+- 2026-11-01T06:09:43.097695: VERIFIED WAIT via live53915:525 R5:46:18->5:47:15, completed79 iterations/2528 candidates, rollout80 step101. Latest numerical checks pass;526 Dependency, next0100 pending, no terminal records. No source/settings/new-job changes; full200 training and independent final comparison remain incomplete.
+
+- 2026-11-01T06:13:05.786410: VERIFIED WAIT via live53915:525 R5:48:11->5:50:05, completed80 iterations/2560 candidates, rollout81 step1. Latest numerical checks pass;526 Dependency, next0100 pending, no terminal records. No source/settings/new-job changes; full200 training and independent final comparison remain required.
+
+- 2026-11-01T06:17:47.069827: VERIFIED WAIT via live53915:525 R5:51:01->5:54:47, completed81 iterations/2592 candidates, rollout82 step101. Latest numerical checks pass;526 Dependency, next0100 pending, no terminal records. No source/settings/new-job changes; full200 training and independent final comparison remain incomplete.
+
+- 2026-11-01T06:21:05.262350: VERIFIED WAIT via live53915:525 R5:55:43->5:58:32, completed82 iterations/2624 candidates, rollout83 step101. Latest numerical checks pass;526 Dependency, next0100 pending, no terminal records. No source/settings/new-job changes; full200 training and independent final comparison remain incomplete.
+
+- 2026-11-01T06:25:53.591654: VERIFIED WAIT via live53915: one SSH observation timeout recovered; authoritative525 R6:01:35->6:03:28, completed83 iterations/2656 candidates, rollout84 step401. Latest numerical checks pass;526 Dependency, next0100 pending, no terminal records. No restart/new jobs/source/settings changes; full200 training and independent final comparison remain required.
+
+- 2026-11-01T09:02:45.426711: COMPLETE fixed validation100 audit stage, not goal: fresh read of watcher53915 showed525 R8:31:31 at120 completed and0100 validation already complete; watcher53915 then exited0 normally. Retrieved history122/200 (3904 candidates/244 updates); CPU532 proveslatest123 with expected/actualbest100 under existing rule. Validation1002/64 hits, MAE1.92689708eV, closer than75 but still aboveinitial1.90621674; uncertainty includes0.525 still R8:38:55 and526 Dependency. Next one read-only watcher to0125, preserve full200 training and final seven-arm conditional comparison.
