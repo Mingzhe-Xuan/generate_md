@@ -789,3 +789,51 @@
 - 2026-11-01T09:00:25.739201: SSH mandatory815ee97 source-bundle pull then CPU Slurm selected-checkpoint audit for milestone100, deriving expectedbest from closed validations up to latest committed iteration; no GPU allocation or restart.
 
 - 2026-11-01T09:00:59.517112: SSH mandatory815ee97 source pull then read CPU532 selected-checkpoint logs and scontrol terminal state; inspect existing525/526, no new jobs here.
+
+- 2026-10-22T14:05:27+08:00：rsync79533明确终止protocol12且未增加远端字节；不是观察超时。Git自带MSYS OpenSSH只读配置核对与原生SSH一致（Guqq2/xmz/vlab）。下一连接仅改用同体系MSYS SSH管道续传同一checkpoint，排除跨运行时管道问题，不改配置/身份/目标。
+
+- 2026-10-22T18:22:10.961735+08:00：三次新连接未获得pull成功证据（5338/94615/39116已终态）；检查既有经验后不重复长下载。下一单次SSH使用本地私有调试日志定位是否真正到达服务器/认证完成；远端仅首先pull并报告退出码，失败只诊断Git代理配置。无需新下载许可，用户直连批准继续有效。
+
+- 2026-10-23T09:36:17.332087+08:00: Real275serial/4processbenchmarkpassed:16controls,48.5533sv21.0023s,2.31178xspeedup,maxenergy2.96699e-6eV/atom,volume2.97051e-5relative,unchangedfmax.01andallconverged. Switchingfullreference5874to4independentworkersinsideoneSlurmGPUallocation. Existingcompletedcachepreserved,266incompletefolderquarantinedwithmanifest. Real273UprobeSCFpassed,Uhubnonzero,MPFeUeff5.3/momentsvalidated. No productionDFTbeforehigherbasiscertification+SUN.
+
+- 2026-10-23T16:51:06.553368+08:00: Alternating module implementation checkpoint:3policy tests pass,pyflakes/compile/bashsyntax/diffpass. Includes originalinitializationcontrol, retainedAdam states, A_ready/B_pending checkpoint phases, explicitcellboundextension, modelidentity/atomorder/Gramfeedback checks, persistentSlurmGPUworkers. Ready4candidate integrationpilot(shortanneal2/guard16,notfullscientificresult). Source-onlycommit/push/bundle firstpull beforejob; noDFT.
+
+- 2026-10-26T12:23:58.7103533+08:00: Plan read-onlyCPU2/4G/5minSlurm archive packaging ofcompleted417 tighttrialinput/finalposes+CF/ALmetadata/predictions for independentlocalphysical/hash audit. No simulation/scoring/sourcechanges. ThenSCPartifact+SHA toignoredlocaltight-evidence. Existing416/417/414terminalexit0; source4e7600a unchanged.
+
+- 2026-11-01T09:04:50.590690: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified8eb0253 bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T09:05:47.679651: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified8eb0253 bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T09:06:46.315019: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified8eb0253 bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T09:07:44.542130: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified8eb0253 bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T09:08:40.736302: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified8eb0253 bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T09:09:39.139154: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified8eb0253 bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T09:10:35.415086: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified8eb0253 bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T09:11:31.847753: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified8eb0253 bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T09:12:28.143285: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified8eb0253 bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T09:13:24.205397: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified8eb0253 bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T09:14:20.996400: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified8eb0253 bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T09:15:17.667469: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified8eb0253 bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T09:16:13.802125: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified8eb0253 bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T09:17:10.394683: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified8eb0253 bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T09:18:06.630167: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified8eb0253 bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T09:19:03.000612: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified8eb0253 bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T09:19:59.438927: Read-only exact525/526 authoritative Slurm poll after verified wait; mandatory verified8eb0253 bundle pull first. Read progress/history/validation/terminal status only; no new jobs/restart/source changes.
+
+- 2026-11-01T09:21:09.626457: Validation125 closed-artifact hash and CPU selected-checkpoint audit submission after mandatory8eb0253 bundle pull; no main525/526 mutations. CPU checkpoint tensor checks use Slurm only.
+
+- 2026-11-01T09:22:04.906190: Read exact CPU533 selected-checkpoint audit scontrol/logs and525/526 state; verified8eb0253 pull first, forwarding disabled, no workload on login.
